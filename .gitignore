@@ -34,6 +34,9 @@ api/staticfiles/
 # 本地从 Vercel 拉下来的环境变量
 .env.local
 
+# Vercel CLI 的本地关联信息（含项目 ID，不入库）
+.vercel/
+
 # macOS / Windows
 .DS_Store
 Thumbs.db
@@ -46,3 +49,6 @@ Thumbs.db
 # 内部工作目录 / 截图等临时产物
 .workbuddy/
 _shots/
+
+.vercel
+.env*
