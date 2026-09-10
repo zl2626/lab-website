@@ -1,0 +1,188 @@
+"""课题组网站的数据模型。
+
+内容由 Django Admin 维护，前端在构建时通过 /api/content/ 拉取。
+"""
+
+from django.db import models
+
+
+class Publishable(models.Model):
+    """公共字段：是否发布 + 时间戳。"""
+
+    published = models.BooleanField("发布", default=True, help_text="取消勾选后前台不显示")
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class ResearchArea(Publishable):
+    """研究方向。"""
+
+    slug = models.SlugField("URL 文件名", max_length=80, unique=True, help_text="英文小写短横线，如 computer-vision")
+    title = models.CharField("中文标题", max_length=120)
+    title_en = models.CharField("英文标题", max_length=200, blank=True)
+    summary = models.TextField("一句话简介", help_text="显示在卡片上")
+    icon = models.CharField("图标 emoji", max_length=16, default="🔬")
+    keywords = models.JSONField("关键词", default=list, blank=True, help_text='JSON 数组，如 ["目标检测", "图像分割"]')
+    order = models.IntegerField("排序", default=99, help_text="数字越小越靠前")
+    cover = models.CharField("配图路径", max_length=300, blank=True, help_text="如 /images/research/xxx.jpg")
+    body = models.TextField("正文（Markdown）", blank=True)
+
+    class Meta:
+        verbose_name = "研究方向"
+        verbose_name_plural = "研究方向"
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class Member(Publishable):
+    """团队成员。"""
+
+    class Role(models.TextChoices):
+        PI = "导师", "导师"
+        POSTDOC = "博士后", "博士后"
+        PHD = "博士生", "博士生"
+        MASTER = "硕士生", "硕士生"
+        UNDERGRAD = "本科生", "本科生"
+        ASSISTANT = "科研助理", "科研助理"
+        ALUMNI = "校友", "校友"
+
+    slug = models.SlugField("URL 文件名", max_length=80, unique=True, help_text="拼音或英文，如 zhang-wei")
+    name = models.CharField("姓名", max_length=60)
+    name_en = models.CharField("英文名 / 拼音", max_length=120, blank=True)
+    role = models.CharField("身份", max_length=20, choices=Role.choices, default=Role.PHD)
+    title = models.CharField("职称 / 年级", max_length=120, blank=True)
+    order = models.IntegerField("组内排序", default=99, help_text="数字越小越靠前")
+    photo = models.CharField("照片路径", max_length=300, blank=True, help_text="如 /images/team/xxx.jpg；留空则显示姓名首字头像")
+    email = models.EmailField("邮箱", blank=True)
+    join_year = models.CharField("加入年份", max_length=10, blank=True)
+    interests = models.JSONField("研究兴趣", default=list, blank=True)
+    links = models.JSONField(
+        "相关链接",
+        default=dict,
+        blank=True,
+        help_text='JSON 对象，支持 homepage / scholar / github / orcid / dblp',
+    )
+    bio = models.TextField("个人简介（Markdown）", blank=True)
+
+    class Meta:
+        verbose_name = "团队成员"
+        verbose_name_plural = "团队成员"
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.name}（{self.role}）"
+
+
+class News(Publishable):
+    """科研新闻。"""
+
+    slug = models.SlugField("URL 文件名", max_length=120, unique=True, help_text="英文短名，如 cvpr-2026-papers")
+    title = models.CharField("标题", max_length=200)
+    date = models.DateField("发布日期")
+    summary = models.TextField("摘要", blank=True, help_text="列表页显示")
+    tags = models.JSONField("标签", default=list, blank=True)
+    cover = models.CharField("封面图路径", max_length=300, blank=True)
+    pinned = models.BooleanField("置顶", default=False)
+    body = models.TextField("正文（Markdown）", blank=True)
+
+    class Meta:
+        verbose_name = "科研新闻"
+        verbose_name_plural = "科研新闻"
+        ordering = ["-date", "-id"]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class Publication(Publishable):
+    """科研成果（论文 / 专利 / 获奖等）。"""
+
+    class Type(models.TextChoices):
+        JOURNAL = "期刊论文", "期刊论文"
+        CONFERENCE = "会议论文", "会议论文"
+        PREPRINT = "预印本", "预印本"
+        PATENT = "专利", "专利"
+        BOOK = "专著", "专著"
+        AWARD = "获奖", "获奖"
+        PROJECT = "项目", "项目"
+
+    slug = models.SlugField("URL 文件名", max_length=140, unique=True)
+    title = models.CharField("成果标题", max_length=400, help_text="论文标题请用英文原文")
+    authors = models.JSONField("作者列表", default=list, blank=True)
+    venue = models.CharField("期刊 / 会议全称", max_length=300)
+    venue_short = models.CharField("简称", max_length=60, blank=True, help_text="如 CVPR")
+    year = models.IntegerField("年份")
+    type = models.CharField("成果类型", max_length=20, choices=Type.choices, default=Type.CONFERENCE)
+    area = models.CharField(
+        "所属研究方向",
+        max_length=120,
+        blank=True,
+        help_text="填「研究方向」的中文标题，才会在该方向详情页关联显示",
+    )
+    highlight = models.BooleanField("设为精选", default=False, help_text="勾选后会出现在首页「代表性成果」")
+    link = models.URLField("原文链接", max_length=500, blank=True)
+    pdf = models.URLField("PDF 链接", max_length=500, blank=True)
+    code = models.URLField("代码仓库", max_length=500, blank=True)
+    abstract = models.TextField("简介", blank=True)
+
+    class Meta:
+        verbose_name = "科研成果"
+        verbose_name_plural = "科研成果"
+        ordering = ["-year", "title"]
+
+    def __str__(self) -> str:
+        return f"[{self.year}] {self.title}"
+
+
+class SiteSetting(models.Model):
+    """站点全局设置（单例，只允许保留一条记录）。"""
+
+    name = models.CharField("课题组名称", max_length=120, default="某某实验室")
+    name_en = models.CharField("英文名称", max_length=200, blank=True)
+    abbr = models.CharField("缩写", max_length=12, default="LAB", help_text="2-5 个字母，显示在 Logo 上")
+    tagline = models.CharField("一句话简介", max_length=300, blank=True)
+    affiliation = models.CharField("所属单位", max_length=200, blank=True)
+    description = models.TextField("搜索引擎简介", blank=True)
+
+    address = models.CharField("通讯地址", max_length=200, blank=True)
+    postcode = models.CharField("邮编", max_length=20, blank=True)
+    email = models.EmailField("电子邮箱", blank=True)
+    phone = models.CharField("联系电话", max_length=60, blank=True)
+
+    openings_enabled = models.BooleanField("显示招生信息", default=True)
+    openings_title = models.CharField("招生标题", max_length=200, blank=True)
+    openings_text = models.TextField("招生说明", blank=True)
+    openings_email = models.EmailField("接收申请邮箱", blank=True)
+
+    nav = models.JSONField(
+        "导航菜单",
+        default=list,
+        blank=True,
+        help_text='JSON 数组，如 [{"label": "首页", "href": "/"}]；留空则使用默认菜单',
+    )
+    social = models.JSONField("页脚链接", default=list, blank=True)
+    icp = models.CharField("备案号", max_length=60, blank=True)
+
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
+
+    class Meta:
+        verbose_name = "站点设置"
+        verbose_name_plural = "站点设置"
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args, **kwargs):
+        # 强制单例
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> "SiteSetting":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

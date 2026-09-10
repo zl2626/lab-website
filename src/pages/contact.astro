@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSite } from '../lib/content';
+
+const site = await getSite();
+const { contact, openings } = site;
+---
+
+<BaseLayout title="联系我们" description={`联系${site.name}`}>
+  <div class="page-head">
+    <div class="container">
+      <h1>联系我们</h1>
+      <p>欢迎对课题组研究感兴趣的同学、老师与合作方与我们联系。</p>
+    </div>
+  </div>
+
+  <section class="section container">
+    <div class="grid grid-3">
+      <div class="card info-card">
+        <span class="ic">📍</span>
+        <h3>通讯地址</h3>
+        <p>{contact.address || '—'}{contact.postcode ? `，邮编 ${contact.postcode}` : ''}</p>
+      </div>
+      <div class="card info-card">
+        <span class="ic">✉️</span>
+        <h3>电子邮箱</h3>
+        <p>{contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : '—'}</p>
+      </div>
+      <div class="card info-card">
+        <span class="ic">☎️</span>
+        <h3>联系电话</h3>
+        <p>{contact.phone || '—'}</p>
+      </div>
+    </div>
+
+    {
+      openings.enabled && openings.title && (
+        <div class="join">
+          <span class="eyebrow">Join Us</span>
+          <h2>{openings.title}</h2>
+          {openings.text && <p>{openings.text}</p>}
+          {(openings.email || contact.email) && (
+            <a
+              class="btn btn-primary"
+              href={`mailto:${openings.email || contact.email}?subject=申请加入课题组`}
+            >
+              发送邮件申请
+            </a>
+          )}
+        </div>
+      )
+    }
+
+    <div class="map-placeholder card">
+      <h3>校园位置</h3>
+      <p class="muted small">
+        如需在页面中嵌入地图，请把地图平台的 &lt;iframe&gt; 代码粘贴到
+        <code>src/pages/contact.astro</code> 的 <code>.map-placeholder</code> 内。
+      </p>
+      <div class="map-box" aria-hidden="true">地图占位区域</div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .info-card { text-align: center; }
+  .info-card .ic { font-size: 1.7rem; display: block; margin-bottom: 12px; }
+  .info-card h3 { font-size: 1rem; margin-bottom: 0.4em; }
+  .info-card p { margin: 0; font-size: 0.94rem; }
+
+  .join {
+    margin-top: 44px; padding: 38px 40px; border-radius: var(--radius);
+    background: linear-gradient(130deg, var(--accent-soft), var(--bg-soft));
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  }
+  .join h2 { margin: 0.3em 0 0.5em; }
+  .join p { max-width: 66ch; }
+  .eyebrow {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
+  }
+
+  .map-placeholder { margin-top: 44px; }
+  .map-placeholder h3 { margin-bottom: 0.3em; }
+  .map-box {
+    margin-top: 16px; height: 240px; border-radius: var(--radius-sm);
+    border: 1px dashed var(--border-strong); background: var(--bg-soft);
+    display: grid; place-items: center; color: var(--muted); font-size: 0.88rem;
+  }
+</style>

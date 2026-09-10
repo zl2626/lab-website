@@ -1,0 +1,74 @@
+---
+import type { MemberItem } from '../lib/content';
+import { asset, u } from '../utils/url';
+import { initials } from '../utils/format';
+
+interface Props {
+  item: MemberItem;
+}
+
+const { item } = Astro.props;
+
+const roleClass: Record<string, string> = {
+  导师: 'tag-gold',
+  博士后: '',
+  博士生: '',
+  硕士生: 'tag-muted',
+  本科生: 'tag-muted',
+  科研助理: 'tag-muted',
+  校友: 'tag-muted',
+};
+---
+
+<a class="card card-link member-card" href={u(`/team/${item.slug}`)}>
+  <div class="avatar">
+    {
+      item.photo ? (
+        <img src={asset(item.photo)} alt={item.name} loading="lazy" />
+      ) : (
+        <span class="avatar-fallback">{initials(item.name)}</span>
+      )
+    }
+  </div>
+  <div class="info">
+    <div class="name-row">
+      <h3>{item.name}</h3>
+      <span class={`tag ${roleClass[item.role] ?? ''}`}>{item.role}</span>
+    </div>
+    {item.nameEn && <p class="en">{item.nameEn}</p>}
+    {item.title && <p class="title">{item.title}</p>}
+    {
+      item.interests.length > 0 && (
+        <div class="row tags">
+          {item.interests.slice(0, 3).map((i) => (
+            <span class="tag tag-muted">{i}</span>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</a>
+
+<style>
+  .member-card { display: flex; gap: 18px; align-items: flex-start; padding: 22px; }
+  .avatar {
+    flex: 0 0 82px; width: 82px; height: 82px; border-radius: 14px; overflow: hidden;
+    background: var(--bg-inset); display: grid; place-items: center;
+    border: 1px solid var(--border);
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-fallback {
+    font-size: 1.4rem; font-weight: 700; color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .info { min-width: 0; flex: 1; }
+  .name-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .name-row h3 { margin: 0; font-size: 1.08rem; }
+  .en { font-size: 0.8rem; color: var(--muted); margin: 3px 0 3px; }
+  .title { font-size: 0.86rem; color: var(--text-soft); margin: 2px 0 0.6em; }
+  .tags { gap: 6px; }
+  @media (max-width: 420px) {
+    .member-card { flex-direction: column; }
+    .avatar { flex: none; }
+  }
+</style>

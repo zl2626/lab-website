@@ -1,0 +1,33 @@
+---
+import { u } from '../utils/url';
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  actionHref?: string;
+  align?: 'left' | 'center';
+}
+
+const { eyebrow, title, description, actionLabel, actionHref, align = 'left' } = Astro.props;
+---
+
+<div class="section-head" class:list={[{ 'is-center': align === 'center' }]}>
+  {eyebrow && <span class="eyebrow">{eyebrow}</span>}
+  <h2>{title}</h2>
+  {description && <p>{description}</p>}
+  {
+    actionLabel && actionHref && (
+      <div class="head-action">
+        <a class="btn btn-ghost" href={u(actionHref)}>{actionLabel} →</a>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .is-center { text-align: center; }
+  .is-center p { margin-left: auto; margin-right: auto; }
+  .head-action { margin-top: 16px; }
+</style>

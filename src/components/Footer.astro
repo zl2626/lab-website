@@ -1,0 +1,77 @@
+---
+import type { SiteInfo } from '../lib/content';
+import { u } from '../utils/url';
+
+interface Props {
+  site: SiteInfo;
+}
+
+const { site } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <div class="row">
+          <span class="brand-mark">{site.abbr}</span>
+          <strong>{site.name}</strong>
+        </div>
+        {site.tagline && <p class="small">{site.tagline}</p>}
+        {site.affiliation && <p class="small muted">{site.affiliation}</p>}
+      </div>
+
+      <div class="footer-col">
+        <h4>快速导航</h4>
+        <ul>
+          {site.nav.map((item) => <li><a href={u(item.href)}>{item.label}</a></li>)}
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>联系我们</h4>
+        <ul>
+          {site.contact.address && <li>{site.contact.address}</li>}
+          {site.contact.email && <li><a href={`mailto:${site.contact.email}`}>{site.contact.email}</a></li>}
+          {site.contact.phone && <li>{site.contact.phone}</li>}
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>相关链接</h4>
+        <ul>
+          {site.social.map((s) => <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>)}
+        </ul>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="footer-bottom">
+      <span class="small muted">© {year} {site.name}. 保留所有权利。</span>
+      {site.icp && <span class="small muted">{site.icp}</span>}
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 52px 0 26px; margin-top: 0; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1fr; gap: 34px; }
+  .footer-col h4 { font-size: 0.86rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .footer-col li { font-size: 0.9rem; color: var(--text-soft); }
+  .footer-col a { color: var(--text-soft); }
+  .footer-col a:hover { color: var(--accent); }
+  .footer-brand .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(140deg, var(--accent), var(--accent-strong));
+    color: #fff; font-weight: 800; font-size: 0.66rem;
+  }
+  .footer-brand strong { font-size: 1.02rem; }
+  .footer-brand p { margin: 12px 0 4px; }
+  .footer-bottom { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 18px; }
+  hr.divider { margin: 34px 0 0; }
+  @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; gap: 26px; } }
+</style>

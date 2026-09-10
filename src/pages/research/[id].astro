@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PublicationItem from '../../components/PublicationItem.astro';
+import { getPublications, getResearch } from '../../lib/content';
+import { u } from '../../utils/url';
+
+export async function getStaticPaths() {
+  const research = await getResearch();
+  return research.map((item) => ({ params: { id: item.slug }, props: { item } }));
+}
+
+const { item } = Astro.props;
+
+const pubs = await getPublications();
+const related = pubs.filter((p) => p.area && p.area === item.title);
+---
+
+<BaseLayout title={item.title} description={item.summary}>
+  <div class="page-head">
+    <div class="container">
+      <p class="crumb"><a href={u('/research')}>研究方向</a> / {item.title}</p>
+      <h1><span class="icon">{item.icon}</span> {item.title}</h1>
+      {item.titleEn && <p class="en">{item.titleEn}</p>}
+      {
+        item.keywords.length > 0 && (
+          <div class="row tags">
+            {item.keywords.map((k) => (
+              <span class="tag tag-muted">{k}</span>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <section class="section container">
+    <div class="prose" set:html={item.bodyHtml} />
+  </section>
+
+  {
+    related.length > 0 && (
+      <section class="section section-alt">
+        <div class="container">
+          <h2>本方向相关工作</h2>
+          <div class="pub-list">
+            {related.map((p) => (
+              <PublicationItem item={p} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .crumb { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+  .icon { font-size: 0.85em; }
+  .en { color: var(--muted); font-size: 1rem; margin: 0 0 0.8em; }
+  .tags { gap: 7px; }
+  .pub-list { border-top: 1px solid var(--border); }
+</style>

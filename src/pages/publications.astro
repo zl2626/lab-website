@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PublicationItem from '../components/PublicationItem.astro';
+import { getPublications, getSite } from '../lib/content';
+import { groupByYear } from '../utils/format';
+
+const site = await getSite();
+const pubs = await getPublications();
+
+const years = groupByYear(pubs, (p) => p.year);
+const types = [...new Set(pubs.map((p) => p.type))];
+const areas = [...new Set(pubs.map((p) => p.area).filter(Boolean))];
+---
+
+<BaseLayout title="科研成果" description={`${site.name}的科研成果与论文列表`}>
+  <div class="page-head">
+    <div class="container">
+      <h1>科研成果</h1>
+      <p>课题组近年发表的论文、专利、专著与获奖成果，共 {pubs.length} 项。</p>
+
+      <div class="row filters">
+        <button class="chip active" data-filter="all">全部</button>
+        {types.map((t) => <button class="chip" data-filter={`type:${t}`}>{t}</button>)}
+        {areas.map((a) => <button class="chip" data-filter={`area:${a}`}>{a}</button>)}
+      </div>
+    </div>
+  </div>
+
+  <section class="section container">
+    {
+      years.map(({ year, items }) => (
+        <div class="year-block">
+          <div class="year-head">
+            <h2>{year}</h2>
+            <span class="muted small">{items.length} 项</span>
+          </div>
+          <div class="pub-list">
+            {items.map((item) => (
+              <div class="pub-cell" data-type={item.type} data-area={item.area}>
+                <PublicationItem item={item} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+    {
+      pubs.length === 0 && (
+        <p class="muted">暂无成果，请登录管理后台添加。</p>
+      )
+    }
+    <p id="no-result" class="muted" hidden>没有符合条件的成果。</p>
+  </section>
+</BaseLayout>
+
+<style>
+  .filters { gap: 8px; margin-top: 24px; }
+  .chip {
+    padding: 6px 14px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft); transition: 0.16s ease;
+  }
+  .chip:hover { border-color: var(--border-strong); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .year-block { margin-bottom: 40px; }
+  .year-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
+    position: sticky; top: 68px; background: var(--bg); padding: 12px 0 8px; z-index: 5;
+    border-bottom: 1px solid var(--border);
+  }
+  .year-head h2 { margin: 0; font-size: 1.4rem; }
+  .pub-cell { display: contents; }
+</style>
+
+<script>
+  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.chip'));
+  const cells = Array.from(document.querySelectorAll<HTMLElement>('.pub-cell'));
+  const blocks = Array.from(document.querySelectorAll<HTMLElement>('.year-block'));
+  const empty = document.getElementById('no-result');
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+
+      const f = chip.dataset.filter || 'all';
+      let visible = 0;
+      cells.forEach((cell) => {
+        let show = f === 'all';
+        if (!show) {
+          const [kind, value] = f.split(':');
+          if (kind === 'type') show = cell.dataset.type === value;
+          if (kind === 'area') show = (cell.dataset.area || '') === value;
+        }
+        cell.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      // 隐藏没有可见条目的年份
+      blocks.forEach((b) => {
+        const any = Array.from(b.querySelectorAll<HTMLElement>('.pub-cell')).some(
+          (c) => c.style.display !== 'none'
+        );
+        b.style.display = any ? '' : 'none';
+      });
+
+      if (empty) empty.hidden = visible > 0;
+    });
+  });
+</script>

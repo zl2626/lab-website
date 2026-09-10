@@ -1,0 +1,137 @@
+"""公开 JSON 接口（只读）。
+
+前端在构建时调用 /api/content/ 拉取全站内容；
+如果接口不可用，前端会自动回退到仓库里的 Markdown 文件。
+"""
+
+from django.http import Http404, JsonResponse
+from django.views.decorators.http import require_GET
+
+from .models import Member, News, Publication, ResearchArea, SiteSetting
+from .serializers import (
+    serialize_member,
+    serialize_news,
+    serialize_publication,
+    serialize_research,
+    serialize_site,
+)
+
+
+def _json(data, status: int = 200) -> JsonResponse:
+    # ensure_ascii=False 保证中文不被转义成 \uXXXX；safe 允许直接返回数组
+    return JsonResponse(
+        data,
+        status=status,
+        safe=not isinstance(data, list),
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
+@require_GET
+def api_root(request):
+    return _json(
+        {
+            "name": "课题组网站内容接口",
+            "endpoints": [
+                "/api/health/",
+                "/api/content/",
+                "/api/site/",
+                "/api/research/",
+                "/api/research/<slug>/",
+                "/api/members/",
+                "/api/members/<slug>/",
+                "/api/news/",
+                "/api/news/<slug>/",
+                "/api/publications/",
+                "/api/publications/<slug>/",
+            ],
+        }
+    )
+
+
+@require_GET
+def health(request):
+    return _json({"status": "ok"})
+
+
+@require_GET
+def content(request):
+    """构建前端时使用：一次请求拿全站内容。"""
+    return _json(
+        {
+            "site": serialize_site(SiteSetting.load()),
+            "research": [
+                serialize_research(o) for o in ResearchArea.objects.filter(published=True)
+            ],
+            "members": [serialize_member(o) for o in Member.objects.filter(published=True)],
+            "news": [serialize_news(o) for o in News.objects.filter(published=True)],
+            "publications": [
+                serialize_publication(o) for o in Publication.objects.filter(published=True)
+            ],
+        }
+    )
+
+
+@require_GET
+def site(request):
+    return _json(serialize_site(SiteSetting.load()))
+
+
+@require_GET
+def research_list(request):
+    return _json(
+        [serialize_research(o) for o in ResearchArea.objects.filter(published=True)]
+    )
+
+
+@require_GET
+def research_detail(request, slug: str):
+    try:
+        obj = ResearchArea.objects.get(slug=slug, published=True)
+    except ResearchArea.DoesNotExist as exc:
+        raise Http404("研究方向不存在") from exc
+    return _json(serialize_research(obj))
+
+
+@require_GET
+def member_list(request):
+    return _json([serialize_member(o) for o in Member.objects.filter(published=True)])
+
+
+@require_GET
+def member_detail(request, slug: str):
+    try:
+        obj = Member.objects.get(slug=slug, published=True)
+    except Member.DoesNotExist as exc:
+        raise Http404("成员不存在") from exc
+    return _json(serialize_member(obj))
+
+
+@require_GET
+def news_list(request):
+    return _json([serialize_news(o) for o in News.objects.filter(published=True)])
+
+
+@require_GET
+def news_detail(request, slug: str):
+    try:
+        obj = News.objects.get(slug=slug, published=True)
+    except News.DoesNotExist as exc:
+        raise Http404("新闻不存在") from exc
+    return _json(serialize_news(obj))
+
+
+@require_GET
+def publication_list(request):
+    return _json(
+        [serialize_publication(o) for o in Publication.objects.filter(published=True)]
+    )
+
+
+@require_GET
+def publication_detail(request, slug: str):
+    try:
+        obj = Publication.objects.get(slug=slug, published=True)
+    except Publication.DoesNotExist as exc:
+        raise Http404("成果不存在") from exc
+    return _json(serialize_publication(obj))

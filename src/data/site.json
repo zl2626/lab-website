@@ -1,0 +1,34 @@
+{
+  "name": "智能感知与计算实验室",
+  "nameEn": "Intelligent Perception & Computing Lab",
+  "abbr": "IPCL",
+  "tagline": "面向真实世界的智能感知、机器学习与具身智能研究",
+  "affiliation": "某某大学 · 计算机科学与技术学院",
+  "description": "智能感知与计算实验室（IPCL）专注于计算机视觉、机器学习与具身智能等方向的研究，致力于培养优秀的青年科研人才。",
+  "contact": {
+    "address": "某某大学 信息楼 512 室",
+    "postcode": "100084",
+    "email": "contact@example.edu.cn",
+    "phone": "+86 010-0000-0000"
+  },
+  "openings": {
+    "enabled": true,
+    "title": "长期招收博士、硕士研究生与本科生科研助理",
+    "text": "欢迎计算机、自动化、数学等相关专业、对科研有热情的同学联系。请附上个人简历与成绩单。",
+    "email": "contact@example.edu.cn"
+  },
+  "nav": [
+    { "label": "首页", "href": "/" },
+    { "label": "研究方向", "href": "/research" },
+    { "label": "团队成员", "href": "/team" },
+    { "label": "科研新闻", "href": "/news" },
+    { "label": "科研成果", "href": "/publications" },
+    { "label": "联系我们", "href": "/contact" }
+  ],
+  "social": [
+    { "label": "GitHub", "href": "https://github.com/" },
+    { "label": "Google Scholar", "href": "https://scholar.google.com/" },
+    { "label": "学院主页", "href": "https://www.example.edu.cn/" }
+  ],
+  "icp": ""
+}

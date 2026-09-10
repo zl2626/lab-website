@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getNews } from '../../lib/content';
+import { asset, u } from '../../utils/url';
+import { formatDate } from '../../utils/format';
+
+export async function getStaticPaths() {
+  const news = await getNews();
+  return news.map((item) => ({ params: { id: item.slug }, props: { item } }));
+}
+
+const { item } = Astro.props;
+---
+
+<BaseLayout title={item.title} description={item.summary || undefined}>
+  <article class="section container-narrow">
+    <p class="crumb"><a href={u('/news')}>科研新闻</a></p>
+    <header>
+      <div class="row meta">
+        <time datetime={item.date}>{formatDate(item.date)}</time>
+        {item.pinned && <span class="tag tag-gold">置顶</span>}
+        {item.tags.map((t) => <span class="tag tag-muted">#{t}</span>)}
+      </div>
+      <h1>{item.title}</h1>
+    </header>
+
+    {item.cover && <img class="cover" src={asset(item.cover)} alt={item.title} />}
+
+    <!-- 正文由后端 / 本地 Markdown 渲染成 HTML 后注入 -->
+    <div class="prose" set:html={item.bodyHtml} />
+
+    <hr class="divider" style="margin:38px 0 22px" />
+    <a class="btn btn-ghost" href={u('/news')}>← 返回新闻列表</a>
+  </article>
+</BaseLayout>
+
+<style>
+  .crumb { font-size: 0.85rem; color: var(--muted); margin-bottom: 18px; }
+  .meta { gap: 10px; margin-bottom: 14px; }
+  .meta time { font-size: 0.86rem; color: var(--muted); }
+  h1 { margin-bottom: 0.6em; }
+  .cover { border-radius: var(--radius); margin: 8px 0 28px; border: 1px solid var(--border); }
+</style>

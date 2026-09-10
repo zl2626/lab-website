@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MemberCard from '../components/MemberCard.astro';
+import { getMembers, getSite } from '../lib/content';
+
+const ROLE_ORDER = ['导师', '博士后', '博士生', '硕士生', '本科生', '科研助理', '校友'];
+
+const site = await getSite();
+const members = await getMembers();
+
+const groups = ROLE_ORDER.map((role) => ({
+  role,
+  list: members.filter((m) => m.role === role),
+})).filter((g) => g.list.length > 0);
+
+// 兜底：后端出现自定义身份时也不丢人
+const knownRoles = new Set(ROLE_ORDER);
+const others = members.filter((m) => !knownRoles.has(m.role));
+if (others.length > 0) groups.push({ role: '其他成员', list: others });
+---
+
+<BaseLayout title="团队成员" description={`${site.name}的团队成员`}>
+  <div class="page-head">
+    <div class="container">
+      <h1>团队成员</h1>
+      <p>课题组现有成员 {members.length} 人，涵盖导师、博士后、研究生与本科生等不同阶段。</p>
+    </div>
+  </div>
+
+  {
+    groups.map((g) => (
+      <section class="section-tight container group">
+        <div class="group-head">
+          <h2>{g.role}</h2>
+          <span class="count">{g.list.length}</span>
+        </div>
+        <div class="grid grid-2">
+          {g.list.map((item) => (
+            <MemberCard item={item} />
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  {
+    members.length === 0 && (
+      <section class="section container">
+        <p class="muted">暂无成员信息。</p>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .group { padding-top: 52px; }
+  .group-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 22px; }
+  .group-head h2 { margin: 0; }
+  .count {
+    font-size: 0.8rem; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); padding: 2px 10px; border-radius: 999px;
+  }
+</style>

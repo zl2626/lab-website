@@ -1,0 +1,79 @@
+---
+import type { PublicationItem as Pub } from '../lib/content';
+
+interface Props {
+  item: Pub;
+}
+
+const { item } = Astro.props;
+
+const typeClass: Record<string, string> = {
+  期刊论文: '',
+  会议论文: 'tag-gold',
+  预印本: 'tag-muted',
+  专利: 'tag-muted',
+  专著: 'tag-muted',
+  获奖: 'tag-gold',
+  项目: 'tag-muted',
+};
+---
+
+<article class="pub" data-type={item.type} data-year={item.year} data-area={item.area}>
+  <div class="pub-year">{item.year}</div>
+  <div class="pub-body">
+    <div class="row top">
+      <span class={`tag ${typeClass[item.type] ?? ''}`}>{item.type}</span>
+      {item.venueShort && <span class="tag tag-muted">{item.venueShort}</span>}
+      {item.highlight && <span class="tag tag-gold">★ 精选</span>}
+      {item.area && <span class="area">{item.area}</span>}
+    </div>
+
+    <h3 class="pub-title">{item.title}</h3>
+    {item.authors.length > 0 && <p class="authors">{item.authors.join('，')}</p>}
+    <p class="venue">{item.venue}</p>
+
+    {
+      (item.link || item.pdf || item.code) && (
+        <div class="row links">
+          {item.link && (
+            <a href={item.link} target="_blank" rel="noopener">
+              原文链接 ↗
+            </a>
+          )}
+          {item.pdf && (
+            <a href={item.pdf} target="_blank" rel="noopener">
+              PDF ↗
+            </a>
+          )}
+          {item.code && (
+            <a href={item.code} target="_blank" rel="noopener">
+              代码 ↗
+            </a>
+          )}
+        </div>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .pub {
+    display: grid; grid-template-columns: 68px 1fr; gap: 18px;
+    padding: 22px 0; border-bottom: 1px solid var(--border);
+  }
+  .pub-year {
+    font-size: 0.92rem; font-weight: 700; color: var(--muted);
+    font-variant-numeric: tabular-nums; padding-top: 2px;
+  }
+  .top { gap: 7px; margin-bottom: 9px; }
+  .area { font-size: 0.76rem; color: var(--muted); }
+  .pub-title { font-size: 1.06rem; margin: 0 0 0.4em; line-height: 1.45; }
+  .authors { font-size: 0.88rem; color: var(--text-soft); margin: 0 0 0.25em; }
+  .venue { font-size: 0.88rem; color: var(--muted); font-style: italic; margin: 0; }
+  .links { gap: 14px; margin-top: 10px; }
+  .links a { font-size: 0.85rem; font-weight: 600; }
+  @media (max-width: 560px) {
+    .pub { grid-template-columns: 1fr; gap: 8px; }
+    .pub-year { padding-top: 0; }
+  }
+</style>

@@ -1,0 +1,95 @@
+---
+import '../styles/global.css';
+import { getSite } from '../lib/content';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const site = await getSite();
+const { title, description } = Astro.props;
+const metaDescription = description || site.description || site.tagline;
+const pageTitle = title
+  ? `${title} · ${site.name}`
+  : site.nameEn
+    ? `${site.name} · ${site.nameEn}`
+    : site.name;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={metaDescription} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- 主题需在绘制前确定，避免闪白 -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        try {
+          var t = localStorage.getItem('theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          root.setAttribute('data-theme', t);
+        } catch (e) {
+          root.setAttribute('data-theme', 'light');
+        }
+        // 仅当浏览器支持淡入动画且用户未要求减少动态效果时，才启用渐显初始状态
+        try {
+          var okObserve = 'IntersectionObserver' in window;
+          var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (okObserve && !reduced) root.classList.add('reveal-ready');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body>
+    <Header site={site} />
+    <main>
+      <slot />
+    </main>
+    <Footer site={site} />
+
+    <script>
+      // 滚动进入视口时的渐显动画
+      const els = document.querySelectorAll('.reveal');
+      if (els.length) {
+        if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          els.forEach((el) => el.classList.add('in'));
+        } else {
+          const io = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((e) => {
+                if (e.isIntersecting) {
+                  e.target.classList.add('in');
+                  io.unobserve(e.target);
+                }
+              });
+            },
+            { rootMargin: '0px 0px -8% 0px', threshold: 0.05 }
+          );
+          els.forEach((el) => io.observe(el));
+        }
+      }
+    </script>
+  </body>
+</html>

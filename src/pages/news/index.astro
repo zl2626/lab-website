@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NewsCard from '../../components/NewsCard.astro';
+import { getNews, getSite } from '../../lib/content';
+import { groupByYear } from '../../utils/format';
+
+const site = await getSite();
+const news = await getNews();
+
+const years = groupByYear(news, (item) => Number(item.date.slice(0, 4)) || 0);
+const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
+---
+
+<BaseLayout title="科研新闻" description={`${site.name}的科研新闻与动态`}>
+  <div class="page-head">
+    <div class="container">
+      <h1>科研新闻</h1>
+      <p>论文发表、科研获奖、学术报告、组内活动与招生公告。</p>
+      {
+        allTags.length > 0 && (
+          <div class="row filters" id="tag-filters">
+            <button class="chip active" data-tag="all">全部</button>
+            {allTags.map((t) => (
+              <button class="chip" data-tag={t}>#{t}</button>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <section class="section container">
+    {
+      years.map(({ year, items }) => (
+        <div class="year-block">
+          <div class="year-head">
+            <h2>{year}</h2>
+            <span class="muted small">{items.length} 条</span>
+          </div>
+          <div class="grid grid-3">
+            {items.map((item, i) => (
+              <div class="news-cell" data-tags={item.tags.join(',')}>
+                <NewsCard item={item} index={i} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+    {news.length === 0 && <p class="muted">暂无新闻。</p>}
+    <p id="no-result" class="muted" hidden>没有符合该标签的新闻。</p>
+  </section>
+</BaseLayout>
+
+<style>
+  .filters { gap: 8px; margin-top: 22px; }
+  .chip {
+    padding: 6px 14px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft); transition: 0.16s ease;
+  }
+  .chip:hover { border-color: var(--border-strong); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .year-block { margin-bottom: 46px; }
+  .year-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+  .year-head h2 { margin: 0; font-size: 1.5rem; }
+  .news-cell { display: contents; }
+</style>
+
+<script>
+  const filters = document.getElementById('tag-filters');
+  const cells = Array.from(document.querySelectorAll<HTMLElement>('.news-cell'));
+  const empty = document.getElementById('no-result');
+
+  filters?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip');
+    if (!btn) return;
+    filters.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+    btn.classList.add('active');
+
+    const tag = btn.dataset.tag;
+    let visible = 0;
+    cells.forEach((cell) => {
+      const tags = (cell.dataset.tags || '').split(',').filter(Boolean);
+      const show = tag === 'all' || tags.includes(tag!);
+      cell.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (empty) empty.hidden = visible > 0;
+  });
+</script>

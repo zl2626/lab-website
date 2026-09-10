@@ -1,0 +1,8 @@
+# Vercel Python 函数依赖（放在仓库根目录，Vercel 会自动安装）
+Django>=5.1,<7.0
+psycopg[binary]>=3.2
+dj-database-url>=2.2
+whitenoise>=6.7
+Markdown>=3.6
+PyYAML>=6.0
+python-dotenv>=1.0

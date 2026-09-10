@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { u } from '../utils/url';
+---
+
+<BaseLayout title="页面未找到">
+  <section class="section container center">
+    <p class="code">404</p>
+    <h1>页面未找到</h1>
+    <p class="muted">你访问的页面不存在或已被移动。</p>
+    <a class="btn btn-primary" href={u('/')}>返回首页</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .code { font-size: 4.4rem; font-weight: 800; color: var(--accent); margin: 0; letter-spacing: -0.03em; }
+  section { padding: 100px 0; }
+</style>
