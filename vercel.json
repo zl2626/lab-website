@@ -7,14 +7,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
-      "includeFiles": [
-        "api/**",
-        "!api/db.sqlite3",
-        "!api/db.sqlite3-journal",
-        "!api/staticfiles/**",
-        "!**/__pycache__/**",
-        "!**/*.pyc"
-      ]
+      "includeFiles": "api/**"
     }
   },
   "rewrites": [

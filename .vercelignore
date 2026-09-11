@@ -6,8 +6,8 @@ node_modules/
 venv/
 
 # 本地数据库：线上用 PostgreSQL，绝不要上传本地 SQLite
-api/db.sqlite3
-api/db.sqlite3-journal
+db.sqlite3
+db.sqlite3-journal
 api/staticfiles/
 
 # 构建产物（Vercel 会自己重新构建）

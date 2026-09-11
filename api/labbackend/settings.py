@@ -133,11 +133,13 @@ if DATABASE_URL:
     # 使用 PgBouncer 等事务级连接池时必须开启
     DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
-    # 本地开发 / 未配置数据库时用 SQLite，保证项目一定能跑起来
+    # 本地开发 / 未配置数据库时用 SQLite，保证项目一定能跑起来。
+    # 特意放在仓库根目录（而不是 api/ 里）：这样 Vercel 打包函数时
+    # 不会把本地数据库文件带上去。
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": ROOT_DIR / "db.sqlite3",
         }
     }
 

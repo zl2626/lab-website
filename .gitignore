@@ -25,8 +25,8 @@ __pycache__/
 *.egg-info/
 
 # 本地 SQLite 数据库（线上用 PostgreSQL，不入库）
-api/db.sqlite3
-api/db.sqlite3-journal
+/db.sqlite3
+/db.sqlite3-journal
 
 # collectstatic 产物（本方案用 WhiteNoise finders，不需要提交）
 api/staticfiles/
