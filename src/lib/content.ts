@@ -206,10 +206,12 @@ function apiBaseCandidates(): string[] {
   const env = (typeof process !== 'undefined' ? process.env : {}) as Record<string, string | undefined>;
   const candidates: (string | undefined)[] = [
     env.API_BASE,
-    env.PUBLIC_API_BASE,
     env.SITE_BASE_URL,
+    env.SITE_URL,
+    // Vercel 构建时自动注入的「生产域名」，指向当前项目已上线的部署（读同一个数据库）
     env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
-    env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined,
+    // 注意：不要用 VERCEL_URL —— 那指向「正在构建的这个部署」，此时它还没上线，
+    // 只会拿到一堆 HTML 并污染构建日志。
   ];
   return [...new Set(candidates.filter((value): value is string => Boolean(value)))].map((value) =>
     value.replace(/\/+$/, '')
