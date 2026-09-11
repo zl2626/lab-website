@@ -59,12 +59,16 @@
 │   ├── data/site.json              #   站点信息（同时也是兜底数据）
 │   ├── content/                    #   Markdown 内容（兜底 + 导入数据库的种子）
 │   │   ├── research/  members/  news/  publications/
-│   ├── components/  layouts/  pages/  styles/
+│   ├── pages/
+│   │   ├── sitemap.xml.ts          #   自动生成站点地图
+│   │   └── robots.txt.ts           #   自动生成 robots.txt
+│   ├── components/  layouts/  styles/
 │   └── utils/
 │
 ├── public/images/                  # 图片（team/ 成员照片，research/ 方向配图）
 ├── requirements.txt                # Python 依赖（Vercel 自动安装）
-├── vercel.json                     # ★ Vercel 部署与路由配置
+├── vercel.json                     # ★ Vercel 部署、路由与安全响应头配置
+├── .vercelignore                   # 部署时不上传的文件（本地数据库、构建产物等）
 ├── .env.example                    # 环境变量示例
 └── astro.config.mjs
 ```
@@ -186,18 +190,26 @@ git push -u origin main
 在本地把生产环境变量拉下来，然后对**线上数据库**执行迁移：
 
 ```bash
-npm i -g vercel
-vercel login
-vercel link                                  # 关联到刚创建的项目
-vercel env pull .env.local                   # 把环境变量拉到本地
+# 关联项目（推荐用 npx，不必全局安装）
+npx vercel login
+npx vercel link                              # 关联到刚创建的项目
+npx vercel env pull .env.local               # 把环境变量拉到本地
 
 python api/manage.py migrate                 # ★ 建表（对线上数据库执行）
 python api/manage.py seed_content            # 可选：把现有 Markdown 导入数据库
-python api/manage.py createsuperuser         # ★ 创建管理员账号
+
+# ★ 创建管理员账号。不想交互式输入就用下面三个环境变量：
+DJANGO_SUPERUSER_USERNAME=admin \
+DJANGO_SUPERUSER_EMAIL=you@example.com \
+DJANGO_SUPERUSER_PASSWORD='换成你的强密码' \
+python api/manage.py createsuperuser --noinput
 ```
 
 > `migrate` 只建表结构；`seed_content` 会把 `src/content/` 里的示例内容写进数据库。
 > 不想用示例内容就跳过它，直接在后台新建。
+>
+> 注意：`vercel env pull` 会把 `DATABASE_URL` 一并拉到 `.env.local`，
+> Django 的 `settings.py` 会自动读取该文件，所以上面几条命令直接操作的就是**线上数据库**。
 
 ### 步骤 6：配置自动重建（Deploy Hook）
 
@@ -262,6 +274,26 @@ Markdown 示例内容。执行 `seed_content` 并在后台点一次「重建前�
 **Q：还需要 Pages CMS 吗？**
 不需要了。之前的 `.pages.yml` 已移除 —— 现在内容以数据库为准，Markdown 只作为
 首次导入的种子数据和接口不可用时的兜底。
+
+**Q：从 Vercel 控制台导入仓库时报「配置错误」/ 连不上仓库？**
+Vercel 的 GitHub App 还没拿到你仓库的授权。到
+<https://github.com/apps/vercel/installations/new> 安装授权（选中该仓库或 All repositories），
+之后 push 就会自动部署了。
+
+**Q：部署保护挡住了构建时的接口请求？**
+团队账号默认开启 Deployment Protection，会导致构建时自取 `/api/content/` 被拦。
+用 `vercel project protection disable <项目名> --sso` 关闭，或在控制台
+Settings → Deployment Protection 里关掉。
+
+**Q：怎么让百度 / Google 收录？**
+站点已内置 `/sitemap.xml`（自动枚举全部成员、新闻、成果、方向页面）与 `/robots.txt`，
+首页还输出了 `ResearchOrganization` 结构化数据。上线后到
+[百度搜索资源平台](https://ziyuan.baidu.com/) 和
+[Google Search Console](https://search.google.com/search-console) 提交
+`https://你的域名/sitemap.xml` 即可。
+
+**Q：想换配色？**
+改 `src/styles/global.css` 顶部的 CSS 变量（`--accent` 是主色），浅色和深色两套各改一次即可。
 
 ---
 
