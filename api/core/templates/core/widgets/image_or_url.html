@@ -1,0 +1,19 @@
+{% include "django/forms/widgets/text.html" %}
+<div class="lab-img">
+  <label class="lab-img__pick">
+    <span class="lab-img__btn">选择图片…</span>
+    <input
+      type="file"
+      name="{{ widget.upload_name }}"
+      accept="image/*"
+      class="lab-img__file"
+      data-preview-target="{{ widget.name }}"
+    >
+  </label>
+  <span class="lab-img__hint">选图后会自动压缩到长边 1600px 再上传；也可以直接在上面粘贴图片链接</span>
+</div>
+{% if widget.preview_url %}
+  <div class="lab-img__preview">
+    <img src="{{ widget.preview_url }}" alt="当前图片预览">
+  </div>
+{% endif %}

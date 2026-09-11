@@ -186,3 +186,30 @@ class SiteSetting(models.Model):
     def load(cls) -> "SiteSetting":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class MediaFile(models.Model):
+    """用户上传的图片，二进制直接存在数据库里。
+
+    这样 serverless 环境不需要可写的文件系统，也不需要额外的对象存储服务。
+    """
+
+    name = models.CharField("存储路径", max_length=200, unique=True)
+    content_type = models.CharField("MIME 类型", max_length=80, default="image/jpeg")
+    size = models.PositiveIntegerField("字节数", default=0)
+    width = models.PositiveIntegerField("宽", default=0)
+    height = models.PositiveIntegerField("高", default=0)
+    data = models.BinaryField("文件内容")
+    uploaded_at = models.DateTimeField("上传时间", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "图片文件"
+        verbose_name_plural = "图片文件"
+        ordering = ["-uploaded_at"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def size_kb(self) -> int:
+        return round(self.size / 1024)

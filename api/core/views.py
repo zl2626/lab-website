@@ -4,10 +4,10 @@
 如果接口不可用，前端会自动回退到仓库里的 Markdown 文件。
 """
 
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
-from .models import Member, News, Publication, ResearchArea, SiteSetting
+from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting
 from .serializers import (
     serialize_member,
     serialize_news,
@@ -52,6 +52,22 @@ def api_root(request):
 @require_GET
 def health(request):
     return _json({"status": "ok"})
+
+
+@require_GET
+def media(request, path: str):
+    """提供后台里上传的图片。
+
+    文件名是内容哈希，内容变了名字才会变，因此可以放心用一年强缓存。
+    """
+    record = MediaFile.objects.filter(name=path).first()
+    if record is None:
+        raise Http404("图片不存在")
+
+    response = HttpResponse(bytes(record.data), content_type=record.content_type)
+    response["Cache-Control"] = "public, max-age=31536000, immutable"
+    response["Content-Length"] = str(record.size)
+    return response
 
 
 @require_GET

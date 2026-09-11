@@ -159,9 +159,22 @@ WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # 用户上传的图片直接存进数据库，见 core/media.py（serverless 无可用文件系统）
+    "default": {"BACKEND": "core.media.DatabaseStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
+
+# --------------------------------------------------------------------------
+# 用户上传的图片（成员照片、封面等）
+# --------------------------------------------------------------------------
+# 同样挂在 /api/ 前缀下，才能被 WhiteNoise / 函数路由命中
+MEDIA_URL = "/api/media/"
+MEDIA_ROOT = BASE_DIR / "media"  # 仅占位，实际读写都由 DatabaseStorage 接管
+
+# Vercel 请求体上限约 4.5MB，这里留一点余量
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
 # --------------------------------------------------------------------------
 # 其它
@@ -172,7 +185,6 @@ USE_I18N = True
 USE_TZ = True
 
 LOGIN_URL = "/api/admin/login/"
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 # 预留给后续 AI 功能（例如自动生成新闻摘要）
 DEEPSEEK_API_KEY = env("DEEPSEEK_API_KEY")
@@ -181,6 +193,10 @@ DEEPSEEK_MODEL = env("DEEPSEEK_MODEL", "deepseek-chat")
 
 # 后台保存内容后，用它自动触发 Vercel 重新构建前端
 VERCEL_DEPLOY_HOOK_URL = env("VERCEL_DEPLOY_HOOK_URL")
+
+# 默认在保存内容后自动触发一次前端重建，这样编辑者不需要记得点「重建」按钮。
+# 如果想改成手动，设 AUTO_REBUILD_ON_SAVE=0。
+AUTO_REBUILD_ON_SAVE = env_bool("AUTO_REBUILD_ON_SAVE", True)
 
 # 前端站点地址（用于 API 里返回绝对链接，可留空）
 SITE_BASE_URL = env("SITE_BASE_URL")

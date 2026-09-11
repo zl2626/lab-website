@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path("", views.api_root, name="api-root"),
     path("health/", views.health, name="health"),
+    path("media/<path:path>", views.media, name="media"),
     path("content/", views.content, name="content"),
     path("site/", views.site, name="site"),
     path("research/", views.research_list, name="research-list"),

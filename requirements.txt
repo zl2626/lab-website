@@ -6,3 +6,5 @@ whitenoise>=6.7
 Markdown>=3.6
 PyYAML>=6.0
 python-dotenv>=1.0
+# 后台图片上传：校验并压缩用户上传的图片
+Pillow>=10.3
