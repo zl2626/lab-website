@@ -18,6 +18,29 @@ const pageTitle = title
     ? `${site.name} · ${site.nameEn}`
     : site.name;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+
+// 结构化数据：帮助搜索引擎正确理解这是一个科研机构站点
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ResearchOrganization',
+  name: site.name,
+  ...(site.nameEn ? { alternateName: site.nameEn } : {}),
+  ...(site.tagline ? { description: site.tagline } : {}),
+  url: canonical.origin,
+  ...(site.affiliation ? { parentOrganization: { '@type': 'Organization', name: site.affiliation } } : {}),
+  ...(site.contact.email ? { email: site.contact.email } : {}),
+  ...(site.contact.phone ? { telephone: site.contact.phone } : {}),
+  ...(site.contact.address
+    ? {
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: site.contact.address,
+          postalCode: site.contact.postcode,
+          addressCountry: 'CN',
+        },
+      }
+    : {}),
+};
 ---
 
 <!doctype html>
@@ -38,6 +61,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
     <meta property="og:description" content={metaDescription} />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#1a56db" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <!-- 主题需在绘制前确定，避免闪白 -->
     <script is:inline>
@@ -63,8 +89,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
   </head>
 
   <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
     <Header site={site} />
-    <main>
+    <main id="main">
       <slot />
     </main>
     <Footer site={site} />

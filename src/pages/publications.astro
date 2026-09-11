@@ -10,6 +10,13 @@ const pubs = await getPublications();
 const years = groupByYear(pubs, (p) => p.year);
 const types = [...new Set(pubs.map((p) => p.type))];
 const areas = [...new Set(pubs.map((p) => p.area).filter(Boolean))];
+
+const typeCounts = types
+  .map((type) => ({ type, count: pubs.filter((p) => p.type === type).length }))
+  .sort((a, b) => b.count - a.count);
+
+const yearRange =
+  years.length > 1 ? `${years[years.length - 1].year}–${years[0].year}` : String(years[0]?.year ?? '—');
 ---
 
 <BaseLayout title="科研成果" description={`${site.name}的科研成果与论文列表`}>
@@ -27,6 +34,26 @@ const areas = [...new Set(pubs.map((p) => p.area).filter(Boolean))];
   </div>
 
   <section class="section container">
+    {
+      pubs.length > 0 && (
+        <div class="stat-strip">
+          <div class="item">
+            <b>{pubs.length}</b>
+            <span>成果总数</span>
+          </div>
+          {typeCounts.map((t) => (
+            <div class="item">
+              <b>{t.count}</b>
+              <span>{t.type}</span>
+            </div>
+          ))}
+          <div class="item">
+            <b>{yearRange}</b>
+            <span>年份跨度</span>
+          </div>
+        </div>
+      )
+    }
     {
       years.map(({ year, items }) => (
         <div class="year-block">

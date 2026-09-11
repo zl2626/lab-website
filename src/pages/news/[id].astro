@@ -10,6 +10,12 @@ export async function getStaticPaths() {
 }
 
 const { item } = Astro.props;
+
+// 列表已按日期倒序，据此找出相邻的两条新闻
+const all = await getNews();
+const index = all.findIndex((n) => n.slug === item.slug);
+const older = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
+const newer = index > 0 ? all[index - 1] : null;
 ---
 
 <BaseLayout title={item.title} description={item.summary || undefined}>
@@ -29,7 +35,30 @@ const { item } = Astro.props;
     <!-- 正文由后端 / 本地 Markdown 渲染成 HTML 后注入 -->
     <div class="prose" set:html={item.bodyHtml} />
 
-    <hr class="divider" style="margin:38px 0 22px" />
+    <nav class="pager" aria-label="新闻翻页">
+      {
+        older ? (
+          <a href={u(`/news/${older.slug}`)}>
+            <span class="dir">← 上一条</span>
+            <span class="t">{older.title}</span>
+          </a>
+        ) : (
+          <span class="spacer" />
+        )
+      }
+      {
+        newer ? (
+          <a class="next" href={u(`/news/${newer.slug}`)}>
+            <span class="dir">下一条 →</span>
+            <span class="t">{newer.title}</span>
+          </a>
+        ) : (
+          <span class="spacer" />
+        )
+      }
+    </nav>
+
+    <hr class="divider" style="margin:34px 0 22px" />
     <a class="btn btn-ghost" href={u('/news')}>← 返回新闻列表</a>
   </article>
 </BaseLayout>

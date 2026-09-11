@@ -11,6 +11,9 @@ export async function getStaticPaths() {
 
 const { item } = Astro.props;
 
+const allResearch = await getResearch();
+const others = allResearch.filter((r) => r.slug !== item.slug);
+
 const pubs = await getPublications();
 const related = pubs.filter((p) => p.area && p.area === item.title);
 ---
@@ -38,6 +41,21 @@ const related = pubs.filter((p) => p.area && p.area === item.title);
   </section>
 
   {
+    others.length > 0 && (
+      <section class="section-tight container">
+        <h2 class="others-head">其他研究方向</h2>
+        <div class="row others">
+          {others.map((o) => (
+            <a class="btn btn-ghost sm" href={u(`/research/${o.slug}`)}>
+              <span aria-hidden="true">{o.icon}</span> {o.title}
+            </a>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
     related.length > 0 && (
       <section class="section section-alt">
         <div class="container">
@@ -59,4 +77,10 @@ const related = pubs.filter((p) => p.area && p.area === item.title);
   .en { color: var(--muted); font-size: 1rem; margin: 0 0 0.8em; }
   .tags { gap: 7px; }
   .pub-list { border-top: 1px solid var(--border); }
+  .others-head {
+    font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px; font-weight: 700;
+  }
+  .others { gap: 10px; }
+  .others .btn.sm { padding: 8px 16px; font-size: 0.88rem; }
 </style>
