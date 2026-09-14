@@ -47,8 +47,10 @@ Thumbs.db
 .idea/
 
 # 内部工作目录 / 截图等临时产物
+# 注意用 _shots* 而不是 _shots/：脚本偶尔会把截图写到根目录（如 _shots$xx.png），
+# 只有目录形式的规则拦不住这种文件
 .workbuddy/
-_shots/
+_shots*
 
 .vercel
 .env*
