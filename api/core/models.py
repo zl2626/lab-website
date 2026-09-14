@@ -61,6 +61,9 @@ class Member(Publishable):
     email = models.EmailField("邮箱", blank=True)
     join_year = models.CharField("加入年份", max_length=10, blank=True)
     interests = models.JSONField("研究兴趣", default=list, blank=True)
+    hobbies = models.JSONField("兴趣爱好", default=list, blank=True)
+    research_focus = models.CharField("主要研究方向", max_length=200, blank=True)
+    achievement_summary = models.TextField("成果产出", blank=True, help_text="用通俗语言写论文、项目或比赛成果")
     links = models.JSONField(
         "相关链接",
         default=dict,
@@ -139,6 +142,27 @@ class Publication(Publishable):
         return f"[{self.year}] {self.title}"
 
 
+class RobotProject(Publishable):
+    """机器人科研平台项目：模型和演示视频用外部链接，避免 serverless 大文件限制。"""
+    slug = models.SlugField("项目短名", max_length=120, unique=True)
+    name = models.CharField("项目名称", max_length=200)
+    summary = models.TextField("项目介绍", blank=True)
+    research_focus = models.CharField("研究方向", max_length=200, blank=True)
+    model_url = models.URLField("3D 模型地址", max_length=500, blank=True)
+    model_format = models.CharField("模型格式", max_length=30, blank=True, help_text="例如 GLB、OBJ、STL")
+    demo_url = models.URLField("演示视频地址", max_length=500, blank=True)
+    body = models.TextField("详细说明", blank=True)
+    order = models.IntegerField("排序", default=99)
+
+    class Meta:
+        verbose_name = "机器人项目"
+        verbose_name_plural = "科研平台·机器人项目"
+        ordering = ["order", "-updated_at", "id"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class SiteSetting(models.Model):
     """站点全局设置（单例，只允许保留一条记录）。"""
 
@@ -148,6 +172,7 @@ class SiteSetting(models.Model):
     tagline = models.CharField("一句话简介", max_length=300, blank=True)
     affiliation = models.CharField("所属单位", max_length=200, blank=True)
     description = models.TextField("搜索引擎简介", blank=True)
+    group_photo = models.CharField("首页团队合照", max_length=500, blank=True, help_text="可上传图片或填写公开图片地址；建议横向大图")
 
     address = models.CharField("通讯地址", max_length=200, blank=True)
     postcode = models.CharField("邮编", max_length=20, blank=True)
@@ -167,6 +192,7 @@ class SiteSetting(models.Model):
     )
     social = models.JSONField("页脚链接", default=list, blank=True)
     icp = models.CharField("备案号", max_length=60, blank=True)
+    page_copy = models.JSONField("各页面文案", default=dict, blank=True)
 
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 

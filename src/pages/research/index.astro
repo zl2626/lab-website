@@ -4,14 +4,15 @@ import ResearchCard from '../../components/ResearchCard.astro';
 import { getResearch, getSite } from '../../lib/content';
 
 const site = await getSite();
+const copy = site.pageCopy;
 const research = await getResearch();
 ---
 
-<BaseLayout title="研究方向" description={`${site.name}的研究方向`}>
+<BaseLayout title={copy.research_title} description={`${site.name}的研究方向`}>
   <div class="page-head">
     <div class="container">
-      <h1>研究方向</h1>
-      <p>课题组围绕以下前沿方向开展系统性研究，点击卡片可查看每个方向的具体内容与相关工作。</p>
+      <h1>{copy.research_title}</h1>
+      <p>{copy.research_intro}</p>
     </div>
   </div>
 

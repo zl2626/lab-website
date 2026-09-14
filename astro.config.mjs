@@ -22,6 +22,11 @@ export default defineConfig({
   base,
 
   trailingSlash: 'ignore',
+  vite: {
+    server: {
+      proxy: { '/api': { target: process.env.API_BASE || 'http://127.0.0.1:8000', changeOrigin: true } },
+    },
+  },
   build: {
     format: 'directory',
   },

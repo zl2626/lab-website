@@ -29,7 +29,7 @@ interface Entry {
 }
 
 export const GET: APIRoute = async ({ site, url }) => {
-  const { research, members, news } = await loadContent();
+  const { research, members, news, robotProjects } = await loadContent();
   const origin = (site ?? url).origin;
 
   const entries: Entry[] = [
@@ -39,6 +39,7 @@ export const GET: APIRoute = async ({ site, url }) => {
     { path: '/team/', priority: '0.8', changefreq: 'monthly' },
     { path: '/news/', priority: '0.8', changefreq: 'weekly' },
     { path: '/contact/', priority: '0.5', changefreq: 'yearly' },
+    { path: '/platform/', priority: '0.8', changefreq: 'monthly' },
   ];
 
   for (const item of research) {

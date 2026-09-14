@@ -1,6 +1,6 @@
 """把模型转换成前端直接可用的 JSON 结构。"""
 
-from .models import Member, News, Publication, ResearchArea, SiteSetting
+from .models import Member, News, Publication, ResearchArea, SiteSetting, RobotProject
 from .utils import as_dict, as_list, render_markdown
 
 DEFAULT_NAV = [
@@ -15,6 +15,8 @@ DEFAULT_NAV = [
 
 def serialize_site(obj: SiteSetting) -> dict:
     nav = as_list(obj.nav) or DEFAULT_NAV
+    if not any(isinstance(item, dict) and item.get("href") == "/platform" for item in nav):
+        nav = [*nav[:-1], {"label": "科研平台", "href": "/platform"}, nav[-1]] if nav else DEFAULT_NAV
     return {
         "name": obj.name,
         "nameEn": obj.name_en,
@@ -22,6 +24,7 @@ def serialize_site(obj: SiteSetting) -> dict:
         "tagline": obj.tagline,
         "affiliation": obj.affiliation,
         "description": obj.description,
+        "groupPhoto": obj.group_photo,
         "contact": {
             "address": obj.address,
             "postcode": obj.postcode,
@@ -45,6 +48,7 @@ def serialize_site(obj: SiteSetting) -> dict:
             if isinstance(item, dict) and item.get("label")
         ],
         "icp": obj.icp,
+        "pageCopy": obj.page_copy,
     }
 
 
@@ -75,6 +79,9 @@ def serialize_member(obj: Member) -> dict:
         "email": obj.email,
         "joinYear": obj.join_year,
         "interests": [str(i) for i in as_list(obj.interests)],
+        "hobbies": [str(i) for i in as_list(obj.hobbies)],
+        "researchFocus": obj.research_focus,
+        "achievementSummary": obj.achievement_summary,
         "links": as_dict(obj.links),
         "bioHtml": render_markdown(obj.bio),
         "updatedAt": obj.updated_at.isoformat(),
@@ -114,6 +121,9 @@ def serialize_publication(obj: Publication) -> dict:
         "updatedAt": obj.updated_at.isoformat(),
     }
 
+def serialize_robot_project(obj: RobotProject) -> dict:
+    return {"slug": obj.slug, "name": obj.name, "summary": obj.summary, "researchFocus": obj.research_focus, "modelUrl": obj.model_url, "modelFormat": obj.model_format, "demoUrl": obj.demo_url, "bodyHtml": render_markdown(obj.body), "updatedAt": obj.updated_at.isoformat()}
+
 
 def serialize_content() -> dict:
     """一次性返回全站内容，构建前端时只需请求一次。"""
@@ -123,4 +133,5 @@ def serialize_content() -> dict:
         "members": [serialize_member(o) for o in Member.objects.filter(published=True)],
         "news": [serialize_news(o) for o in News.objects.filter(published=True)],
         "publications": [serialize_publication(o) for o in Publication.objects.filter(published=True)],
+        "robotProjects": [serialize_robot_project(o) for o in RobotProject.objects.filter(published=True)],
     }

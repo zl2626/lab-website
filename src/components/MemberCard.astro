@@ -11,8 +11,8 @@ const { item } = Astro.props;
 
 const roleClass: Record<string, string> = {
   导师: 'tag-gold',
-  博士后: '',
-  博士生: '',
+  博士后: 'tag-accent',
+  博士生: 'tag-accent',
   硕士生: 'tag-muted',
   本科生: 'tag-muted',
   科研助理: 'tag-muted',
@@ -20,55 +20,63 @@ const roleClass: Record<string, string> = {
 };
 ---
 
-<a class="card card-link member-card" href={u(`/team/${item.slug}`)}>
-  <div class="avatar">
+<a class="card member-card" href={u(`/team/${item.slug}`)}>
+  <span class="avatar">
     {
       item.photo ? (
         <img src={asset(item.photo)} alt={item.name} loading="lazy" />
       ) : (
-        <span class="avatar-fallback">{initials(item.name)}</span>
+        <span class="avatar-fallback" aria-hidden="true">{initials(item.name)}</span>
       )
     }
-  </div>
-  <div class="info">
-    <div class="name-row">
-      <h3>{item.name}</h3>
-      <span class={`tag ${roleClass[item.role] ?? ''}`}>{item.role}</span>
-    </div>
-    {item.nameEn && <p class="en">{item.nameEn}</p>}
-    {item.title && <p class="title">{item.title}</p>}
+  </span>
+
+  <span class="info">
+    <span class="name-row">
+      <strong class="name">{item.name}</strong>
+      <span class={`tag ${roleClass[item.role] ?? 'tag-muted'}`}>{item.role}</span>
+    </span>
+    {item.nameEn && <span class="en">{item.nameEn}</span>}
+    {item.title && <span class="meta">{item.title}</span>}
+    {item.researchFocus && <span class="meta">研究方向：{item.researchFocus}</span>}
     {
       item.interests.length > 0 && (
-        <div class="row tags">
-          {item.interests.slice(0, 3).map((i) => (
-            <span class="tag tag-muted">{i}</span>
+        <span class="chips">
+          {item.interests.slice(0, 3).map((interest) => (
+            <span class="tag tag-muted">{interest}</span>
           ))}
-        </div>
+        </span>
       )
     }
-  </div>
+  </span>
 </a>
 
 <style>
-  .member-card { display: flex; gap: 18px; align-items: flex-start; padding: 22px; }
+  .member-card {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 20px; height: 100%; border-radius: var(--radius-sm);
+  }
   .avatar {
-    flex: 0 0 82px; width: 82px; height: 82px; border-radius: 14px; overflow: hidden;
+    flex: 0 0 72px; width: 72px; height: 72px; border-radius: 14px; overflow: hidden;
     background: var(--bg-inset); display: grid; place-items: center;
     border: 1px solid var(--border);
   }
   .avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .avatar-fallback {
-    font-size: 1.4rem; font-weight: 700; color: var(--accent);
-    letter-spacing: 0.02em;
-  }
-  .info { min-width: 0; flex: 1; }
-  .name-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-  .name-row h3 { margin: 0; font-size: 1.08rem; }
-  .en { font-size: 0.8rem; color: var(--muted); margin: 3px 0 3px; }
-  .title { font-size: 0.86rem; color: var(--text-soft); margin: 2px 0 0.6em; }
-  .tags { gap: 6px; }
-  @media (max-width: 420px) {
-    .member-card { flex-direction: column; }
-    .avatar { flex: none; }
+  .avatar-fallback { font-size: 1.22rem; font-weight: 700; color: var(--accent); letter-spacing: 0.02em; }
+
+  .info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .name { font-size: 1.05rem; font-weight: 700; color: var(--text); line-height: 1.35; }
+  .en { font-size: 0.79rem; color: var(--muted); letter-spacing: 0.01em; }
+  .meta { font-size: 0.84rem; color: var(--text-soft); line-height: 1.55; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+
+  .member-card:hover { text-decoration: none; }
+  .member-card:hover .name { color: var(--accent); }
+
+  /* 只有极窄屏（约 ≤360px 视口）才改为上下排布；常见手机宽度仍保持横向，避免卡片过高 */
+  @media (max-width: 360px) {
+    .member-card { flex-direction: column; gap: 12px; }
+    .avatar { flex: none; width: 62px; height: 62px; }
   }
 </style>

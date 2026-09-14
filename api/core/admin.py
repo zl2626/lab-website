@@ -15,7 +15,8 @@ from django.db import transaction
 from django.utils.html import format_html
 
 from .ai import AIError, generate_summary
-from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting
+from .forms import LineListField, LinkListField, MemberLinksField, PAGE_COPY
+from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
 from .utils import trigger_deploy
 from .widgets import ImageOrUrlField
 
@@ -23,13 +24,13 @@ from .widgets import ImageOrUrlField
 # ---------------------------------------------------------------------------
 # 通用动作 / 逻辑
 # ---------------------------------------------------------------------------
-@admin.action(description="🚀 重建前台站点（让本次修改在网站上生效）")
+@admin.action(description="🚀 重建前台站点（让本次修改在网站上生效）", permissions=["publish"])
 def rebuild_site(modeladmin, request, queryset):
     ok, message = trigger_deploy()
     modeladmin.message_user(request, message, messages.SUCCESS if ok else messages.WARNING)
 
 
-@admin.action(description="🤖 用 AI 根据正文生成摘要")
+@admin.action(description="🤖 用 AI 根据正文生成摘要", permissions=["change"])
 def ai_make_summary(modeladmin, request, queryset):
     success, failures = 0, []
     for obj in queryset:
@@ -42,6 +43,7 @@ def ai_make_summary(modeladmin, request, queryset):
 
     if success:
         modeladmin.message_user(request, f"已为 {success} 条新闻生成摘要。", messages.SUCCESS)
+        schedule_rebuild(request, modeladmin)
     for note in failures:
         modeladmin.message_user(request, note, messages.ERROR)
 
@@ -58,8 +60,7 @@ def schedule_rebuild(request, modeladmin):
         ok, message = trigger_deploy()
         if ok:
             modeladmin.message_user(request, message, messages.SUCCESS)
-        elif "未配置" not in message:
-            # 还没配 Deploy Hook 是常见状态，不必每次保存都飘一条警告
+        else:
             modeladmin.message_user(request, message, messages.WARNING)
 
     # 等事务提交后再触发，避免前端构建时读到旧数据
@@ -68,6 +69,9 @@ def schedule_rebuild(request, modeladmin):
 
 class AutoRebuildMixin:
     """保存或删除后自动重建前台站点。"""
+
+    def has_publish_permission(self, request):
+        return request.user.is_superuser
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -87,6 +91,7 @@ class AutoRebuildMixin:
 # ---------------------------------------------------------------------------
 class ResearchAreaForm(forms.ModelForm):
     cover = ImageOrUrlField(label="配图")
+    keywords = LineListField(label="关键词")
 
     class Meta:
         model = ResearchArea
@@ -95,6 +100,9 @@ class ResearchAreaForm(forms.ModelForm):
 
 class MemberForm(forms.ModelForm):
     photo = ImageOrUrlField(label="照片")
+    interests = LineListField(label="研究兴趣")
+    hobbies = LineListField(label="兴趣爱好")
+    links = MemberLinksField(label="相关链接", help_text="每行：homepage | https://…；支持 homepage、scholar、github、dblp、orcid。")
 
     class Meta:
         model = Member
@@ -103,10 +111,49 @@ class MemberForm(forms.ModelForm):
 
 class NewsForm(forms.ModelForm):
     cover = ImageOrUrlField(label="封面图")
+    tags = LineListField(label="标签")
 
     class Meta:
         model = News
         fields = "__all__"
+
+
+class PublicationForm(forms.ModelForm):
+    authors = LineListField(label="作者列表", help_text="每行一位作者，顺序即署名顺序；姓名中的逗号会保留。")
+
+    class Meta:
+        model = Publication
+        fields = "__all__"
+
+
+class SiteSettingForm(forms.ModelForm):
+    group_photo = ImageOrUrlField(label="首页团队合照")
+    nav = LinkListField(label="导航菜单", help_text="每行：名称 | 链接。留空使用默认导航。")
+    social = LinkListField(label="页脚链接")
+    for key, spec in PAGE_COPY.items():
+        locals()[f"copy_{key}"] = (forms.URLField if spec["type"] == "url" else forms.CharField)(
+            label=spec["label"], required=False,
+            widget=forms.Textarea(attrs={"rows": 2, "cols": 70}) if "intro" in key or key.endswith("text") else forms.TextInput(attrs={"size": 70}),
+            help_text="支持 {count}，自动替换为当前内容数量。" if "{count}" in spec["default"] else "",
+        )
+
+    class Meta:
+        model = SiteSetting
+        exclude = ("page_copy",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        saved = self.instance.page_copy or {}
+        for key, spec in PAGE_COPY.items():
+            self.initial[f"copy_{key}"] = saved.get(key, spec["default"])
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.page_copy = {key: self.cleaned_data[f"copy_{key}"] for key in PAGE_COPY}
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +193,7 @@ class MemberAdmin(AutoRebuildMixin, admin.ModelAdmin):
             },
         ),
         ("联系方式", {"fields": ("email", "links")}),
-        ("展示", {"fields": ("interests", "order")}),
+        ("展示", {"fields": ("research_focus", "interests", "hobbies", "achievement_summary", "order")}),
         ("个人简介（支持 Markdown）", {"fields": ("bio",)}),
         ("发布", {"fields": ("published",)}),
     )
@@ -171,6 +218,7 @@ class NewsAdmin(AutoRebuildMixin, admin.ModelAdmin):
 
 @admin.register(Publication)
 class PublicationAdmin(AutoRebuildMixin, admin.ModelAdmin):
+    form = PublicationForm
     list_display = ("title", "year", "venue_short", "type", "area", "highlight", "published")
     list_editable = ("highlight", "published")
     list_filter = ("year", "type", "highlight", "published")
@@ -185,27 +233,48 @@ class PublicationAdmin(AutoRebuildMixin, admin.ModelAdmin):
     )
 
 
+@admin.register(RobotProject)
+class RobotProjectAdmin(AutoRebuildMixin, admin.ModelAdmin):
+    list_display = ("name", "research_focus", "model_format", "published", "updated_at")
+    list_editable = ("published",)
+    list_filter = ("published", "model_format")
+    search_fields = ("name", "summary", "research_focus", "slug")
+    actions = [rebuild_site]
+    fieldsets = (
+        ("项目基本信息", {"fields": ("name", "slug", "summary", "research_focus", "order")}),
+        ("文件和演示", {"fields": ("model_url", "model_format", "demo_url"), "description": "填写模型或视频的公开地址。建议使用对象存储、GitHub Releases 或网盘链接；大文件不建议直接放进网站服务器。"}),
+        ("详细说明", {"fields": ("body",)}),
+        ("发布", {"fields": ("published",)}),
+    )
+
+
 @admin.register(SiteSetting)
 class SiteSettingAdmin(AutoRebuildMixin, admin.ModelAdmin):
+    form = SiteSettingForm
     actions = [rebuild_site]
     list_display = ("name", "abbr", "email", "updated_at")
 
     fieldsets = (
-        ("课题组信息", {"fields": ("name", "name_en", "abbr", "tagline", "affiliation", "description")}),
+        ("课题组信息", {"fields": ("name", "name_en", "abbr", "tagline", "affiliation", "description", "group_photo")}),
         ("联系方式", {"fields": ("address", "postcode", "email", "phone")}),
         ("招生信息", {"fields": ("openings_enabled", "openings_title", "openings_text", "openings_email")}),
         (
             "导航与页脚",
             {
                 "fields": ("nav", "social", "icp"),
-                "description": "nav 留空则使用默认菜单；格式示例：[{\"label\": \"首页\", \"href\": \"/\"}]",
+                "description": "每行填写名称 | 链接；导航留空则使用默认菜单。",
             },
         ),
     )
 
+    fieldsets += tuple(
+        (group, {"fields": tuple(f"copy_{key}" for key, spec in PAGE_COPY.items() if spec["group"] == group), "classes": ("collapse",)})
+        for group in dict.fromkeys(spec["group"] for spec in PAGE_COPY.values())
+    )
+
     def has_add_permission(self, request):
         # 单例：只允许存在一条记录
-        return not SiteSetting.objects.exists()
+        return super().has_add_permission(request) and not SiteSetting.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
         return False

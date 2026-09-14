@@ -5,23 +5,24 @@ import { getNews, getSite } from '../../lib/content';
 import { groupByYear } from '../../utils/format';
 
 const site = await getSite();
+const copy = site.pageCopy;
 const news = await getNews();
 
 const years = groupByYear(news, (item) => Number(item.date.slice(0, 4)) || 0);
 const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
 ---
 
-<BaseLayout title="科研新闻" description={`${site.name}的科研新闻与动态`}>
+<BaseLayout title={copy.news_title} description={`${site.name}的科研新闻与动态`}>
   <div class="page-head">
     <div class="container">
-      <h1>科研新闻</h1>
-      <p>论文发表、科研获奖、学术报告、组内活动与招生公告。</p>
+      <h1>{copy.news_title}</h1>
+      <p>{copy.news_intro}</p>
       {
         allTags.length > 0 && (
           <div class="row filters" id="tag-filters">
-            <button class="chip active" data-tag="all">全部</button>
+            <button class="chip active" aria-pressed="true">全部</button>
             {allTags.map((t) => (
-              <button class="chip" data-tag={t}>#{t}</button>
+              <button class="chip" data-tag={t} aria-pressed="false">#{t}</button>
             ))}
           </div>
         )
@@ -35,11 +36,11 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
         <div class="year-block">
           <div class="year-head">
             <h2>{year}</h2>
-            <span class="muted small">{items.length} 条</span>
+            <span class="muted small year-count">{items.length} 条</span>
           </div>
           <div class="grid grid-3">
             {items.map((item, i) => (
-              <div class="news-cell" data-tags={item.tags.join(',')}>
+              <div class="news-cell" data-tags={JSON.stringify(item.tags)}>
                 <NewsCard item={item} index={i} />
               </div>
             ))}
@@ -59,7 +60,7 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
     border: 1px solid var(--border); background: var(--bg); color: var(--text-soft); transition: 0.16s ease;
   }
   .chip:hover { border-color: var(--border-strong); }
-  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .year-block { margin-bottom: 46px; }
   .year-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
   .year-head h2 { margin: 0; font-size: 1.5rem; }
@@ -67,6 +68,7 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
 </style>
 
 <script>
+  import { matchesNewsTag } from '../../utils/news-filter.mjs';
   const filters = document.getElementById('tag-filters');
   const cells = Array.from(document.querySelectorAll<HTMLElement>('.news-cell'));
   const empty = document.getElementById('no-result');
@@ -74,16 +76,23 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
   filters?.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip');
     if (!btn) return;
-    filters.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
-    btn.classList.add('active');
+    filters.querySelectorAll('.chip').forEach((c) => {
+      c.classList.toggle('active', c === btn);
+      c.setAttribute('aria-pressed', String(c === btn));
+    });
 
-    const tag = btn.dataset.tag;
+    const tag = btn.dataset.tag ?? null;
     let visible = 0;
     cells.forEach((cell) => {
-      const tags = (cell.dataset.tags || '').split(',').filter(Boolean);
-      const show = tag === 'all' || tags.includes(tag!);
+      const show = matchesNewsTag(cell.dataset.tags || '[]', tag);
       cell.style.display = show ? '' : 'none';
       if (show) visible++;
+    });
+    document.querySelectorAll<HTMLElement>('.year-block').forEach((block) => {
+      const total = Array.from(block.querySelectorAll<HTMLElement>('.news-cell'))
+        .filter((cell) => cell.style.display !== 'none').length;
+      block.hidden = total === 0;
+      block.querySelector('.year-count')!.textContent = `${total} 条`;
     });
     if (empty) empty.hidden = visible > 0;
   });

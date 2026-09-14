@@ -1,6 +1,6 @@
 ---
 import type { ResearchItem } from '../lib/content';
-import { u } from '../utils/url';
+import { asset, u } from '../utils/url';
 
 interface Props {
   item: ResearchItem;
@@ -15,6 +15,7 @@ const { item, index = 0 } = Astro.props;
   href={u(`/research/${item.slug}`)}
   style={`transition-delay:${index * 60}ms`}
 >
+  {item.cover && <img class="card-cover" src={asset(item.cover)} alt="" loading="lazy" />}
   <span class="icon" aria-hidden="true">{item.icon}</span>
   <h3>{item.title}</h3>
   {item.titleEn && <p class="en">{item.titleEn}</p>}
@@ -32,6 +33,7 @@ const { item, index = 0 } = Astro.props;
 </a>
 
 <style>
+  .card-cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; margin-bottom: 18px; }
   .research-card { display: flex; flex-direction: column; height: 100%; }
   .icon { font-size: 1.9rem; line-height: 1; margin-bottom: 14px; display: block; }
   .research-card h3 { margin-bottom: 0.2em; }

@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PublicationItem from '../../components/PublicationItem.astro';
-import { getPublications, getResearch } from '../../lib/content';
-import { u } from '../../utils/url';
+import { getPublications, getResearch, getSite } from '../../lib/content';
+import { asset, u } from '../../utils/url';
 
 export async function getStaticPaths() {
   const research = await getResearch();
@@ -10,6 +10,7 @@ export async function getStaticPaths() {
 }
 
 const { item } = Astro.props;
+const copy = (await getSite()).pageCopy;
 
 const allResearch = await getResearch();
 const others = allResearch.filter((r) => r.slug !== item.slug);
@@ -21,7 +22,7 @@ const related = pubs.filter((p) => p.area && p.area === item.title);
 <BaseLayout title={item.title} description={item.summary}>
   <div class="page-head">
     <div class="container">
-      <p class="crumb"><a href={u('/research')}>研究方向</a> / {item.title}</p>
+      <p class="crumb"><a href={u('/research')}>{copy.research_title}</a> / {item.title}</p>
       <h1><span class="icon">{item.icon}</span> {item.title}</h1>
       {item.titleEn && <p class="en">{item.titleEn}</p>}
       {
@@ -36,14 +37,15 @@ const related = pubs.filter((p) => p.area && p.area === item.title);
     </div>
   </div>
 
-  <section class="section container">
+  <section class="section-detail container">
+    {item.cover && <img class="research-cover" src={asset(item.cover)} alt={item.title} />}
     <div class="prose" set:html={item.bodyHtml} />
   </section>
 
   {
     others.length > 0 && (
       <section class="section-tight container">
-        <h2 class="others-head">其他研究方向</h2>
+        <h2 class="sub-head">{copy.research_others}</h2>
         <div class="row others">
           {others.map((o) => (
             <a class="btn btn-ghost sm" href={u(`/research/${o.slug}`)}>
@@ -59,7 +61,7 @@ const related = pubs.filter((p) => p.area && p.area === item.title);
     related.length > 0 && (
       <section class="section section-alt">
         <div class="container">
-          <h2>本方向相关工作</h2>
+          <h2 class="sub-head">{copy.research_related}</h2>
           <div class="pub-list">
             {related.map((p) => (
               <PublicationItem item={p} />
@@ -72,14 +74,20 @@ const related = pubs.filter((p) => p.area && p.area === item.title);
 </BaseLayout>
 
 <style>
+  .research-cover { max-height: 420px; object-fit: cover; border-radius: var(--radius); margin-bottom: 28px; }
   .crumb { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
   .icon { font-size: 0.85em; }
   .en { color: var(--muted); font-size: 1rem; margin: 0 0 0.8em; }
   .tags { gap: 7px; }
   .pub-list { border-top: 1px solid var(--border); }
-  .others-head {
-    font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 16px; font-weight: 700;
+  /* 两个次级标题（其他研究方向 / 本方向相关工作）保持同一视觉层级 */
+  .sub-head {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1.12rem; font-weight: 700; margin-bottom: 18px;
+  }
+  .sub-head::before {
+    content: ''; width: 3px; height: 1.05em; flex: 0 0 3px;
+    background: var(--accent); border-radius: 2px;
   }
   .others { gap: 10px; }
   .others .btn.sm { padding: 8px 16px; font-size: 0.88rem; }

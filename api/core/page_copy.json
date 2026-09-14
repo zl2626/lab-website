@@ -1,0 +1,218 @@
+{
+  "home_research_action": {
+    "group": "首页",
+    "label": "研究方向按钮",
+    "default": "探索研究方向",
+    "type": "text"
+  },
+  "home_team_action": {
+    "group": "首页",
+    "label": "团队按钮",
+    "default": "认识我们的团队",
+    "type": "text"
+  },
+  "home_news_title": {
+    "group": "首页",
+    "label": "近况标题",
+    "default": "实验室近况",
+    "type": "text"
+  },
+  "home_news_intro": {
+    "group": "首页",
+    "label": "近况栏目介绍",
+    "default": "论文发表、获奖、学术活动与课题组公告。",
+    "type": "text"
+  },
+  "home_news_action": {
+    "group": "首页",
+    "label": "近况按钮",
+    "default": "全部动态",
+    "type": "text"
+  },
+  "home_join_action": {
+    "group": "首页",
+    "label": "加入我们入口",
+    "default": "加入我们，开展研究与合作",
+    "type": "text"
+  },
+  "home_research_title": {
+    "group": "首页",
+    "label": "研究栏目标题",
+    "default": "研究方向",
+    "type": "text"
+  },
+  "home_research_intro": {
+    "group": "首页",
+    "label": "研究栏目介绍",
+    "default": "课题组围绕以下方向开展前沿研究，注重理论与实际系统的结合。",
+    "type": "text"
+  },
+  "home_research_more": {
+    "group": "首页",
+    "label": "研究栏目按钮",
+    "default": "全部方向",
+    "type": "text"
+  },
+  "home_publications_title": {
+    "group": "首页",
+    "label": "成果栏目标题",
+    "default": "代表性成果",
+    "type": "text"
+  },
+  "home_publications_intro": {
+    "group": "首页",
+    "label": "成果栏目介绍",
+    "default": "近年来的部分代表性论文与获奖成果。",
+    "type": "text"
+  },
+  "home_publications_more": {
+    "group": "首页",
+    "label": "成果栏目按钮",
+    "default": "完整成果列表",
+    "type": "text"
+  },
+  "research_title": {
+    "group": "研究方向页",
+    "label": "页面标题",
+    "default": "研究方向",
+    "type": "text"
+  },
+  "research_intro": {
+    "group": "研究方向页",
+    "label": "页面介绍",
+    "default": "课题组围绕以下前沿方向开展系统性研究，点击卡片可查看每个方向的具体内容与相关工作。",
+    "type": "text"
+  },
+  "research_others": {
+    "group": "研究方向页",
+    "label": "其他方向标题",
+    "default": "其他研究方向",
+    "type": "text"
+  },
+  "research_related": {
+    "group": "研究方向页",
+    "label": "相关成果标题",
+    "default": "本方向相关工作",
+    "type": "text"
+  },
+  "team_title": {
+    "group": "成员页",
+    "label": "页面标题",
+    "default": "团队成员",
+    "type": "text"
+  },
+  "team_intro": {
+    "group": "成员页",
+    "label": "页面介绍",
+    "default": "课题组现有成员 {count} 人，涵盖导师、博士后、研究生与本科生等不同阶段。",
+    "type": "text"
+  },
+  "news_title": {
+    "group": "新闻页",
+    "label": "页面标题",
+    "default": "科研新闻",
+    "type": "text"
+  },
+  "news_intro": {
+    "group": "新闻页",
+    "label": "页面介绍",
+    "default": "论文发表、科研获奖、学术报告、组内活动与招生公告。",
+    "type": "text"
+  },
+  "publications_title": {
+    "group": "成果页",
+    "label": "页面标题",
+    "default": "科研成果",
+    "type": "text"
+  },
+  "publications_intro": {
+    "group": "成果页",
+    "label": "页面介绍",
+    "default": "课题组近年发表的论文、专利、专著与获奖成果，共 {count} 项。",
+    "type": "text"
+  },
+  "contact_title": {
+    "group": "联系页",
+    "label": "页面标题",
+    "default": "联系我们",
+    "type": "text"
+  },
+  "contact_intro": {
+    "group": "联系页",
+    "label": "页面介绍",
+    "default": "欢迎对课题组研究感兴趣的同学、老师与合作方与我们联系。",
+    "type": "text"
+  },
+  "contact_address_label": {
+    "group": "联系页",
+    "label": "地址标题",
+    "default": "通讯地址",
+    "type": "text"
+  },
+  "contact_email_label": {
+    "group": "联系页",
+    "label": "邮箱标题",
+    "default": "电子邮箱",
+    "type": "text"
+  },
+  "contact_phone_label": {
+    "group": "联系页",
+    "label": "电话标题",
+    "default": "联系电话",
+    "type": "text"
+  },
+  "contact_map_title": {
+    "group": "联系页",
+    "label": "位置标题",
+    "default": "校园位置",
+    "type": "text"
+  },
+  "contact_map_text": {
+    "group": "联系页",
+    "label": "到访说明",
+    "default": "",
+    "type": "text"
+  },
+  "contact_map_url": {
+    "group": "联系页",
+    "label": "地图链接",
+    "default": "",
+    "type": "url"
+  },
+  "contact_apply_label": {
+    "group": "联系页",
+    "label": "申请按钮",
+    "default": "发送邮件申请",
+    "type": "text"
+  },
+  "contact_apply_subject": {
+    "group": "联系页",
+    "label": "申请邮件主题",
+    "default": "申请加入课题组",
+    "type": "text"
+  },
+  "footer_nav_title": {
+    "group": "页脚",
+    "label": "导航标题",
+    "default": "快速导航",
+    "type": "text"
+  },
+  "footer_contact_title": {
+    "group": "页脚",
+    "label": "联系标题",
+    "default": "联系我们",
+    "type": "text"
+  },
+  "footer_links_title": {
+    "group": "页脚",
+    "label": "链接标题",
+    "default": "相关链接",
+    "type": "text"
+  },
+  "footer_copyright": {
+    "group": "页脚",
+    "label": "版权说明",
+    "default": "保留所有权利。",
+    "type": "text"
+  }
+}

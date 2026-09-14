@@ -6,6 +6,7 @@
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, ''); // '' 或 '/lab-website'
 
 export function u(path = '/'): string {
+  if (/^https?:\/\//i.test(path)) return path;
   const p = path.startsWith('/') ? path : `/${path}`;
   return `${BASE}${p}` || '/';
 }

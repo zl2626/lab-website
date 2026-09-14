@@ -34,6 +34,9 @@ const members = defineCollection({
     email: z.string().optional(),
     /** 研究兴趣 */
     interests: z.array(z.string()).default([]),
+    hobbies: z.array(z.string()).default([]),
+    researchFocus: z.string().default(''),
+    achievementSummary: z.string().default(''),
     /** 个人主页 / 学术主页链接 */
     links: z
       .object({

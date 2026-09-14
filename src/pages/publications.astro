@@ -5,6 +5,7 @@ import { getPublications, getSite } from '../lib/content';
 import { groupByYear } from '../utils/format';
 
 const site = await getSite();
+const copy = site.pageCopy;
 const pubs = await getPublications();
 
 const years = groupByYear(pubs, (p) => p.year);
@@ -19,17 +20,22 @@ const yearRange =
   years.length > 1 ? `${years[years.length - 1].year}–${years[0].year}` : String(years[0]?.year ?? '—');
 ---
 
-<BaseLayout title="科研成果" description={`${site.name}的科研成果与论文列表`}>
+<BaseLayout title={copy.publications_title} description={`${site.name}的科研成果与论文列表`}>
   <div class="page-head">
     <div class="container">
-      <h1>科研成果</h1>
-      <p>课题组近年发表的论文、专利、专著与获奖成果，共 {pubs.length} 项。</p>
+      <h1>{copy.publications_title}</h1>
+      <p>{copy.publications_intro.replaceAll('{count}', String(pubs.length))}</p>
 
-      <div class="row filters">
-        <button class="chip active" data-filter="all">全部</button>
-        {types.map((t) => <button class="chip" data-filter={`type:${t}`}>{t}</button>)}
-        {areas.map((a) => <button class="chip" data-filter={`area:${a}`}>{a}</button>)}
-      </div>
+      <form class="filters" role="search" aria-label="筛选科研成果" onsubmit="return false">
+        <label class="search-field">关键词
+          <input id="pub-search" type="search" placeholder="搜索标题、作者、期刊或会议" />
+        </label>
+        <label>年份<select id="pub-year"><option value="">全部年份</option>{years.map(({ year }) => <option value={year}>{year}</option>)}</select></label>
+        <label>成果类型<select id="pub-type"><option value="">全部类型</option>{types.map((t) => <option value={t}>{t}</option>)}</select></label>
+        <label>研究方向<select id="pub-area"><option value="">全部方向</option>{areas.map((a) => <option value={a}>{a}</option>)}</select></label>
+        <button type="reset" class="reset-filter">清除筛选</button>
+      </form>
+      <p id="result-count" class="small muted" role="status" aria-live="polite">共 {pubs.length} 项成果</p>
     </div>
   </div>
 
@@ -59,11 +65,11 @@ const yearRange =
         <div class="year-block">
           <div class="year-head">
             <h2>{year}</h2>
-            <span class="muted small">{items.length} 项</span>
+            <span class="muted small year-count">{items.length} 项</span>
           </div>
           <div class="pub-list">
             {items.map((item) => (
-              <div class="pub-cell" data-type={item.type} data-area={item.area}>
+              <div class="pub-cell" data-type={item.type} data-area={item.area} data-year={item.year} data-search={[item.title, ...item.authors, item.venue, item.venueShort].join(" ").toLocaleLowerCase()}>
                 <PublicationItem item={item} />
               </div>
             ))}
@@ -73,7 +79,7 @@ const yearRange =
     }
     {
       pubs.length === 0 && (
-        <p class="muted">暂无成果，请登录管理后台添加。</p>
+        <p class="muted">科研成果整理中，欢迎稍后查看。</p>
       )
     }
     <p id="no-result" class="muted" hidden>没有符合条件的成果。</p>
@@ -81,17 +87,29 @@ const yearRange =
 </BaseLayout>
 
 <style>
-  .filters { gap: 8px; margin-top: 24px; }
-  .chip {
-    padding: 6px 14px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; cursor: pointer;
-    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft); transition: 0.16s ease;
+  .filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 26px 0 14px; }
+  .filters label { display: flex; flex-direction: column; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--muted); }
+  .search-field { flex: 1 1 260px; }
+  .filters input, .filters select, .reset-filter {
+    min-height: 42px; padding: 9px 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font: inherit; font-weight: 400;
+    transition: border-color .16s ease, box-shadow .16s ease;
   }
-  .chip:hover { border-color: var(--border-strong); }
-  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filters input:hover, .filters select:hover { border-color: var(--border-strong); }
+  .filters input:focus-visible, .filters select:focus-visible {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .filters select { max-width: 100%; }
+  .reset-filter { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .reset-filter:hover { border-color: var(--accent); background: var(--accent-soft); }
+  @media (max-width: 600px) { .filters label { flex: 1 1 100%; min-width: 0; } }
+
   .year-block { margin-bottom: 40px; }
   .year-head {
     display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
-    position: sticky; top: 68px; background: var(--bg); padding: 12px 0 8px; z-index: 5;
+    position: sticky; top: var(--header-h); background: var(--bg);
+    padding: 14px 0 8px; z-index: 5;
     border-bottom: 1px solid var(--border);
   }
   .year-head h2 { margin: 0; font-size: 1.4rem; }
@@ -99,38 +117,38 @@ const yearRange =
 </style>
 
 <script>
-  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.chip'));
+  const form = document.querySelector<HTMLFormElement>('.filters')!;
+  const search = document.querySelector<HTMLInputElement>('#pub-search')!;
+  const year = document.querySelector<HTMLSelectElement>('#pub-year')!;
+  const type = document.querySelector<HTMLSelectElement>('#pub-type')!;
+  const area = document.querySelector<HTMLSelectElement>('#pub-area')!;
   const cells = Array.from(document.querySelectorAll<HTMLElement>('.pub-cell'));
   const blocks = Array.from(document.querySelectorAll<HTMLElement>('.year-block'));
-  const empty = document.getElementById('no-result');
+  const empty = document.getElementById('no-result')!;
+  const count = document.getElementById('result-count')!;
 
-  chips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      chips.forEach((c) => c.classList.remove('active'));
-      chip.classList.add('active');
-
-      const f = chip.dataset.filter || 'all';
-      let visible = 0;
-      cells.forEach((cell) => {
-        let show = f === 'all';
-        if (!show) {
-          const [kind, value] = f.split(':');
-          if (kind === 'type') show = cell.dataset.type === value;
-          if (kind === 'area') show = (cell.dataset.area || '') === value;
-        }
-        cell.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-
-      // 隐藏没有可见条目的年份
-      blocks.forEach((b) => {
-        const any = Array.from(b.querySelectorAll<HTMLElement>('.pub-cell')).some(
-          (c) => c.style.display !== 'none'
-        );
-        b.style.display = any ? '' : 'none';
-      });
-
-      if (empty) empty.hidden = visible > 0;
+  function update() {
+    const words = search.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    let visible = 0;
+    cells.forEach((cell) => {
+      const show = (!year.value || cell.dataset.year === year.value)
+        && (!type.value || cell.dataset.type === type.value)
+        && (!area.value || cell.dataset.area === area.value)
+        && words.every((word) => (cell.dataset.search || '').includes(word));
+      cell.style.display = show ? '' : 'none';
+      if (show) visible++;
     });
-  });
+    blocks.forEach((block) => {
+      const total = Array.from(block.querySelectorAll<HTMLElement>('.pub-cell'))
+        .filter((cell) => cell.style.display !== 'none').length;
+      block.hidden = total === 0;
+      block.querySelector('.year-count')!.textContent = `${total} 项`;
+    });
+    count.textContent = `显示 ${visible} / ${cells.length} 项成果`;
+    empty.hidden = visible > 0 || cells.length === 0;
+  }
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('reset', () => { setTimeout(update, 0); });
+  update();
 </script>

@@ -14,46 +14,42 @@ const isActive = (href: string) => {
   if (h === '/') return path === '' || path === '/';
   return path === h || path.startsWith(h + '/');
 };
+const isHome = path === (u('/').replace(/\/+$/, '') || '/');
 ---
 
-<header class="site-header">
+<header class="site-header" data-home={isHome ? 'true' : 'false'}>
   <div class="container header-inner">
-    <a class="brand" href={u('/')} aria-label={site.name}>
-      <span class="brand-mark">{site.abbr}</span>
+    <a class="brand" href={u('/')} aria-label={`${site.name} 首页`}>
+      <span class="brand-mark" aria-hidden="true">{site.abbr}</span>
       <span class="brand-text">
         <strong>{site.name}</strong>
         {site.nameEn && <em>{site.nameEn}</em>}
       </span>
     </a>
 
-    <nav class="nav-desktop" aria-label="主导航">
-      {
-        site.nav.map((item) => (
-          <a href={u(item.href)} class:list={['nav-link', { active: isActive(item.href) }]}>
-            {item.label}
-          </a>
-        ))
-      }
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深色模式">
-        <span class="icon-sun" aria-hidden="true">☀</span>
-        <span class="icon-moon" aria-hidden="true">☾</span>
-      </button>
-    </nav>
-
-    <button id="menu-toggle" class="menu-toggle" type="button" aria-label="打开菜单" aria-expanded="false">
-      <span></span><span></span><span></span>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深色模式">
+      <span class="icon-sun" aria-hidden="true">☀</span>
+      <span class="icon-moon" aria-hidden="true">☾</span>
     </button>
   </div>
 
-  <div id="nav-mobile" class="nav-mobile" hidden>
-    {
-      site.nav.map((item) => (
-        <a href={u(item.href)} class:list={['nav-link', { active: isActive(item.href) }]}>
-          {item.label}
-        </a>
-      ))
-    }
-  </div>
+  <nav class="nav-bar" aria-label="主导航">
+    <div class="container nav-wrap">
+      <div class="nav-items">
+        {
+          site.nav.map((item) => (
+            <a
+              href={u(item.href)}
+              class:list={['nav-link', { active: isActive(item.href) }]}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </nav>
 </header>
 
 <style>
@@ -61,10 +57,11 @@ const isActive = (href: string) => {
     position: sticky;
     top: 0;
     z-index: 60;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: saturate(180%) blur(12px);
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
   }
+
+  /* ---------- 品牌区 ---------- */
   .header-inner {
     display: flex;
     align-items: center;
@@ -72,28 +69,48 @@ const isActive = (href: string) => {
     gap: 18px;
     height: 68px;
   }
-  .brand { display: flex; align-items: center; gap: 11px; text-decoration: none !important; }
+  .brand { min-width: 0; display: flex; align-items: center; gap: 11px; text-decoration: none !important; }
   .brand-mark {
     width: 38px; height: 38px; flex: 0 0 38px; border-radius: 11px;
     display: grid; place-items: center;
     background: linear-gradient(140deg, var(--accent), var(--accent-strong));
-    color: #fff; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.02em;
+    color: var(--on-accent); font-weight: 800; font-size: 0.72rem; letter-spacing: 0.02em;
   }
-  .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
   .brand-text strong { color: var(--text); font-size: 1rem; letter-spacing: -0.01em; }
   .brand-text em { color: var(--muted); font-size: 0.68rem; font-style: normal; letter-spacing: 0.02em; }
 
-  .nav-desktop { display: flex; align-items: center; gap: 4px; }
+  /* ---------- 导航条：跟随主题的浅表面，不再是硬编码灰条 ---------- */
+  .nav-bar { background: var(--bg-soft); border-top: 1px solid var(--border); }
+  .nav-wrap { position: relative; }
+  .nav-items {
+    display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 2px;
+    overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+    /* 移动端横向滚动时，右侧渐变淡出作为“还有内容”的提示 */
+    mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent 100%);
+  }
+  .nav-items::-webkit-scrollbar { display: none; }
   .nav-link {
-    padding: 8px 13px; border-radius: 9px; font-size: 0.92rem; font-weight: 500;
-    color: var(--text-soft); text-decoration: none !important; transition: 0.16s ease;
-    white-space: nowrap;
+    position: relative; flex: 0 0 auto; white-space: nowrap;
+    padding: 14px 15px; font-size: 0.88rem; font-weight: 600;
+    color: var(--text-soft); text-decoration: none !important;
+    transition: color 0.16s ease, background-color 0.16s ease;
+  }
+  .nav-link::after {
+    content: ''; position: absolute; left: 15px; right: 15px; bottom: 0; height: 2px;
+    background: var(--accent); border-radius: 2px 2px 0 0;
+    transform: scaleX(0); transform-origin: center; transition: transform 0.2s ease;
   }
   .nav-link:hover { color: var(--accent); background: var(--bg-inset); }
-  .nav-link.active { color: var(--accent); background: var(--accent-soft); font-weight: 650; }
+  .nav-link:hover::after { transform: scaleX(1); }
+  .nav-link.active { color: var(--accent); font-weight: 700; }
+  .nav-link.active::after { transform: scaleX(1); }
+  .nav-link:focus-visible { outline-offset: -3px; }
 
+  /* ---------- 主题切换 ---------- */
   .theme-toggle {
-    margin-left: 6px; width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+    width: 42px; height: 42px; border-radius: 10px; cursor: pointer; flex-shrink: 0;
     border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
     display: grid; place-items: center; font-size: 1rem; transition: 0.16s ease;
   }
@@ -103,42 +120,117 @@ const isActive = (href: string) => {
   html[data-theme='dark'] .icon-moon,
   html[data-theme='light'] .icon-sun { display: block; }
 
-  .menu-toggle {
-    display: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
-    border: 1px solid var(--border); background: var(--bg); padding: 10px 9px;
-    flex-direction: column; justify-content: space-between;
+  /* ---------- 首页：覆盖在大图之上，滚动后过渡为实底 ---------- */
+  .site-header[data-home='true'] {
+    position: fixed;
+    inset: 0 0 auto;
+    background: transparent;
+    border-bottom-color: transparent;
+    transition: background-color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
   }
-  .menu-toggle span { display: block; height: 2px; background: var(--text-soft); border-radius: 2px; }
+  .site-header[data-home='true'] .header-inner { height: 76px; }
+  .site-header[data-home='true'] .brand-text strong { color: #fff; }
+  .site-header[data-home='true'] .brand-text em { color: #d4e0e7; }
+  .site-header[data-home='true'] .brand-mark {
+    background: transparent; border: 1px solid #d4e0e7; color: #fff;
+  }
+  .site-header[data-home='true'] .theme-toggle {
+    background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.4);
+  }
+  .site-header[data-home='true'] .theme-toggle:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  .site-header[data-home='true'] .nav-bar { background: transparent; border-top-color: transparent; }
+  .site-header[data-home='true'] .nav-link { color: #e8eef3; }
+  .site-header[data-home='true'] .nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+  .site-header[data-home='true'] .nav-link.active { color: #fff; }
+  .site-header[data-home='true'] .nav-link::after { background: #fff; }
+  .site-header[data-home='true'] .nav-link:focus-visible { outline-color: #fff; }
 
-  .nav-mobile { display: none; flex-direction: column; padding: 8px 16px 18px; gap: 2px; border-top: 1px solid var(--border); }
-  .nav-mobile .nav-link { padding: 11px 12px; }
+  /* 滚动离开首屏后恢复为普通实底头部 */
+  .site-header[data-home='true'].is-scrolled {
+    background: var(--bg);
+    border-bottom-color: var(--border);
+    box-shadow: 0 6px 24px -18px rgba(16, 24, 40, 0.5);
+  }
+  .site-header[data-home='true'].is-scrolled .header-inner { height: 64px; }
+  .site-header[data-home='true'].is-scrolled .brand-text strong { color: var(--text); }
+  .site-header[data-home='true'].is-scrolled .brand-text em { color: var(--muted); }
+  .site-header[data-home='true'].is-scrolled .brand-mark {
+    background: linear-gradient(140deg, var(--accent), var(--accent-strong));
+    border-color: transparent; color: var(--on-accent);
+  }
+  .site-header[data-home='true'].is-scrolled .theme-toggle {
+    background: var(--bg); color: var(--text-soft); border-color: var(--border);
+  }
+  .site-header[data-home='true'].is-scrolled .nav-bar { background: var(--bg-soft); border-top-color: var(--border); }
+  .site-header[data-home='true'].is-scrolled .nav-link { color: var(--text-soft); }
+  .site-header[data-home='true'].is-scrolled .nav-link:hover { color: var(--accent); background: var(--bg-inset); }
+  .site-header[data-home='true'].is-scrolled .nav-link.active { color: var(--accent); }
+  .site-header[data-home='true'].is-scrolled .nav-link::after { background: var(--accent); }
 
-  @media (max-width: 880px) {
-    .nav-desktop { display: none; }
-    .menu-toggle { display: flex; }
-    .nav-mobile:not([hidden]) { display: flex; }
+  @media (max-width: 800px) {
+    .nav-items { justify-content: flex-start; padding-inline: 10px; gap: 0; }
+    .nav-link { padding: 13px 12px; }
+    .nav-link::after { left: 12px; right: 12px; }
+  }
+  @media (max-width: 480px) {
+    .header-inner { gap: 10px; }
+    .brand-text strong { font-size: 0.85rem; }
+    .brand-text em { display: none; }
+    .brand-mark { width: 32px; height: 32px; flex-basis: 32px; }
+    .brand { gap: 8px; }
+    .theme-toggle { width: 38px; height: 38px; }
   }
 </style>
 
 <script>
-  // 移动端菜单
-  const menuBtn = document.getElementById('menu-toggle');
-  const navMobile = document.getElementById('nav-mobile');
-  menuBtn?.addEventListener('click', () => {
-    const open = navMobile?.hasAttribute('hidden');
-    if (open) navMobile?.removeAttribute('hidden');
-    else navMobile?.setAttribute('hidden', '');
-    menuBtn.setAttribute('aria-expanded', String(!!open));
-  });
-
   // 主题切换
   const themeBtn = document.getElementById('theme-toggle');
+  function syncThemeLabel() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeBtn?.setAttribute('aria-label', dark ? '切换浅色模式' : '切换深色模式');
+  }
+  syncThemeLabel();
   themeBtn?.addEventListener('click', () => {
-    const cur = document.documentElement.getAttribute('data-theme');
-    const next = cur === 'dark' ? 'light' : 'dark';
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    try {
-      localStorage.setItem('theme', next);
-    } catch (e) {}
+    syncThemeLabel();
+    try { localStorage.setItem('theme', next); } catch {}
   });
+
+  // 首页头部：滚动离开首屏后由透明浮层切换为实底
+  const header = document.querySelector<HTMLElement>('.site-header[data-home="true"]');
+
+  /**
+   * 把顶栏真实高度写入 --header-h。
+   * 吸顶元素（成果页的年份标题等）依赖这个变量，写死数值会随字号/断点漂移，
+   * 因此统一在运行时测量，并在窗口尺寸变化后重新校准。
+   */
+  const headerEl = document.querySelector<HTMLElement>('.site-header');
+  function syncHeaderHeight() {
+    if (!headerEl) return;
+    const height = Math.round(headerEl.getBoundingClientRect().height);
+    if (height > 0) document.documentElement.style.setProperty('--header-h', `${height}px`);
+  }
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight, { passive: true });
+  window.addEventListener('load', syncHeaderHeight);
+  // 字体加载完成后顶栏高度可能变化，需重新测量
+  document.fonts?.ready.then(syncHeaderHeight).catch(() => {});
+  if (headerEl && 'ResizeObserver' in window) {
+    new ResizeObserver(syncHeaderHeight).observe(headerEl);
+  }
+
+  if (header) {
+    let ticking = false;
+    const apply = () => {
+      header.classList.toggle('is-scrolled', window.scrollY > 72);
+      syncHeaderHeight();
+      ticking = false;
+    };
+    const onScroll = () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(apply); }
+    };
+    apply();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
 </script>

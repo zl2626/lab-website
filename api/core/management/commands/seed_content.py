@@ -93,6 +93,8 @@ class Command(BaseCommand):
         site.tagline = data.get("tagline", "")
         site.affiliation = data.get("affiliation", "")
         site.description = data.get("description", "")
+        site.group_photo = data.get("groupPhoto", site.group_photo)
+        site.page_copy = {**site.page_copy, **data.get("pageCopy", {})}
         site.address = contact.get("address", "")
         site.postcode = contact.get("postcode", "")
         site.email = contact.get("email", "")
@@ -149,6 +151,9 @@ class Command(BaseCommand):
             "email": front.get("email", "") or "",
             "join_year": str(front.get("joinYear", "") or ""),
             "interests": as_list(front.get("interests")),
+            **({"hobbies": as_list(front["hobbies"])} if "hobbies" in front else {}),
+            **({"research_focus": front["researchFocus"] or ""} if "researchFocus" in front else {}),
+            **({"achievement_summary": front["achievementSummary"] or ""} if "achievementSummary" in front else {}),
             "links": front.get("links") or {},
             "bio": body,
             "published": not bool(front.get("draft", False)),

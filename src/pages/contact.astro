@@ -3,14 +3,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { getSite } from '../lib/content';
 
 const site = await getSite();
+const copy = site.pageCopy;
 const { contact, openings } = site;
 ---
 
-<BaseLayout title="联系我们" description={`联系${site.name}`}>
+<BaseLayout title={copy.contact_title} description={`联系${site.name}`}>
   <div class="page-head">
     <div class="container">
-      <h1>联系我们</h1>
-      <p>欢迎对课题组研究感兴趣的同学、老师与合作方与我们联系。</p>
+      <h1>{copy.contact_title}</h1>
+      <p>{copy.contact_intro}</p>
     </div>
   </div>
 
@@ -18,17 +19,17 @@ const { contact, openings } = site;
     <div class="grid grid-3">
       <div class="card info-card">
         <span class="ic">📍</span>
-        <h3>通讯地址</h3>
+        <h3>{copy.contact_address_label}</h3>
         <p>{contact.address || '—'}{contact.postcode ? `，邮编 ${contact.postcode}` : ''}</p>
       </div>
       <div class="card info-card">
         <span class="ic">✉️</span>
-        <h3>电子邮箱</h3>
+        <h3>{copy.contact_email_label}</h3>
         <p>{contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : '—'}</p>
       </div>
       <div class="card info-card">
         <span class="ic">☎️</span>
-        <h3>联系电话</h3>
+        <h3>{copy.contact_phone_label}</h3>
         <p>{contact.phone || '—'}</p>
       </div>
     </div>
@@ -42,23 +43,22 @@ const { contact, openings } = site;
           {(openings.email || contact.email) && (
             <a
               class="btn btn-primary"
-              href={`mailto:${openings.email || contact.email}?subject=申请加入课题组`}
+              href={`mailto:${openings.email || contact.email}?subject=${encodeURIComponent(copy.contact_apply_subject)}`}
             >
-              发送邮件申请
+              {copy.contact_apply_label}
             </a>
           )}
         </div>
       )
     }
 
-    <div class="map-placeholder card">
-      <h3>校园位置</h3>
-      <p class="muted small">
-        如需在页面中嵌入地图，请把地图平台的 &lt;iframe&gt; 代码粘贴到
-        <code>src/pages/contact.astro</code> 的 <code>.map-placeholder</code> 内。
-      </p>
-      <div class="map-box" aria-hidden="true">地图占位区域</div>
-    </div>
+    {(copy.contact_map_text || copy.contact_map_url) && (
+      <div class="map-placeholder card">
+        <h3>{copy.contact_map_title}</h3>
+        {copy.contact_map_text && <p style="white-space: pre-line">{copy.contact_map_text}</p>}
+        {copy.contact_map_url && <a class="btn btn-ghost" href={copy.contact_map_url} target="_blank" rel="noopener">在地图中查看</a>}
+      </div>
+    )}
   </section>
 </BaseLayout>
 
@@ -81,9 +81,4 @@ const { contact, openings } = site;
 
   .map-placeholder { margin-top: 44px; }
   .map-placeholder h3 { margin-bottom: 0.3em; }
-  .map-box {
-    margin-top: 16px; height: 240px; border-radius: var(--radius-sm);
-    border: 1px dashed var(--border-strong); background: var(--bg-soft);
-    display: grid; place-items: center; color: var(--muted); font-size: 0.88rem;
-  }
 </style>

@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getRobotProjects, getSite } from '../lib/content';
+const site = await getSite(); const projects = await getRobotProjects();
+---
+<BaseLayout title="科研平台" description={`${site.name}的机器人科研平台`}>
+  <div class="page-head"><div class="container"><h1>科研平台</h1><p>查看实验室机器人项目、3D 模型和运行演示。</p></div></div>
+  <section class="section container">
+    <div class="platform-note"><strong>机器人项目</strong><span>模型可用于展示、下载或继续建模；视频用于记录真实运行效果。</span></div>
+    <div class="project-grid">
+      {projects.map((item) => <article class="project card"><div class="project-top"><span class="tag">{item.modelFormat || '机器人项目'}</span>{item.researchFocus && <span class="muted small">{item.researchFocus}</span>}</div><h2>{item.name}</h2>{item.summary && <p>{item.summary}</p>}<div class="project-actions">{item.modelUrl && <a class="btn btn-primary" href={item.modelUrl} target="_blank" rel="noopener">查看 3D 模型</a>}{item.demoUrl && <a class="btn btn-ghost" href={item.demoUrl} target="_blank" rel="noopener">观看运行演示</a>}</div></article>)}
+    </div>
+    {projects.length === 0 && <div class="empty"><h2>第一个机器人项目</h2><p>登录后台，在“科研平台·机器人项目”里添加项目名称、模型地址和演示视频。</p><a class="btn btn-primary" href="/api/admin/core/robotproject/add/">添加机器人项目</a></div>}
+  </section>
+</BaseLayout>
+<style>
+.platform-note{display:flex;gap:16px;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:18px;margin-bottom:22px}.platform-note strong{font-size:1.2rem}.platform-note span{color:var(--muted);font-size:.9rem}.project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.project h2{font-size:1.2rem;margin:14px 0 8px}.project p{min-height:3em}.project-top,.project-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.empty{padding:48px 0;text-align:center;border:1px dashed var(--border-strong)}@media(max-width:700px){.project-grid{grid-template-columns:1fr}.platform-note{display:block}.platform-note span{display:block;margin-top:6px}}
+</style>

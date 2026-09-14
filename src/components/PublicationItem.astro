@@ -1,11 +1,13 @@
 ---
 import type { PublicationItem as Pub } from '../lib/content';
+import { publicationBibtex } from '../utils/bibtex.mjs';
 
 interface Props {
   item: Pub;
 }
 
 const { item } = Astro.props;
+const bibtex = publicationBibtex(item);
 
 const typeClass: Record<string, string> = {
   期刊论文: '',
@@ -53,27 +55,81 @@ const typeClass: Record<string, string> = {
         </div>
       )
     }
+
+    <div class="publication-details">
+      {item.abstract && (
+        <details>
+          <summary>查看摘要</summary>
+          <div class="detail-body">
+            <p class="abstract">{item.abstract}</p>
+          </div>
+        </details>
+      )}
+      <details>
+        <summary>BibTeX 引用</summary>
+        <div class="detail-body">
+          <pre><code>{bibtex}</code></pre>
+          <p class="citation-note">
+            根据本站登记信息生成，引用前请核对原文。
+            <a class="citation-download" href={`data:application/x-bibtex;charset=utf-8,${encodeURIComponent(bibtex)}`} download={`${item.slug}.bib`}>下载 .bib 文件</a>
+          </p>
+        </div>
+      </details>
+    </div>
   </div>
 </article>
 
 <style>
   .pub {
-    display: grid; grid-template-columns: 68px 1fr; gap: 18px;
+    display: grid; grid-template-columns: 62px 1fr; gap: 18px;
     padding: 22px 0; border-bottom: 1px solid var(--border);
   }
   .pub-year {
     font-size: 0.92rem; font-weight: 700; color: var(--muted);
-    font-variant-numeric: tabular-nums; padding-top: 2px;
+    font-variant-numeric: tabular-nums; padding-top: 3px;
   }
+  .pub-body { min-width: 0; }
   .top { gap: 7px; margin-bottom: 9px; }
-  .area { font-size: 0.76rem; color: var(--muted); }
+  .area { font-size: 0.76rem; color: var(--muted); margin-left: auto; }
   .pub-title { font-size: 1.06rem; margin: 0 0 0.4em; line-height: 1.45; }
   .authors { font-size: 0.88rem; color: var(--text-soft); margin: 0 0 0.25em; }
   .venue { font-size: 0.88rem; color: var(--muted); font-style: italic; margin: 0; }
   .links { gap: 14px; margin-top: 10px; }
   .links a { font-size: 0.85rem; font-weight: 600; }
+
+  /* 折叠面板：收起时并排成两个小按钮，展开后占满整行 */
+  .publication-details { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-top: 13px; }
+  .publication-details details { flex: 0 1 auto; }
+  .publication-details details[open] { flex: 1 1 100%; }
+  summary {
+    display: inline-flex; align-items: center; gap: 6px; width: fit-content;
+    padding: 5px 13px; border: 1px solid var(--border); border-radius: 999px;
+    background: var(--bg); color: var(--accent);
+    font-size: 0.83rem; font-weight: 600; cursor: pointer; list-style: none;
+    transition: 0.16s ease;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-weight: 700; line-height: 1; }
+  details[open] summary::after { content: '−'; }
+  summary:hover { border-color: var(--accent); background: var(--accent-soft); }
+  summary:focus-visible { outline-offset: 2px; }
+  .detail-body { margin-top: 10px; }
+  .abstract {
+    background: var(--bg-soft); padding: 14px 16px; border-radius: var(--radius-sm);
+    border-left: 3px solid var(--border-strong); font-size: .9rem;
+    white-space: pre-wrap; margin: 0;
+  }
+  pre {
+    white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg-soft);
+    border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-sm);
+    font-size: .8rem; margin: 0;
+  }
+  .citation-note { font-size: .78rem; color: var(--muted); margin: 9px 0 0; }
+  .citation-download { font-weight: 600; margin-left: 6px; }
+
   @media (max-width: 560px) {
     .pub { grid-template-columns: 1fr; gap: 8px; }
     .pub-year { padding-top: 0; }
+    .area { margin-left: 0; }
   }
 </style>

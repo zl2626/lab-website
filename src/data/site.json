@@ -23,6 +23,7 @@
     { "label": "团队成员", "href": "/team" },
     { "label": "科研新闻", "href": "/news" },
     { "label": "科研成果", "href": "/publications" },
+    { "label": "科研平台", "href": "/platform" },
     { "label": "联系我们", "href": "/contact" }
   ],
   "social": [

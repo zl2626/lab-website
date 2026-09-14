@@ -7,11 +7,12 @@
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
-from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting
+from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
 from .serializers import (
     serialize_member,
     serialize_news,
     serialize_publication,
+    serialize_robot_project,
     serialize_research,
     serialize_site,
 )
@@ -84,6 +85,7 @@ def content(request):
             "publications": [
                 serialize_publication(o) for o in Publication.objects.filter(published=True)
             ],
+            "robotProjects": [serialize_robot_project(o) for o in RobotProject.objects.filter(published=True)],
         }
     )
 

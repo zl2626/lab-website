@@ -77,7 +77,7 @@ SESSION_COOKIE_SAMESITE = "Lax"
 # 应用
 # --------------------------------------------------------------------------
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "core.admin_site.LabAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

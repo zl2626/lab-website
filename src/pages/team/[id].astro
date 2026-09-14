@@ -21,7 +21,7 @@ const linkItems = [
 ---
 
 <BaseLayout title={item.name} description={`${item.name} · ${item.role}`}>
-  <section class="section container">
+  <section class="section-detail container">
     <p class="crumb"><a href={u('/team')}>团队成员</a> / {item.name}</p>
 
     <div class="profile">
@@ -43,6 +43,9 @@ const linkItems = [
           {item.joinYear && <span class="muted small">{item.joinYear} 年加入</span>}
         </div>
         {item.nameEn && <p class="en">{item.nameEn}</p>}
+        {item.researchFocus && <p class="small">研究方向：{item.researchFocus}</p>}
+        {item.hobbies.length > 0 && <div class="block"><h4>兴趣爱好</h4><div class="row tags">{item.hobbies.map((h) => <span class="tag tag-muted">{h}</span>)}</div></div>}
+        {item.achievementSummary && <div class="block"><h4>成果产出</h4><p>{item.achievementSummary}</p></div>}
         {item.email && <p class="small">邮箱：<a href={`mailto:${item.email}`}>{item.email}</a></p>}
 
         {

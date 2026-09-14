@@ -7,6 +7,7 @@ interface Props {
 }
 
 const { site } = Astro.props;
+const copy = site.pageCopy;
 const year = new Date().getFullYear();
 ---
 
@@ -23,14 +24,14 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="footer-col">
-        <h4>快速导航</h4>
+        <h4>{copy.footer_nav_title}</h4>
         <ul>
           {site.nav.map((item) => <li><a href={u(item.href)}>{item.label}</a></li>)}
         </ul>
       </div>
 
       <div class="footer-col">
-        <h4>联系我们</h4>
+        <h4>{copy.footer_contact_title}</h4>
         <ul>
           {site.contact.address && <li>{site.contact.address}</li>}
           {site.contact.email && <li><a href={`mailto:${site.contact.email}`}>{site.contact.email}</a></li>}
@@ -39,7 +40,7 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="footer-col">
-        <h4>相关链接</h4>
+        <h4>{copy.footer_links_title}</h4>
         <ul>
           {site.social.map((s) => <li><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>)}
         </ul>
@@ -49,7 +50,7 @@ const year = new Date().getFullYear();
     <hr class="divider" />
 
     <div class="footer-bottom">
-      <span class="small muted">© {year} {site.name}. 保留所有权利。</span>
+      <span class="small muted">© {year} {site.name}. {copy.footer_copyright}</span>
       {site.icp && <span class="small muted">{site.icp}</span>}
     </div>
   </div>

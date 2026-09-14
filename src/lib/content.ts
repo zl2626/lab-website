@@ -2,16 +2,17 @@
  * 内容加载层 —— 全站唯一的数据入口。
  *
  * 构建时优先调用后端接口 `${API_BASE}/api/content/`；
- * 如果接口不可用（例如首次部署后端还没上线、本地没启动 Django），
- * 自动回退到仓库里的 Markdown 文件（src/content/**）。
- *
- * 因此：后端没配好，网站照样能构建出来，不会白屏。
+ * 未指定 API_BASE 时允许 Markdown 演示模式；指定接口后失败则停止构建。
+ * 本地开发默认连接 8000 端口，每次页面请求读取最新保存内容。
  */
 
 import { getCollection } from 'astro:content';
 import { marked } from 'marked';
 
 import siteJson from '../data/site.json';
+import pageCopySchema from '../../api/core/page_copy.json';
+
+const DEFAULT_COPY = Object.fromEntries(Object.entries(pageCopySchema).map(([key, spec]) => [key, spec.default]));
 
 // ---------------------------------------------------------------------------
 // 类型
@@ -29,11 +30,13 @@ export interface SiteInfo {
   tagline: string;
   affiliation: string;
   description: string;
+  groupPhoto: string;
   contact: { address: string; postcode: string; email: string; phone: string };
   openings: { enabled: boolean; title: string; text: string; email: string };
   nav: NavLink[];
   social: NavLink[];
   icp: string;
+  pageCopy: Record<string, string>;
 }
 
 export interface ResearchItem {
@@ -59,9 +62,14 @@ export interface MemberItem {
   email: string;
   joinYear: string;
   interests: string[];
+  hobbies: string[];
+  researchFocus: string;
+  achievementSummary: string;
   links: Record<string, string>;
   bioHtml: string;
 }
+
+export interface RobotProjectItem { slug: string; name: string; summary: string; researchFocus: string; modelUrl: string; modelFormat: string; demoUrl: string; bodyHtml: string; }
 
 export interface NewsItem {
   slug: string;
@@ -98,6 +106,7 @@ export interface ContentBundle {
   members: MemberItem[];
   news: NewsItem[];
   publications: PublicationItem[];
+  robotProjects: RobotProjectItem[];
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +119,7 @@ const DEFAULT_NAV: NavLink[] = [
   { label: '团队成员', href: '/team' },
   { label: '科研新闻', href: '/news' },
   { label: '科研成果', href: '/publications' },
+  { label: '科研平台', href: '/platform' },
   { label: '联系我们', href: '/contact' },
 ];
 
@@ -120,11 +130,13 @@ const FALLBACK_SITE: SiteInfo = {
   tagline: '',
   affiliation: '',
   description: '',
+  groupPhoto: '',
   contact: { address: '', postcode: '', email: '', phone: '' },
   openings: { enabled: false, title: '', text: '', email: '' },
   nav: DEFAULT_NAV,
   social: [],
   icp: '',
+  pageCopy: DEFAULT_COPY,
 };
 
 // ---------------------------------------------------------------------------
@@ -180,6 +192,7 @@ function normalizeSite(raw: Record<string, unknown> | null | undefined): SiteInf
     tagline: str(raw.tagline),
     affiliation: str(raw.affiliation),
     description: str(raw.description),
+    groupPhoto: str(raw.groupPhoto),
     contact: {
       address: str(contact.address),
       postcode: str(contact.postcode),
@@ -195,6 +208,7 @@ function normalizeSite(raw: Record<string, unknown> | null | undefined): SiteInf
     nav: linkList(raw.nav).length ? linkList(raw.nav) : DEFAULT_NAV,
     social: linkList(raw.social),
     icp: str(raw.icp),
+    pageCopy: { ...DEFAULT_COPY, ...Object.fromEntries(Object.entries((raw.pageCopy ?? {}) as Record<string, unknown>).filter(([, value]) => typeof value === 'string')) } as Record<string, string>,
   };
 }
 
@@ -204,8 +218,11 @@ function normalizeSite(raw: Record<string, unknown> | null | undefined): SiteInf
 
 function apiBaseCandidates(): string[] {
   const env = (typeof process !== 'undefined' ? process.env : {}) as Record<string, string | undefined>;
+  // An explicit source must never fall through to another database or deployment.
+  if (env.API_BASE) return [env.API_BASE.replace(/\/+$/, '')];
   const candidates: (string | undefined)[] = [
     env.API_BASE,
+    import.meta.env.DEV ? 'http://127.0.0.1:8000' : undefined,
     env.SITE_BASE_URL,
     env.SITE_URL,
     // Vercel 构建时自动注入的「生产域名」，指向当前项目已上线的部署（读同一个数据库）
@@ -227,11 +244,10 @@ async function fetchFromApi(): Promise<ContentBundle | null> {
 
   for (const base of bases) {
     const url = `${base}/api/content/`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
+      const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
 
       if (!response.ok) {
         console.warn(`[content] ${url} 返回 ${response.status}，尝试下一个地址。`);
@@ -239,6 +255,9 @@ async function fetchFromApi(): Promise<ContentBundle | null> {
       }
 
       const data = (await response.json()) as Record<string, unknown>;
+      if (!data.site || !['research', 'members', 'news', 'publications'].every((key) => Array.isArray(data[key]))) {
+        throw new Error('内容接口结构不完整');
+      }
       console.info(`[content] ✅ 已从后端接口加载内容：${url}`);
       return {
         source: 'api',
@@ -249,12 +268,19 @@ async function fetchFromApi(): Promise<ContentBundle | null> {
         publications: (Array.isArray(data.publications) ? data.publications : []).map(
           normalizePublication
         ),
+        robotProjects: (Array.isArray(data.robotProjects) ? data.robotProjects : []).map(normalizeRobotProject),
       };
     } catch (error) {
       console.warn(`[content] ${url} 请求失败：${(error as Error).message}`);
+    } finally {
+      clearTimeout(timer);
     }
   }
 
+  // Explicitly configured managed builds must not silently publish stale demo content.
+  if (process.env.API_BASE && process.env.ALLOW_CONTENT_FALLBACK !== '1') {
+    throw new Error('配置的内容接口不可用，已停止构建以避免用示例数据覆盖网站。');
+  }
   console.warn('[content] 后端接口不可用，回退到本地 Markdown 内容。');
   return null;
 }
@@ -288,6 +314,9 @@ function normalizeMember(raw: unknown): MemberItem {
     email: str(item.email),
     joinYear: str(item.joinYear),
     interests: strList(item.interests),
+    hobbies: strList(item.hobbies),
+    researchFocus: str(item.researchFocus),
+    achievementSummary: str(item.achievementSummary),
     links: Object.fromEntries(
       Object.entries(links)
         .filter(([, value]) => Boolean(value))
@@ -331,6 +360,11 @@ function normalizePublication(raw: unknown): PublicationItem {
   };
 }
 
+function normalizeRobotProject(raw: unknown): RobotProjectItem {
+  const item = (raw ?? {}) as Record<string, unknown>;
+  return { slug: str(item.slug), name: str(item.name), summary: str(item.summary), researchFocus: str(item.researchFocus), modelUrl: str(item.modelUrl), modelFormat: str(item.modelFormat), demoUrl: str(item.demoUrl), bodyHtml: str(item.bodyHtml) };
+}
+
 // ---------------------------------------------------------------------------
 // 数据源二：本地 Markdown（兜底）
 // ---------------------------------------------------------------------------
@@ -369,6 +403,9 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
       email: entry.data.email ?? '',
       joinYear: entry.data.joinYear ?? '',
       interests: entry.data.interests,
+      hobbies: entry.data.hobbies,
+      researchFocus: entry.data.researchFocus,
+      achievementSummary: entry.data.achievementSummary,
       links: Object.fromEntries(
         Object.entries(entry.data.links ?? {}).filter(([, value]) => Boolean(value))
       ) as Record<string, string>,
@@ -415,6 +452,7 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
     members,
     news,
     publications,
+    robotProjects: [],
   };
 }
 
@@ -425,6 +463,8 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
 let bundlePromise: Promise<ContentBundle> | null = null;
 
 export function loadContent(): Promise<ContentBundle> {
+  // Dev pages must read saved database changes instead of keeping the first bundle forever.
+  if (import.meta.env.DEV) return (async () => (await fetchFromApi()) ?? (await buildFromMarkdown()))();
   if (!bundlePromise) {
     bundlePromise = (async () => (await fetchFromApi()) ?? (await buildFromMarkdown()))();
   }
@@ -450,3 +490,5 @@ export async function getNews(): Promise<NewsItem[]> {
 export async function getPublications(): Promise<PublicationItem[]> {
   return (await loadContent()).publications;
 }
+
+export async function getRobotProjects(): Promise<RobotProjectItem[]> { return (await loadContent()).robotProjects; }

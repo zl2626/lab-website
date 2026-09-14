@@ -17,6 +17,7 @@ PREVIEW_PREFIXES = ("http://", "https://", "/api/media/", "/images/")
 
 class ImageOrUrlWidget(forms.TextInput):
     template_name = "core/widgets/image_or_url.html"
+    needs_multipart_form = True
 
     class Media:
         css = {"all": ("core/css/lab-admin.css",)}
