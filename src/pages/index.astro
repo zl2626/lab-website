@@ -3,13 +3,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { loadContent } from '../lib/content';
 import { asset, u } from '../utils/url';
 import { formatDate } from '../utils/format';
-const { site, research, members, news, publications: pubs } = await loadContent();
+const { site, homeSlides, research, members, news, publications: pubs } = await loadContent();
 const copy = site.pageCopy;
-const slides = [
-  { title: site.name, english: site.nameEn, summary: site.tagline, image: site.groupPhoto, href: '/team', action: copy.home_team_action },
-  ...research.slice(0, 2).map(item => ({ title: item.title, english: item.titleEn, summary: item.summary, image: item.cover, href: `/research/${item.slug}`, action: copy.home_research_action })),
+
+// 后台配置了「首页轮播」就用配置的内容；没配置时回退到「团队合照 + 前两个研究方向」的自动拼接，
+// 这样老站点不配也能正常显示。
+const fallbackSlides = [
+  { title: site.name, titleEn: site.nameEn, summary: site.tagline, image: site.groupPhoto, link: '/team', linkLabel: copy.home_team_action },
+  ...research.slice(0, 2).map((item) => ({ title: item.title, titleEn: item.titleEn, summary: item.summary, image: item.cover, link: `/research/${item.slug}`, linkLabel: copy.home_research_action })),
 ];
-const stats = [{ value: research.length, label: '研究方向' }, { value: members.length, label: '团队成员' }, { value: pubs.length, label: '科研成果' }];
+const slides = homeSlides.length ? homeSlides : fallbackSlides;
+
+const stats = [
+  { value: research.length, label: copy.home_stat_research },
+  { value: members.length, label: copy.home_stat_members },
+  { value: pubs.length, label: copy.home_stat_publications },
+];
 
 // 首页「代表性成果」：优先精选，不足时按年份从新到旧补齐
 const highlights = pubs.filter((p) => p.highlight);
@@ -38,9 +47,13 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
         <div class="container banner-copy">
           <p class="banner-affil">{site.affiliation}</p>
           {index === 0 ? <h1>{slide.title}</h1> : <h2 class="banner-title">{slide.title}</h2>}
-          {slide.english && <p class="banner-english">{slide.english}</p>}
-          <p class="banner-summary">{slide.summary}</p>
-          <a class="banner-link" href={u(slide.href)}>{slide.action} <span aria-hidden="true">→</span></a>
+          {slide.titleEn && <p class="banner-english">{slide.titleEn}</p>}
+          {slide.summary && <p class="banner-summary">{slide.summary}</p>}
+          {slide.link && (
+            <a class="banner-link" href={u(slide.link)}>
+              {slide.linkLabel || copy.home_slide_more} <span aria-hidden="true">→</span>
+            </a>
+          )}
         </div>
       </article>
     ))}
@@ -77,7 +90,7 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
       <div class="home-heading">
         <div>
           <h2>{copy.home_research_title}</h2>
-          <span>Research directions</span>
+          <span>{copy.home_research_label}</span>
         </div>
         <a class="more-link" href={u('/research')}>{copy.home_research_more} <span aria-hidden="true">→</span></a>
       </div>
@@ -96,7 +109,7 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
           </a>
         ))}
       </div>
-      {research.length === 0 && <p>研究方向整理中。</p>}
+      {research.length === 0 && <p>{copy.home_research_empty}</p>}
     </div>
   </section>
 
@@ -107,7 +120,7 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
           <div class="home-heading">
             <div>
               <h2>{copy.home_publications_title}</h2>
-              <span>Selected publications</span>
+              <span>{copy.home_publications_label}</span>
             </div>
             <a class="more-link" href={u('/publications')}>{copy.home_publications_more} <span aria-hidden="true">→</span></a>
           </div>
@@ -119,15 +132,15 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
                   <span class="ph-year">{item.year}</span>
                   <span class="tag">{item.type}</span>
                   {item.venueShort && <span class="tag tag-muted">{item.venueShort}</span>}
-                  {item.highlight && <span class="tag tag-gold">★ 精选</span>}
+                  {item.highlight && <span class="tag tag-gold">{copy.pub_highlight_tag}</span>}
                 </div>
                 <h3>{item.title}</h3>
                 {item.authors.length > 0 && <p class="ph-authors">{item.authors.join('，')}</p>}
                 {item.venue && <p class="ph-venue">{item.venue}</p>}
                 <div class="ph-links">
-                  {item.link && <a href={item.link} target="_blank" rel="noopener">原文 ↗</a>}
-                  {item.pdf && <a href={item.pdf} target="_blank" rel="noopener">PDF ↗</a>}
-                  {item.code && <a href={item.code} target="_blank" rel="noopener">代码 ↗</a>}
+                  {item.link && <a href={item.link} target="_blank" rel="noopener">{copy.pub_link_original} ↗</a>}
+                  {item.pdf && <a href={item.pdf} target="_blank" rel="noopener">{copy.pub_link_pdf} ↗</a>}
+                  {item.code && <a href={item.code} target="_blank" rel="noopener">{copy.pub_link_code} ↗</a>}
                 </div>
               </article>
             ))}
@@ -142,7 +155,7 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
       <div class="home-heading">
         <div>
           <h2>{copy.home_news_title}</h2>
-          <span>News</span>
+          <span>{copy.home_news_label}</span>
         </div>
         <a class="more-link" href={u('/news')}>{copy.home_news_action} <span aria-hidden="true">→</span></a>
       </div>
@@ -155,9 +168,9 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
                 <img src={asset(item.cover)} alt="" loading="lazy" />
               ) : (
                 <div class="news-placeholder">
-                  <span>{item.tags[0] || '科研动态'}</span>
+                  <span>{item.tags[0] || copy.news_default_tag}</span>
                   <strong>{formatDate(item.date).slice(0, 4)}</strong>
-                  <span>{site.abbr} · RESEARCH NEWS</span>
+                  <span>{site.abbr} · {copy.home_news_meta}</span>
                 </div>
               )}
             </div>
@@ -171,14 +184,14 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
           </a>
         ))}
       </div>
-      {news.length === 0 && <p>科研动态整理中，欢迎关注。</p>}
+      {news.length === 0 && <p>{copy.home_news_empty}</p>}
     </div>
   </section>
 
   <section class="home-section home-about">
     <div class="container about-grid">
       <div class="about-copy">
-        <div class="home-heading"><div><h2>关于我们</h2><span>About us</span></div></div>
+        <div class="home-heading"><div><h2>{copy.home_about_title}</h2><span>{copy.home_about_label}</span></div></div>
         <p class="about-description">{site.description || site.tagline}</p>
         <a class="more-link" href={u('/team')}>{copy.home_team_action} <span aria-hidden="true">→</span></a>
         <div class="about-stats">{stats.map((stat) => <div><strong>{stat.value}</strong><span>{stat.label}</span></div>)}</div>

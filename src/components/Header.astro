@@ -7,6 +7,7 @@ interface Props {
 }
 
 const { site } = Astro.props;
+const copy = site.pageCopy;
 
 const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const isActive = (href: string) => {
@@ -28,9 +29,9 @@ const isHome = path === (u('/').replace(/\/+$/, '') || '/');
     </a>
 
     <div class="header-actions">
-      <button type="button" class="search-trigger" data-search-open aria-label="站内搜索">
+      <button type="button" class="search-trigger" data-search-open aria-label={copy.search_label}>
         <span class="search-glyph" aria-hidden="true">⌕</span>
-        <span class="search-label">搜索</span>
+        <span class="search-label">{copy.search_label}</span>
         <kbd class="search-kbd" aria-hidden="true">⌘K</kbd>
       </button>
       <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深色模式">

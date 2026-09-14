@@ -9,10 +9,34 @@ from __future__ import annotations
 
 from django import forms
 from django.core.files.uploadedfile import UploadedFile
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 from .media import MediaError, save_uploaded_image
 
 PREVIEW_PREFIXES = ("http://", "https://", "/api/media/", "/images/")
+
+
+class DatalistTextInput(forms.TextInput):
+    """带输入建议的文本框。
+
+    有些字段（成员身份）既要能选常用值，又要能自由填写实验室自己的叫法。
+    Django 的 choices 只能二选一，这里改用 <datalist>：输入框照常可编辑，
+    同时给出建议列表。
+    """
+
+    def __init__(self, options=(), attrs=None, **kwargs):
+        self.options = [str(option) for option in options]
+        super().__init__(attrs=attrs, **kwargs)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        attrs = dict(attrs or {})
+        list_id = f"{attrs.get('id') or 'id_' + name}_suggestions"
+        attrs["list"] = list_id
+        attrs.setdefault("autocomplete", "off")
+        html = super().render(name, value, attrs, renderer)
+        options = "".join(f'<option value="{escape(option)}"></option>' for option in self.options)
+        return mark_safe(f"{html}<datalist id=\"{escape(list_id)}\">{options}</datalist>")
 
 
 class ImageOrUrlWidget(forms.TextInput):

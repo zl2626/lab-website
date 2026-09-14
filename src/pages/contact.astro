@@ -18,17 +18,17 @@ const { contact, openings } = site;
   <section class="section container">
     <div class="grid grid-3">
       <div class="card info-card">
-        <span class="ic">📍</span>
+        <span class="ic" aria-hidden="true">📍</span>
         <h3>{copy.contact_address_label}</h3>
-        <p>{contact.address || '—'}{contact.postcode ? `，邮编 ${contact.postcode}` : ''}</p>
+        <p>{contact.address || '—'}{contact.postcode ? `，${copy.contact_postcode_prefix} ${contact.postcode}` : ''}</p>
       </div>
       <div class="card info-card">
-        <span class="ic">✉️</span>
+        <span class="ic" aria-hidden="true">✉️</span>
         <h3>{copy.contact_email_label}</h3>
         <p>{contact.email ? <a href={`mailto:${contact.email}`}>{contact.email}</a> : '—'}</p>
       </div>
       <div class="card info-card">
-        <span class="ic">☎️</span>
+        <span class="ic" aria-hidden="true">☎️</span>
         <h3>{copy.contact_phone_label}</h3>
         <p>{contact.phone || '—'}</p>
       </div>
@@ -37,7 +37,7 @@ const { contact, openings } = site;
     {
       openings.enabled && openings.title && (
         <section class="join">
-          <span class="eyebrow">Join Us</span>
+          <span class="eyebrow">{copy.contact_join_eyebrow}</span>
           <h2>{openings.title}</h2>
           {openings.text && <p>{openings.text}</p>}
           {(openings.email || contact.email) && (
@@ -57,7 +57,7 @@ const { contact, openings } = site;
       <div class="map-placeholder card">
         <h3>{copy.contact_map_title}</h3>
         {copy.contact_map_text && <p style="white-space: pre-line">{copy.contact_map_text}</p>}
-        {copy.contact_map_url && <a class="btn btn-ghost" href={copy.contact_map_url} target="_blank" rel="noopener">在地图中查看</a>}
+        {copy.contact_map_url && <a class="btn btn-ghost" href={copy.contact_map_url} target="_blank" rel="noopener">{copy.contact_map_action}</a>}
       </div>
     )}
   </section>

@@ -240,3 +240,93 @@ class ContentPersistenceTests(TestCase):
         self.assertIn("<h2", html)
         self.assertIn("个人简历", html)
         self.assertIn("<li>", html)
+
+
+class AdminCoverageTests(TestCase):
+    """后台必须能改到每一处内容。
+
+    历史坑：给模型加了字段却忘记加进 ModelAdmin.fieldsets，
+    字段在后台根本不会出现，POST 也存不进去，而且不会报错。
+    这里用测试把它锁死：任何「模型里有、后台里没有」的字段都会让测试失败。
+    """
+
+    # 有意不在后台直接编辑的字段：page_copy 由逐条文案字段（copy_xxx）代理
+    INTENTIONALLY_HIDDEN = {"SiteSetting": {"page_copy"}}
+
+    def _request(self):
+        from django.test import RequestFactory
+        request = RequestFactory().get("/admin/")
+        request.user = get_user_model().objects.create_superuser("coverage", "", "pw")
+        return request
+
+    def test_every_model_field_is_reachable_from_admin(self):
+        from django.contrib import admin as dj_admin
+        from .models import HomeSlide, Member, News, Publication, ResearchArea, RobotProject, SiteSetting
+
+        request = self._request()
+        models = (HomeSlide, ResearchArea, Member, News, Publication, RobotProject, SiteSetting)
+        for model in models:
+            with self.subTest(model=model.__name__):
+                admin_class = dj_admin.site._registry[model]
+                listed = set()
+                for _title, options in admin_class.get_fieldsets(request, None):
+                    listed.update(options.get("fields", ()))
+                listed.update(getattr(admin_class, "readonly_fields", ()))
+
+                # 自动生成的主键不需要（也不应该）在后台出现
+                editable = {
+                    f.name for f in model._meta.fields if f.editable and not f.auto_created
+                }
+                hidden = self.INTENTIONALLY_HIDDEN.get(model.__name__, set())
+                missing = editable - listed - hidden
+                self.assertEqual(
+                    missing, set(),
+                    f"{model.__name__} 的这些字段没有出现在后台分组里，管理者改不到：{sorted(missing)}",
+                )
+
+    def test_every_page_copy_key_has_an_admin_field(self):
+        """page_copy.json 里每一条文案都要能在后台编辑，否则文案是「配了但改不了」。"""
+        from .admin import SiteSettingForm
+        from .forms import PAGE_COPY
+
+        form = SiteSettingForm()
+        missing = [key for key in PAGE_COPY if f"copy_{key}" not in form.fields]
+        self.assertEqual(missing, [], f"这些文案键没有对应的后台字段：{missing}")
+
+    def test_page_copy_defaults_are_all_non_empty_or_intentionally_blank(self):
+        """默认值不能是空白：空默认会让前台出现「改了也不知道原来写什么」的空洞。"""
+        from .forms import PAGE_COPY
+
+        blanks = [key for key, spec in PAGE_COPY.items() if not str(spec["default"]).strip()]
+        self.assertEqual(
+            blanks, ["contact_map_text", "contact_map_url"],
+            f"出现未预期的空白默认值：{blanks}",
+        )
+
+    def test_home_slides_are_manageable_and_exposed_to_the_frontend(self):
+        """首页轮播要在后台增删改，并通过接口提供给前端。"""
+        from django.contrib import admin as dj_admin
+        from .models import HomeSlide
+
+        self.assertIn(HomeSlide, dj_admin.site._registry)
+        admin_class = dj_admin.site._registry[HomeSlide]
+        self.assertTrue(admin_class.has_add_permission(self._request()))
+
+        HomeSlide.objects.create(title="第一屏", summary="说明", link="/team", link_label="看看团队", order=1)
+        HomeSlide.objects.create(title="未发布屏", order=2, published=False)
+
+        slides = self.client.get("/api/content/").json()["homeSlides"]
+        self.assertEqual([slide["title"] for slide in slides], ["第一屏"])
+        self.assertEqual(slides[0]["link"], "/team")
+        self.assertEqual(slides[0]["linkLabel"], "看看团队")
+
+    def test_member_role_accepts_custom_values(self):
+        """成员身份不再写死：实验室自己的叫法（访问学者等）也要能填、能按顺序分组。"""
+        from .models import Member
+
+        member = Member.objects.create(slug="visiting", name="访问学者甲", role="访问学者")
+        payload = next(
+            item for item in self.client.get("/api/members/").json() if item["slug"] == "visiting"
+        )
+        self.assertEqual(payload["role"], "访问学者")
+        self.assertEqual(member.role, "访问学者")

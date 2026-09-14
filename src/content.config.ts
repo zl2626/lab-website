@@ -27,7 +27,8 @@ const members = defineCollection({
   schema: z.object({
     name: z.string(), // 中文姓名
     nameEn: z.string().optional(), // 拼音 / 英文名
-    role: z.enum(['导师', '博士后', '博士生', '硕士生', '本科生', '科研助理', '校友']),
+    // 身份不限制取值，实验室可以自定义（展示分组顺序由后台文案「身份分组顺序」控制）
+    role: z.string().default('博士生'),
     title: z.string().optional(), // 职称，如“教授 / 博士生导师”
     order: z.number().default(99), // 组内排序，越小越靠前
     photo: z.string().optional(), // 照片路径，如 /images/team/zhangsan.jpg

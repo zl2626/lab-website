@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PublicationItem from '../components/PublicationItem.astro';
-import { getPublications, getSite } from '../lib/content';
+import { fillCopy, getPublications, getSite } from '../lib/content';
 import { groupByYear } from '../utils/format';
 
 const site = await getSite();
@@ -18,27 +18,38 @@ const typeCounts = types
 
 const yearRange =
   years.length > 1 ? `${years[years.length - 1].year}–${years[0].year}` : String(years[0]?.year ?? '—');
+
+// 筛选结果的条数与导出按钮的反馈都在客户端生成，把模板一并下发，避免把文案写进脚本
+const clientCopy = {
+  unit: copy.pub_unit,
+  resultCount: copy.pub_result_count,
+  yearCount: copy.pub_year_count,
+  exportDone: copy.pub_export_done,
+  exportEmpty: copy.pub_export_empty,
+  exportHeader: copy.pub_export_header,
+  siteName: site.name,
+};
 ---
 
 <BaseLayout title={copy.publications_title} description={`${site.name}的科研成果与论文列表`}>
   <div class="page-head">
     <div class="container">
       <h1>{copy.publications_title}</h1>
-      <p>{copy.publications_intro.replaceAll('{count}', String(pubs.length))}</p>
+      <p>{fillCopy(copy.publications_intro, { count: pubs.length })}</p>
 
-      <form class="filters" role="search" aria-label="筛选科研成果" onsubmit="return false">
-        <label class="search-field">关键词
-          <input id="pub-search" type="search" placeholder="搜索标题、作者、期刊或会议" />
+      <form class="filters" role="search" aria-label={copy.publications_title} onsubmit="return false">
+        <label class="search-field">{copy.pub_filter_keyword}
+          <input id="pub-search" type="search" placeholder={copy.pub_filter_placeholder} />
         </label>
-        <label>年份<select id="pub-year"><option value="">全部年份</option>{years.map(({ year }) => <option value={year}>{year}</option>)}</select></label>
-        <label>成果类型<select id="pub-type"><option value="">全部类型</option>{types.map((t) => <option value={t}>{t}</option>)}</select></label>
-        <label>研究方向<select id="pub-area"><option value="">全部方向</option>{areas.map((a) => <option value={a}>{a}</option>)}</select></label>
-        <button type="reset" class="reset-filter">清除筛选</button>
-        <button type="button" class="export-filter" id="export-bib" data-site={site.name} title="把当前筛选出的成果导出为一个 .bib 文件，可直接导入 Zotero / EndNote / BibDesk">
-          导出筛选结果 (.bib)
+        <label>{copy.pub_filter_year}<select id="pub-year"><option value="">{copy.pub_filter_year_all}</option>{years.map(({ year }) => <option value={year}>{year}</option>)}</select></label>
+        <label>{copy.pub_filter_type}<select id="pub-type"><option value="">{copy.pub_filter_type_all}</option>{types.map((t) => <option value={t}>{t}</option>)}</select></label>
+        <label>{copy.pub_filter_area}<select id="pub-area"><option value="">{copy.pub_filter_area_all}</option>{areas.map((a) => <option value={a}>{a}</option>)}</select></label>
+        <button type="reset" class="reset-filter">{copy.pub_filter_reset}</button>
+        <button type="button" class="export-filter" id="export-bib" data-site={site.name} title={copy.pub_export_hint}>
+          {copy.pub_export}
         </button>
       </form>
-      <p id="result-count" class="small muted" role="status" aria-live="polite">共 {pubs.length} 项成果</p>
+      <p id="result-count" class="small muted" role="status" aria-live="polite">{fillCopy(copy.pub_result_initial, { count: pubs.length })}</p>
     </div>
   </div>
 
@@ -48,7 +59,7 @@ const yearRange =
         <div class="stat-strip">
           <div class="item">
             <b>{pubs.length}</b>
-            <span>成果总数</span>
+            <span>{copy.pub_stat_total}</span>
           </div>
           {typeCounts.map((t) => (
             <div class="item">
@@ -58,7 +69,7 @@ const yearRange =
           ))}
           <div class="item">
             <b>{yearRange}</b>
-            <span>年份跨度</span>
+            <span>{copy.pub_stat_span}</span>
           </div>
         </div>
       )
@@ -68,12 +79,12 @@ const yearRange =
         <div class="year-block">
           <div class="year-head">
             <h2>{year}</h2>
-            <span class="muted small year-count">{items.length} 项</span>
+            <span class="muted small year-count">{items.length} {copy.pub_unit}</span>
           </div>
           <div class="pub-list">
             {items.map((item) => (
               <div class="pub-cell" data-type={item.type} data-area={item.area} data-year={item.year} data-search={[item.title, ...item.authors, item.venue, item.venueShort].join(" ").toLocaleLowerCase()}>
-                <PublicationItem item={item} />
+                <PublicationItem item={item} copy={copy} />
               </div>
             ))}
           </div>
@@ -82,11 +93,13 @@ const yearRange =
     }
     {
       pubs.length === 0 && (
-        <p class="muted">科研成果整理中，欢迎稍后查看。</p>
+        <p class="muted">{copy.pub_empty}</p>
       )
     }
-    <p id="no-result" class="muted" hidden>没有符合条件的成果。</p>
+    <p id="no-result" class="muted" hidden>{copy.pub_empty_filter}</p>
   </section>
+
+  <script type="application/json" id="pub-client-copy" set:html={JSON.stringify(clientCopy)} />
 </BaseLayout>
 
 <style>
@@ -124,6 +137,18 @@ const yearRange =
 
 <script>
   import { downloadText } from '../utils/clipboard.mjs';
+  import { fillCopy } from '../utils/copy.mjs';
+
+  // 文案由服务端下发，避免把界面文字写死在脚本里
+  const clientCopy = JSON.parse(document.getElementById('pub-client-copy')?.textContent || '{}') as {
+    unit?: string;
+    resultCount?: string;
+    yearCount?: string;
+    exportDone?: string;
+    exportEmpty?: string;
+    exportHeader?: string;
+    siteName?: string;
+  };
 
   const form = document.querySelector<HTMLFormElement>('.filters')!;
   const search = document.querySelector<HTMLInputElement>('#pub-search')!;
@@ -151,9 +176,10 @@ const yearRange =
       const total = Array.from(block.querySelectorAll<HTMLElement>('.pub-cell'))
         .filter((cell) => cell.style.display !== 'none').length;
       block.hidden = total === 0;
-      block.querySelector('.year-count')!.textContent = `${total} 项`;
+      const label = block.querySelector('.year-count');
+      if (label) label.textContent = fillCopy(clientCopy.yearCount || '{count}', { count: total });
     });
-    count.textContent = `显示 ${visible} / ${cells.length} 项成果`;
+    count.textContent = fillCopy(clientCopy.resultCount || '{shown} / {total}', { shown: visible, total: cells.length });
     empty.hidden = visible > 0 || cells.length === 0;
   }
 
@@ -171,26 +197,30 @@ const yearRange =
       .filter(Boolean);
 
     const original = exportButton.textContent ?? '';
-    if (chunks.length === 0) {
-      exportButton.textContent = '当前没有可导出的成果';
+
+    // 统一的「改了文案 → 过一会儿再变回去」反馈
+    const flash = (text: string) => {
+      exportButton.textContent = text;
       exportButton.classList.add('is-done');
       window.setTimeout(() => {
         exportButton.textContent = original;
         exportButton.classList.remove('is-done');
-      }, 1800);
+      }, 2000);
+    };
+
+    if (chunks.length === 0) {
+      flash(clientCopy.exportEmpty || original);
       return;
     }
 
     const today = new Date();
     const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const header = `% ${exportButton.dataset.site || 'Lab'} 科研成果导出\n% 导出时间：${stamp}，共 ${chunks.length} 条\n% 引用前请与原文核对。\n\n`;
-    downloadText(`publications-${stamp}.bib`, header + chunks.join('\n'));
+    const header = fillCopy(
+      clientCopy.exportHeader || '% {site}\n% {date} · {count}',
+      { site: exportButton.dataset.site || clientCopy.siteName || '', date: stamp, count: chunks.length }
+    );
+    downloadText(`publications-${stamp}.bib`, `${header}\n\n` + chunks.join('\n'));
 
-    exportButton.textContent = `已导出 ${chunks.length} 条 ✓`;
-    exportButton.classList.add('is-done');
-    window.setTimeout(() => {
-      exportButton.textContent = original;
-      exportButton.classList.remove('is-done');
-    }, 2200);
+    flash(fillCopy(clientCopy.exportDone || '{count}', { count: chunks.length }));
   });
 </script>

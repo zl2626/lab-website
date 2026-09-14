@@ -49,7 +49,7 @@ const members = (await getMembers()).filter((m) => m.areas.includes(item.title))
   {
     members.length > 0 && (
       <section class="section-tight container">
-        <h2 class="sub-head">本方向成员</h2>
+        <h2 class="sub-head">{copy.research_members}</h2>
         <ul class="area-members">
           {members.map((member) => (
             <li>
@@ -95,7 +95,7 @@ const members = (await getMembers()).filter((m) => m.areas.includes(item.title))
           <h2 class="sub-head">{copy.research_related}</h2>
           <div class="pub-list">
             {related.map((p) => (
-              <PublicationItem item={p} />
+              <PublicationItem item={p} copy={copy} />
             ))}
           </div>
         </div>

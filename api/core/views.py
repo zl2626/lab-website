@@ -7,12 +7,13 @@
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
-from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
+from .models import HomeSlide, MediaFile, Member, News, Publication, ResearchArea, SiteSetting
 from .serializers import (
+    serialize_content,
+    serialize_home_slide,
     serialize_member,
     serialize_news,
     serialize_publication,
-    serialize_robot_project,
     serialize_research,
     serialize_site,
 )
@@ -37,6 +38,7 @@ def api_root(request):
                 "/api/health/",
                 "/api/content/",
                 "/api/site/",
+                "/api/home-slides/",
                 "/api/research/",
                 "/api/research/<slug>/",
                 "/api/members/",
@@ -74,20 +76,12 @@ def media(request, path: str):
 @require_GET
 def content(request):
     """构建前端时使用：一次请求拿全站内容。"""
-    return _json(
-        {
-            "site": serialize_site(SiteSetting.load()),
-            "research": [
-                serialize_research(o) for o in ResearchArea.objects.filter(published=True)
-            ],
-            "members": [serialize_member(o) for o in Member.objects.filter(published=True)],
-            "news": [serialize_news(o) for o in News.objects.filter(published=True)],
-            "publications": [
-                serialize_publication(o) for o in Publication.objects.filter(published=True)
-            ],
-            "robotProjects": [serialize_robot_project(o) for o in RobotProject.objects.filter(published=True)],
-        }
-    )
+    return _json(serialize_content())
+
+
+@require_GET
+def home_slide_list(request):
+    return _json([serialize_home_slide(o) for o in HomeSlide.objects.filter(published=True)])
 
 
 @require_GET

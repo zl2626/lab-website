@@ -6,9 +6,11 @@ import { formatDate } from '../utils/format';
 interface Props {
   item: NewsItem;
   index?: number;
+  /** 界面文案（来自后台「站点设置 → 页面文案」） */
+  copy: Record<string, string>;
 }
 
-const { item, index = 0 } = Astro.props;
+const { item, index = 0, copy } = Astro.props;
 ---
 
 <a
@@ -19,7 +21,7 @@ const { item, index = 0 } = Astro.props;
   {item.cover && <img class="card-cover" src={asset(item.cover)} alt="" loading="lazy" />}
   <div class="meta">
     <time datetime={item.date}>{formatDate(item.date)}</time>
-    {item.pinned && <span class="tag tag-gold">置顶</span>}
+    {item.pinned && <span class="tag tag-gold">{copy.news_pinned}</span>}
   </div>
   <h3>{item.title}</h3>
   {item.summary && <p class="summary">{item.summary}</p>}

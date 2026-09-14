@@ -4,18 +4,34 @@
  *
  * 纯静态实现：索引在构建时生成（/search-index.json），第一次打开时才拉取。
  * 键盘：⌘K / Ctrl+K 打开，↑↓ 选择，Enter 打开，Esc 关闭。
+ * 所有面向访客的文字都来自后台「站点设置 → 页面文案 → 站内搜索」。
  */
+interface Props {
+  copy: Record<string, string>;
+}
+
+const { copy } = Astro.props;
+
+// 结果分组直接用各栏目自己的标题，改标题时搜索里也会同步
 const typeLabels: { type: string; label: string }[] = [
-  { type: 'research', label: '研究方向' },
-  { type: 'member', label: '团队成员' },
-  { type: 'news', label: '科研新闻' },
-  { type: 'publication', label: '科研成果' },
+  { type: 'research', label: copy.research_title },
+  { type: 'member', label: copy.team_title },
+  { type: 'news', label: copy.news_title },
+  { type: 'publication', label: copy.publications_title },
 ];
+
+const clientCopy = {
+  labels: Object.fromEntries(typeLabels.map((item) => [item.type, item.label])),
+  found: copy.search_found,
+  empty: copy.search_empty,
+  failed: copy.search_failed,
+  hint: copy.search_hint,
+};
 ---
 
 <dialog id="site-search" class="search-dialog" aria-labelledby="search-title">
   <div class="search-panel">
-    <h2 id="search-title" class="sr-only">站内搜索</h2>
+    <h2 id="search-title" class="sr-only">{copy.search_label}</h2>
 
     <div class="search-field">
       <span class="search-icon" aria-hidden="true">⌕</span>
@@ -26,36 +42,36 @@ const typeLabels: { type: string; label: string }[] = [
         autocapitalize="off"
         spellcheck="false"
         enterkeyhint="search"
-        placeholder="搜索研究方向、成员、新闻或成果…"
+        placeholder={copy.search_placeholder}
         aria-controls="search-results"
         aria-expanded="false"
         aria-autocomplete="list"
         aria-describedby="search-status"
         role="combobox"
       />
-      <button type="button" class="search-cancel" data-search-close aria-label="关闭搜索">
+      <button type="button" class="search-cancel" data-search-close aria-label={copy.search_key_close}>
         <span class="kbd">Esc</span>
       </button>
     </div>
 
-    <p id="search-status" class="search-status" role="status" aria-live="polite">
-      输入关键词开始搜索，支持按名字、方向、期刊或会议查找。
-    </p>
+    <p id="search-status" class="search-status" role="status" aria-live="polite">{copy.search_hint}</p>
 
     <ul id="search-results" class="search-results" hidden></ul>
 
-    <div class="search-suggest" hidden>
+    <div class="search-suggest">
       {typeLabels.map((group) => (
         <span class="search-chip" data-search-suggest={group.type}>{group.label}</span>
       ))}
     </div>
 
     <p class="search-foot">
-      <span><b class="kbd">↑</b><b class="kbd">↓</b> 选择</span>
-      <span><b class="kbd">Enter</b> 打开</span>
-      <span><b class="kbd">Esc</b> 关闭</span>
+      <span><b class="kbd">↑</b><b class="kbd">↓</b> {copy.search_key_select}</span>
+      <span><b class="kbd">Enter</b> {copy.search_key_open}</span>
+      <span><b class="kbd">Esc</b> {copy.search_key_close}</span>
     </p>
   </div>
+
+  <script type="application/json" id="search-client-copy" set:html={JSON.stringify(clientCopy)} />
 </dialog>
 
 <style is:global>
@@ -143,6 +159,7 @@ const typeLabels: { type: string; label: string }[] = [
 
 <script>
   import { escapeHtml, highlightMatches, searchEntries, tokenize } from '../utils/search.mjs';
+  import { fillCopy } from '../utils/copy.mjs';
 
   interface Entry {
     type: 'research' | 'member' | 'news' | 'publication';
@@ -152,19 +169,28 @@ const typeLabels: { type: string; label: string }[] = [
     text: string;
   }
 
-  const TYPE_LABEL: Record<Entry['type'], string> = {
-    research: '研究方向',
-    member: '团队成员',
-    news: '科研新闻',
-    publication: '科研成果',
-  };
-  const MAX_RESULTS = 18;
   const dialog = document.getElementById('site-search') as HTMLDialogElement | null;
   const input = document.getElementById('search-input') as HTMLInputElement | null;
   const list = document.getElementById('search-results') as HTMLUListElement | null;
   const status = document.getElementById('search-status');
   const suggest = document.querySelector<HTMLElement>('.search-suggest');
   if (!dialog || !input || !list) throw new Error('search dialog markup missing');
+
+  // 文案由服务端下发（后台「页面文案 → 站内搜索」）
+  const clientCopy = JSON.parse(document.getElementById('search-client-copy')?.textContent || '{}') as {
+    labels?: Record<string, string>;
+    found?: string;
+    empty?: string;
+    failed?: string;
+    hint?: string;
+  };
+  const TYPE_LABEL: Record<Entry['type'], string> = {
+    research: clientCopy.labels?.research || '研究方向',
+    member: clientCopy.labels?.member || '团队成员',
+    news: clientCopy.labels?.news || '科研新闻',
+    publication: clientCopy.labels?.publication || '科研成果',
+  };
+  const MAX_RESULTS = 18;
 
   let entries: Entry[] = [];
   let indexState: 'idle' | 'loading' | 'ready' | 'failed' = 'idle';
@@ -187,7 +213,7 @@ const typeLabels: { type: string; label: string }[] = [
         indexState = 'ready';
       } catch {
         indexState = 'failed';
-        setStatus('搜索索引加载失败，请刷新页面后重试。');
+        setStatus(clientCopy.failed || '搜索索引加载失败，请刷新页面后重试。');
       }
     })();
     return indexPromise;
@@ -211,8 +237,8 @@ const typeLabels: { type: string; label: string }[] = [
       if (suggest) suggest.hidden = false;
       setStatus(
         indexState === 'failed'
-          ? '搜索索引加载失败，请刷新页面后重试。'
-          : '输入关键词开始搜索，支持按名字、方向、期刊或会议查找。'
+          ? clientCopy.failed || '搜索索引加载失败，请刷新页面后重试。'
+          : clientCopy.hint || ''
       );
       return;
     }
@@ -224,7 +250,7 @@ const typeLabels: { type: string; label: string }[] = [
     if (results.length === 0) {
       list!.hidden = true;
       list!.innerHTML = '';
-      setStatus(`没有找到与「${query}」相关的内容。`);
+      setStatus(fillCopy(clientCopy.empty || '没有找到与「{query}」相关的内容。', { query }));
       input!.setAttribute('aria-expanded', 'false');
       input!.removeAttribute('aria-activedescendant');
       return;
@@ -235,7 +261,7 @@ const typeLabels: { type: string; label: string }[] = [
     results.forEach((entry, i) => {
       if (entry.type !== lastType) {
         lastType = entry.type;
-        html += `<li class="search-group" role="presentation">${TYPE_LABEL[entry.type]}</li>`;
+        html += `<li class="search-group" role="presentation">${escapeHtml(TYPE_LABEL[entry.type] || '')}</li>`;
       }
       html += `<li class="search-item${i === active ? ' is-active' : ''}" id="search-opt-${i}">
         <a href="${escapeHtml(entry.url)}">
@@ -248,7 +274,7 @@ const typeLabels: { type: string; label: string }[] = [
     list!.hidden = false;
     input!.setAttribute('aria-expanded', 'true');
     syncActive();
-    setStatus(`找到 ${results.length} 条结果。`);
+    setStatus(fillCopy(clientCopy.found || '找到 {count} 条结果。', { count: results.length }));
   }
 
   function syncActive() {

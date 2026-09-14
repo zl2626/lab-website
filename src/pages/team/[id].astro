@@ -14,18 +14,20 @@ const { item } = Astro.props;
 // 研究方向标题 -> slug，用于把成员的「所在研究方向」变成可点击的链接
 const areaSlug = new Map((await getResearch()).map((area) => [area.title, area.slug]));
 
-const linkItems = [
-  { key: 'homepage', label: '个人主页' },
-  { key: 'scholar', label: 'Google Scholar' },
-  { key: 'github', label: 'GitHub' },
-  { key: 'dblp', label: 'DBLP' },
-  { key: 'orcid', label: 'ORCID' },
-].filter((l) => Boolean(item.links[l.key]));
-
 // 结构化数据：让搜索引擎把这位成员识别为一个研究者（而不是普通页面）
 const site = await getSite();
+const copy = site.pageCopy;
 const origin = (Astro.site ?? new URL('https://example.com')).origin;
 const portrait = item.photo ? new URL(asset(item.photo), origin).toString() : '';
+
+const linkItems = [
+  { key: 'homepage', label: copy.member_link_homepage },
+  { key: 'scholar', label: copy.member_link_scholar },
+  { key: 'github', label: copy.member_link_github },
+  { key: 'dblp', label: copy.member_link_dblp },
+  { key: 'orcid', label: copy.member_link_orcid },
+].filter((l) => Boolean(item.links[l.key]));
+
 const personSchema = {
   '@type': 'Person',
   '@id': `${origin}${u(`/team/${item.slug}/`)}#person`,
@@ -44,7 +46,7 @@ const personSchema = {
 
 <BaseLayout title={item.name} description={`${item.name} · ${item.role}`} crumb={item.name} schema={personSchema}>
   <section class="section-detail container">
-    <p class="crumb"><a href={u('/team')}>团队成员</a> / {item.name}</p>
+    <p class="crumb"><a href={u('/team')}>{copy.team_title}</a> / {item.name}</p>
 
     <div class="profile">
       <div class="avatar">
@@ -62,16 +64,16 @@ const personSchema = {
         <div class="row meta">
           <span class="tag tag-gold">{item.role}</span>
           {item.title && <span class="muted small">{item.title}</span>}
-          {item.joinYear && <span class="muted small">{item.joinYear} 年加入</span>}
+          {item.joinYear && <span class="muted small">{item.joinYear} {copy.member_join_year_suffix}</span>}
         </div>
         {item.nameEn && <p class="en">{item.nameEn}</p>}
-        {item.nowAt && <p class="now-at"><span class="now-at-label">现在</span>{item.nowAt}</p>}
-        {item.researchFocus && <p class="small">研究方向：{item.researchFocus}</p>}
+        {item.nowAt && <p class="now-at"><span class="now-at-label">{copy.member_now_label}</span>{item.nowAt}</p>}
+        {item.researchFocus && <p class="small">{copy.member_focus_label}：{item.researchFocus}</p>}
 
         {
           item.areas.length > 0 && (
             <div class="block">
-              <h4>所在研究方向</h4>
+              <h4>{copy.member_areas_title}</h4>
               <div class="row tags">
                 {item.areas.map((areaTitle) =>
                   areaSlug.get(areaTitle) ? (
@@ -85,14 +87,14 @@ const personSchema = {
           )
         }
 
-        {item.hobbies.length > 0 && <div class="block"><h4>兴趣爱好</h4><div class="row tags">{item.hobbies.map((h) => <span class="tag tag-muted">{h}</span>)}</div></div>}
-        {item.achievementSummary && <div class="block"><h4>成果产出</h4><p>{item.achievementSummary}</p></div>}
-        {item.email && <p class="small">邮箱：<a href={`mailto:${item.email}`}>{item.email}</a></p>}
+        {item.hobbies.length > 0 && <div class="block"><h4>{copy.member_hobbies_title}</h4><div class="row tags">{item.hobbies.map((h) => <span class="tag tag-muted">{h}</span>)}</div></div>}
+        {item.achievementSummary && <div class="block"><h4>{copy.member_achievements_title}</h4><p>{item.achievementSummary}</p></div>}
+        {item.email && <p class="small">{copy.member_email_label}：<a href={`mailto:${item.email}`}>{item.email}</a></p>}
 
         {
           item.interests.length > 0 && (
             <div class="block">
-              <h4>研究兴趣</h4>
+              <h4>{copy.member_interests_title}</h4>
               <div class="row tags">
                 {item.interests.map((i) => (
                   <span class="tag tag-muted">{i}</span>
@@ -105,7 +107,7 @@ const personSchema = {
         {
           linkItems.length > 0 && (
             <div class="block">
-              <h4>相关链接</h4>
+              <h4>{copy.member_links_title}</h4>
               <div class="row links">
                 {linkItems.map((l) => (
                   <a class="btn btn-ghost sm" href={item.links[l.key]} target="_blank" rel="noopener">

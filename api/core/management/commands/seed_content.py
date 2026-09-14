@@ -20,7 +20,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from core.models import Member, News, Publication, ResearchArea, SiteSetting
+from core.models import HomeSlide, Member, News, Publication, ResearchArea, SiteSetting
 from core.utils import as_list
 
 
@@ -70,6 +70,7 @@ class Command(BaseCommand):
             "publications": self._seed(
                 content_dir / "publications", Publication, self._publication_fields
             ),
+            "home_slides": self._seed_home_slides(content_dir / "research"),
         }
 
         for name, count in counts.items():
@@ -128,6 +129,46 @@ class Command(BaseCommand):
             model.objects.update_or_create(slug=slug, defaults=fields)
             count += 1
         return count
+
+    def _seed_home_slides(self, research_folder: Path) -> int:
+        """首次导入时，把首页轮播落成可编辑的记录。
+
+        首页在没有配置轮播时会自动用「团队合照 + 前两个研究方向」拼接，
+        但那对管理者是不透明的。这里把默认内容写成真实记录，
+        之后就可以在后台自由调整顺序、文案和图片。
+        已经配置过轮播（哪怕只剩一条）时不再覆盖。
+        """
+        if HomeSlide.objects.exists():
+            return 0
+
+        site = SiteSetting.load()
+        slides = [
+            {
+                "title": site.name,
+                "title_en": site.name_en,
+                "summary": site.tagline,
+                "image": site.group_photo,
+                "link": "/team",
+                "link_label": "认识我们的团队",
+                "order": 1,
+            }
+        ]
+        for index, area in enumerate(ResearchArea.objects.order_by("order", "id")[:2], start=2):
+            slides.append(
+                {
+                    "title": area.title,
+                    "title_en": area.title_en,
+                    "summary": area.summary,
+                    "image": area.cover,
+                    "link": f"/research/{area.slug}",
+                    "link_label": "了解研究方向",
+                    "order": index,
+                }
+            )
+
+        for slide in slides:
+            HomeSlide.objects.create(**slide)
+        return len(slides)
 
     # ------------------------------------------------------------------
     def _research_fields(self, front: dict, body: str, stem: str, slug: str) -> dict:

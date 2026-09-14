@@ -15,10 +15,10 @@ from django.db import transaction
 from django.utils.html import format_html
 
 from .ai import AIError, generate_summary
-from .forms import LineListField, LinkListField, MemberLinksField, PAGE_COPY
-from .models import MediaFile, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
+from .forms import LineListField, LinkListField, MemberLinksField, PAGE_COPY, SingleLinkField
+from .models import HomeSlide, MediaFile, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
 from .utils import trigger_deploy
-from .widgets import ImageOrUrlField
+from .widgets import DatalistTextInput, ImageOrUrlField
 
 
 # ---------------------------------------------------------------------------
@@ -100,6 +100,13 @@ class ResearchAreaForm(forms.ModelForm):
 
 class MemberForm(forms.ModelForm):
     photo = ImageOrUrlField(label="照片")
+    role = forms.CharField(
+        label="身份",
+        required=False,
+        widget=DatalistTextInput(options=Member.DEFAULT_ROLES, attrs={"size": 30}),
+        help_text="可以直接选建议里的常用身份，也可以自己填（例如「访问学者」）。"
+        "成员页的分组顺序在「站点设置 → 成员页文案 → 身份分组顺序」里调整。",
+    )
     interests = LineListField(label="研究兴趣")
     hobbies = LineListField(label="兴趣爱好")
     areas = LineListField(
@@ -110,6 +117,18 @@ class MemberForm(forms.ModelForm):
 
     class Meta:
         model = Member
+        fields = "__all__"
+
+
+class HomeSlideForm(forms.ModelForm):
+    image = ImageOrUrlField(label="背景图")
+    link = SingleLinkField(
+        label="按钮链接",
+        help_text="站内路径（如 /research）或完整 http(s) 地址；留空则不显示按钮。",
+    )
+
+    class Meta:
+        model = HomeSlide
         fields = "__all__"
 
 
@@ -141,10 +160,17 @@ class SiteSettingForm(forms.ModelForm):
         help_text="可写申请材料清单、申请流程、常见问题。支持 Markdown：# 小标题、- 列表、**加粗**、[链接](https://…)",
     )
     for key, spec in PAGE_COPY.items():
+        multiline = bool(spec.get("multiline")) or "intro" in key or key.endswith(("text", "note"))
+        if spec.get("help"):
+            help_text = spec["help"]
+        elif "{count}" in spec["default"]:
+            help_text = "支持 {count}，自动替换为当前内容数量。"
+        else:
+            help_text = ""
         locals()[f"copy_{key}"] = (forms.URLField if spec["type"] == "url" else forms.CharField)(
             label=spec["label"], required=False,
-            widget=forms.Textarea(attrs={"rows": 2, "cols": 70}) if "intro" in key or key.endswith("text") else forms.TextInput(attrs={"size": 70}),
-            help_text="支持 {count}，自动替换为当前内容数量。" if "{count}" in spec["default"] else "",
+            widget=forms.Textarea(attrs={"rows": 2, "cols": 70}) if multiline else forms.TextInput(attrs={"size": 70}),
+            help_text=help_text,
         )
 
     class Meta:
@@ -255,6 +281,34 @@ class RobotProjectAdmin(AutoRebuildMixin, admin.ModelAdmin):
         ("文件和演示", {"fields": ("model_url", "model_format", "demo_url"), "description": "填写模型或视频的公开地址。建议使用对象存储、GitHub Releases 或网盘链接；大文件不建议直接放进网站服务器。"}),
         ("详细说明", {"fields": ("body",)}),
         ("发布", {"fields": ("published",)}),
+    )
+
+
+@admin.register(HomeSlide)
+class HomeSlideAdmin(AutoRebuildMixin, admin.ModelAdmin):
+    form = HomeSlideForm
+    list_display = ("title", "link_label", "order", "published", "updated_at")
+    list_editable = ("order", "published")
+    list_filter = ("published",)
+    search_fields = ("title", "title_en", "summary")
+    actions = [rebuild_site]
+    fieldsets = (
+        (
+            "这一屏的内容",
+            {
+                "fields": ("title", "title_en", "summary"),
+                "description": "标题建议不超过 20 字；英文副标题可以留空。",
+            },
+        ),
+        (
+            "背景图",
+            {
+                "fields": ("image",),
+                "description": "建议用横向大图（1600×900 左右）。留空则使用内置的深色渐变背景。",
+            },
+        ),
+        ("按钮", {"fields": ("link", "link_label"), "description": "链接留空则不显示按钮。"}),
+        ("排序与发布", {"fields": ("order", "published")}),
     )
 
 

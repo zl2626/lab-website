@@ -1,6 +1,6 @@
 """把模型转换成前端直接可用的 JSON 结构。"""
 
-from .models import Member, News, Publication, ResearchArea, SiteSetting, RobotProject
+from .models import HomeSlide, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
 from .utils import as_dict, as_list, render_markdown
 
 DEFAULT_NAV = [
@@ -128,10 +128,25 @@ def serialize_robot_project(obj: RobotProject) -> dict:
     return {"slug": obj.slug, "name": obj.name, "summary": obj.summary, "researchFocus": obj.research_focus, "modelUrl": obj.model_url, "modelFormat": obj.model_format, "demoUrl": obj.demo_url, "bodyHtml": render_markdown(obj.body), "updatedAt": obj.updated_at.isoformat()}
 
 
+def serialize_home_slide(obj: HomeSlide) -> dict:
+    return {
+        "slug": f"slide-{obj.pk}",
+        "title": obj.title,
+        "titleEn": obj.title_en,
+        "summary": obj.summary,
+        "image": obj.image,
+        "link": obj.link,
+        "linkLabel": obj.link_label,
+        "order": obj.order,
+        "updatedAt": obj.updated_at.isoformat(),
+    }
+
+
 def serialize_content() -> dict:
     """一次性返回全站内容，构建前端时只需请求一次。"""
     return {
         "site": serialize_site(SiteSetting.load()),
+        "homeSlides": [serialize_home_slide(o) for o in HomeSlide.objects.filter(published=True)],
         "research": [serialize_research(o) for o in ResearchArea.objects.filter(published=True)],
         "members": [serialize_member(o) for o in Member.objects.filter(published=True)],
         "news": [serialize_news(o) for o in News.objects.filter(published=True)],

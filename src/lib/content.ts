@@ -11,6 +11,10 @@ import { marked } from 'marked';
 
 import siteJson from '../data/site.json';
 import pageCopySchema from '../../api/core/page_copy.json';
+import { fillCopy, splitList } from '../utils/copy.mjs';
+
+// 文案工具放在 utils 里（浏览器端脚本也要用），这里转出去方便页面统一从内容层导入
+export { fillCopy, splitList };
 
 const DEFAULT_COPY = Object.fromEntries(Object.entries(pageCopySchema).map(([key, spec]) => [key, spec.default]));
 
@@ -75,6 +79,17 @@ export interface MemberItem {
 
 export interface RobotProjectItem { slug: string; name: string; summary: string; researchFocus: string; modelUrl: string; modelFormat: string; demoUrl: string; bodyHtml: string; }
 
+export interface HomeSlideItem {
+  slug: string;
+  title: string;
+  titleEn: string;
+  summary: string;
+  image: string;
+  link: string;
+  linkLabel: string;
+  order: number;
+}
+
 export interface NewsItem {
   slug: string;
   title: string;
@@ -106,6 +121,7 @@ export interface PublicationItem {
 export interface ContentBundle {
   source: 'api' | 'markdown';
   site: SiteInfo;
+  homeSlides: HomeSlideItem[];
   research: ResearchItem[];
   members: MemberItem[];
   news: NewsItem[];
@@ -268,6 +284,7 @@ async function fetchFromApi(): Promise<ContentBundle | null> {
       return {
         source: 'api',
         site: normalizeSite(data.site as Record<string, unknown>),
+        homeSlides: (Array.isArray(data.homeSlides) ? data.homeSlides : []).map(normalizeHomeSlide),
         research: (Array.isArray(data.research) ? data.research : []).map(normalizeResearch),
         members: (Array.isArray(data.members) ? data.members : []).map(normalizeMember),
         news: (Array.isArray(data.news) ? data.news : []).map(normalizeNews),
@@ -373,6 +390,20 @@ function normalizeRobotProject(raw: unknown): RobotProjectItem {
   return { slug: str(item.slug), name: str(item.name), summary: str(item.summary), researchFocus: str(item.researchFocus), modelUrl: str(item.modelUrl), modelFormat: str(item.modelFormat), demoUrl: str(item.demoUrl), bodyHtml: str(item.bodyHtml) };
 }
 
+function normalizeHomeSlide(raw: unknown): HomeSlideItem {
+  const item = (raw ?? {}) as Record<string, unknown>;
+  return {
+    slug: str(item.slug),
+    title: str(item.title),
+    titleEn: str(item.titleEn),
+    summary: str(item.summary),
+    image: str(item.image),
+    link: str(item.link),
+    linkLabel: str(item.linkLabel),
+    order: num(item.order, 99),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // 数据源二：本地 Markdown（兜底）
 // ---------------------------------------------------------------------------
@@ -458,6 +489,7 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
   return {
     source: 'markdown',
     site: normalizeSite(siteJson as unknown as Record<string, unknown>),
+    homeSlides: [],
     research,
     members,
     news,
@@ -502,3 +534,5 @@ export async function getPublications(): Promise<PublicationItem[]> {
 }
 
 export async function getRobotProjects(): Promise<RobotProjectItem[]> { return (await loadContent()).robotProjects; }
+
+export async function getHomeSlides(): Promise<HomeSlideItem[]> { return (await loadContent()).homeSlides; }

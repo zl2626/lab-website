@@ -4,9 +4,11 @@ import { publicationBibtex } from '../utils/bibtex.mjs';
 
 interface Props {
   item: Pub;
+  /** 界面文案（来自后台「站点设置 → 页面文案」） */
+  copy: Record<string, string>;
 }
 
-const { item } = Astro.props;
+const { item, copy } = Astro.props;
 const bibtex = publicationBibtex(item);
 
 const typeClass: Record<string, string> = {
@@ -26,7 +28,7 @@ const typeClass: Record<string, string> = {
     <div class="row top">
       <span class={`tag ${typeClass[item.type] ?? ''}`}>{item.type}</span>
       {item.venueShort && <span class="tag tag-muted">{item.venueShort}</span>}
-      {item.highlight && <span class="tag tag-gold">★ 精选</span>}
+      {item.highlight && <span class="tag tag-gold">{copy.pub_highlight_tag}</span>}
       {item.area && <span class="area">{item.area}</span>}
     </div>
 
@@ -39,17 +41,17 @@ const typeClass: Record<string, string> = {
         <div class="row links">
           {item.link && (
             <a href={item.link} target="_blank" rel="noopener">
-              原文链接 ↗
+              {copy.pub_link_original} ↗
             </a>
           )}
           {item.pdf && (
             <a href={item.pdf} target="_blank" rel="noopener">
-              PDF ↗
+              {copy.pub_link_pdf} ↗
             </a>
           )}
           {item.code && (
             <a href={item.code} target="_blank" rel="noopener">
-              代码 ↗
+              {copy.pub_link_code} ↗
             </a>
           )}
         </div>
@@ -59,23 +61,30 @@ const typeClass: Record<string, string> = {
     <div class="publication-details">
       {item.abstract && (
         <details>
-          <summary>查看摘要</summary>
+          <summary>{copy.pub_abstract_toggle}</summary>
           <div class="detail-body">
             <p class="abstract">{item.abstract}</p>
           </div>
         </details>
       )}
       <details>
-        <summary>BibTeX 引用</summary>
+        <summary>{copy.pub_bibtex_toggle}</summary>
         <div class="detail-body">
           <pre><code>{bibtex}</code></pre>
           <p class="citation-note">
-            根据本站登记信息生成，引用前请核对原文。
-            <a class="citation-download" href={`data:application/x-bibtex;charset=utf-8,${encodeURIComponent(bibtex)}`} download={`${item.slug}.bib`}>下载 .bib 文件</a>
+            {copy.pub_bibtex_note}
+            <a class="citation-download" href={`data:application/x-bibtex;charset=utf-8,${encodeURIComponent(bibtex)}`} download={`${item.slug}.bib`}>{copy.pub_bibtex_download}</a>
           </p>
         </div>
       </details>
-      <button type="button" class="cite-copy" data-cite-copy aria-live="polite">复制引用</button>
+      <button
+        type="button"
+        class="cite-copy"
+        data-cite-copy
+        data-label-done={copy.pub_copy_done}
+        data-label-failed={copy.pub_copy_failed}
+        aria-live="polite"
+      >{copy.pub_copy_cite}</button>
     </div>
   </div>
 </article>
@@ -92,13 +101,19 @@ const typeClass: Record<string, string> = {
     const bibtex = code?.textContent ?? '';
     if (!bibtex.trim()) return;
 
+    const label = button.dataset.labelDefault || button.textContent || '';
     const ok = await copyText(bibtex);
-    button.textContent = ok ? '已复制 ✓' : '复制失败，请手动选中';
+    button.textContent = ok ? button.dataset.labelDone || label : button.dataset.labelFailed || label;
     button.classList.toggle('is-done', ok);
     window.setTimeout(() => {
-      button.textContent = '复制引用';
+      button.textContent = label;
       button.classList.remove('is-done');
     }, 1800);
+  });
+
+  // 首次渲染时把按钮原始文案记下来，供恢复使用
+  document.querySelectorAll<HTMLButtonElement>('[data-cite-copy]').forEach((button) => {
+    button.dataset.labelDefault = (button.textContent || '').trim();
   });
 </script>
 

@@ -84,9 +84,16 @@ class MemberLinksField(LinkListField):
 
 
 class LineListField(forms.Field):
+    """每行一项的文本列表。
+
+    `allow_empty_lines=False` 用于「不允许空项」的场景（如成员身份分组顺序），
+    这样 `a,,b` 这类漏写会被直接指出，而不是悄悄产生一个空分组。
+    """
+
     widget = forms.Textarea(attrs={"rows": 4, "cols": 60})
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, allow_empty_lines=True, **kwargs):
+        self.allow_empty_lines = allow_empty_lines
         kwargs.setdefault("required", False)
         kwargs.setdefault("help_text", "每行填写一项，无需填写 JSON；也兼容已有 JSON 数组。")
         super().__init__(*args, **kwargs)
@@ -110,4 +117,24 @@ class LineListField(forms.Field):
                 value = value.splitlines()
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
             raise forms.ValidationError("请填写文本列表，每行一项。")
-        return [item.strip() for item in value if item.strip()]
+        cleaned = [item.strip() for item in value]
+        if self.allow_empty_lines:
+            return [item for item in cleaned if item]
+        if any(not item for item in cleaned):
+            raise forms.ValidationError("每一项都不能为空，请删除多余的空行。")
+        return cleaned
+
+
+class SingleLinkField(forms.CharField):
+    """站内路径或完整 http(s) 地址；复用链接列表的同一套校验规则。"""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("max_length", 300)
+        super().__init__(*args, **kwargs)
+
+    def clean(self, value):
+        cleaned = super().clean(value)
+        if cleaned:
+            validate_link(cleaned)
+        return cleaned

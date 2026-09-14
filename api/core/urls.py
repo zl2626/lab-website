@@ -9,6 +9,7 @@ urlpatterns = [
     path("media/<path:path>", views.media, name="media"),
     path("content/", views.content, name="content"),
     path("site/", views.site, name="site"),
+    path("home-slides/", views.home_slide_list, name="home-slide-list"),
     path("research/", views.research_list, name="research-list"),
     path("research/<slug:slug>/", views.research_detail, name="research-detail"),
     path("members/", views.member_list, name="member-list"),

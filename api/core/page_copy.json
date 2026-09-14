@@ -21,7 +21,8 @@
     "group": "首页",
     "label": "近况栏目介绍",
     "default": "论文发表、获奖、学术活动与课题组公告。",
-    "type": "text"
+    "type": "text",
+    "multiline": true
   },
   "home_news_action": {
     "group": "首页",
@@ -29,10 +30,30 @@
     "default": "全部动态",
     "type": "text"
   },
-  "home_join_action": {
+  "home_news_label": {
     "group": "首页",
-    "label": "加入我们入口",
-    "default": "加入我们，开展研究与合作",
+    "label": "近况英文小标",
+    "default": "News",
+    "type": "text"
+  },
+  "home_news_meta": {
+    "group": "首页",
+    "label": "近况占位图副标",
+    "default": "RESEARCH NEWS",
+    "type": "text",
+    "help": "无封面的新闻卡片，在年份下方显示「缩写 · 这段文字」。"
+  },
+  "home_slide_more": {
+    "group": "首页",
+    "label": "轮播按钮默认文字",
+    "default": "了解更多",
+    "type": "text",
+    "help": "后台「首页轮播」里某一屏没填按钮文字时使用。"
+  },
+  "home_news_empty": {
+    "group": "首页",
+    "label": "近况为空时提示",
+    "default": "科研动态整理中，欢迎关注。",
     "type": "text"
   },
   "home_research_title": {
@@ -45,12 +66,25 @@
     "group": "首页",
     "label": "研究栏目介绍",
     "default": "课题组围绕以下方向开展前沿研究，注重理论与实际系统的结合。",
-    "type": "text"
+    "type": "text",
+    "multiline": true
   },
   "home_research_more": {
     "group": "首页",
     "label": "研究栏目按钮",
     "default": "全部方向",
+    "type": "text"
+  },
+  "home_research_label": {
+    "group": "首页",
+    "label": "研究栏目英文小标",
+    "default": "Research directions",
+    "type": "text"
+  },
+  "home_research_empty": {
+    "group": "首页",
+    "label": "研究方向为空时提示",
+    "default": "研究方向整理中。",
     "type": "text"
   },
   "home_publications_title": {
@@ -63,7 +97,8 @@
     "group": "首页",
     "label": "成果栏目介绍",
     "default": "近年来的部分代表性论文与获奖成果。",
-    "type": "text"
+    "type": "text",
+    "multiline": true
   },
   "home_publications_more": {
     "group": "首页",
@@ -71,6 +106,49 @@
     "default": "完整成果列表",
     "type": "text"
   },
+  "home_publications_label": {
+    "group": "首页",
+    "label": "成果栏目英文小标",
+    "default": "Selected publications",
+    "type": "text"
+  },
+  "home_about_title": {
+    "group": "首页",
+    "label": "关于我们标题",
+    "default": "关于我们",
+    "type": "text"
+  },
+  "home_about_label": {
+    "group": "首页",
+    "label": "关于我们英文小标",
+    "default": "About us",
+    "type": "text"
+  },
+  "home_stat_research": {
+    "group": "首页",
+    "label": "统计项：研究方向",
+    "default": "研究方向",
+    "type": "text"
+  },
+  "home_stat_members": {
+    "group": "首页",
+    "label": "统计项：团队成员",
+    "default": "团队成员",
+    "type": "text"
+  },
+  "home_stat_publications": {
+    "group": "首页",
+    "label": "统计项：科研成果",
+    "default": "科研成果",
+    "type": "text"
+  },
+  "home_join_action": {
+    "group": "首页",
+    "label": "加入我们入口",
+    "default": "加入我们，开展研究与合作",
+    "type": "text"
+  },
+
   "research_title": {
     "group": "研究方向页",
     "label": "页面标题",
@@ -81,6 +159,25 @@
     "group": "研究方向页",
     "label": "页面介绍",
     "default": "课题组围绕以下前沿方向开展系统性研究，点击卡片可查看每个方向的具体内容与相关工作。",
+    "type": "text",
+    "multiline": true
+  },
+  "research_card_action": {
+    "group": "研究方向页",
+    "label": "卡片按钮",
+    "default": "查看详情",
+    "type": "text"
+  },
+  "research_empty": {
+    "group": "研究方向页",
+    "label": "列表为空时提示",
+    "default": "暂无研究方向内容。",
+    "type": "text"
+  },
+  "research_members": {
+    "group": "研究方向页",
+    "label": "本方向成员标题",
+    "default": "本方向成员",
     "type": "text"
   },
   "research_others": {
@@ -95,6 +192,7 @@
     "default": "本方向相关工作",
     "type": "text"
   },
+
   "team_title": {
     "group": "成员页",
     "label": "页面标题",
@@ -105,8 +203,113 @@
     "group": "成员页",
     "label": "页面介绍",
     "default": "课题组现有成员 {count} 人，涵盖导师、博士后、研究生与本科生等不同阶段。",
+    "type": "text",
+    "multiline": true
+  },
+  "team_roles": {
+    "group": "成员页",
+    "label": "身份分组顺序",
+    "default": "导师,博士后,博士生,硕士生,本科生,科研助理,校友",
+    "type": "text",
+    "help": "用逗号分隔。成员页按这个顺序分组展示；成员填写的身份不在列表里时，统一归到下一项「其他成员分组名称」。"
+  },
+  "team_other_group": {
+    "group": "成员页",
+    "label": "其他成员分组名称",
+    "default": "其他成员",
     "type": "text"
   },
+  "team_empty": {
+    "group": "成员页",
+    "label": "列表为空时提示",
+    "default": "暂无成员信息。",
+    "type": "text"
+  },
+  "member_now_label": {
+    "group": "成员页",
+    "label": "去向标签",
+    "default": "现在",
+    "type": "text"
+  },
+  "member_join_year_suffix": {
+    "group": "成员页",
+    "label": "加入年份后缀",
+    "default": "年加入",
+    "type": "text"
+  },
+  "member_focus_label": {
+    "group": "成员页",
+    "label": "研究方向标签",
+    "default": "研究方向",
+    "type": "text"
+  },
+  "member_areas_title": {
+    "group": "成员页",
+    "label": "区块：所在研究方向",
+    "default": "所在研究方向",
+    "type": "text"
+  },
+  "member_interests_title": {
+    "group": "成员页",
+    "label": "区块：研究兴趣",
+    "default": "研究兴趣",
+    "type": "text"
+  },
+  "member_hobbies_title": {
+    "group": "成员页",
+    "label": "区块：兴趣爱好",
+    "default": "兴趣爱好",
+    "type": "text"
+  },
+  "member_achievements_title": {
+    "group": "成员页",
+    "label": "区块：成果产出",
+    "default": "成果产出",
+    "type": "text"
+  },
+  "member_links_title": {
+    "group": "成员页",
+    "label": "区块：相关链接",
+    "default": "相关链接",
+    "type": "text"
+  },
+  "member_email_label": {
+    "group": "成员页",
+    "label": "邮箱标签",
+    "default": "邮箱",
+    "type": "text"
+  },
+  "member_link_homepage": {
+    "group": "成员页",
+    "label": "链接名：主页",
+    "default": "个人主页",
+    "type": "text"
+  },
+  "member_link_scholar": {
+    "group": "成员页",
+    "label": "链接名：Scholar",
+    "default": "Google Scholar",
+    "type": "text"
+  },
+  "member_link_github": {
+    "group": "成员页",
+    "label": "链接名：GitHub",
+    "default": "GitHub",
+    "type": "text"
+  },
+  "member_link_dblp": {
+    "group": "成员页",
+    "label": "链接名：DBLP",
+    "default": "DBLP",
+    "type": "text"
+  },
+  "member_link_orcid": {
+    "group": "成员页",
+    "label": "链接名：ORCID",
+    "default": "ORCID",
+    "type": "text"
+  },
+
   "news_title": {
     "group": "新闻页",
     "label": "页面标题",
@@ -117,8 +320,65 @@
     "group": "新闻页",
     "label": "页面介绍",
     "default": "论文发表、科研获奖、学术报告、组内活动与招生公告。",
+    "type": "text",
+    "multiline": true
+  },
+  "news_tag_all": {
+    "group": "新闻页",
+    "label": "标签筛选：全部",
+    "default": "全部",
     "type": "text"
   },
+  "news_default_tag": {
+    "group": "新闻页",
+    "label": "默认标签",
+    "default": "科研动态",
+    "type": "text",
+    "help": "新闻没有填标签时，列表与首页卡片上显示的兜底标签。"
+  },
+  "news_pinned": {
+    "group": "新闻页",
+    "label": "置顶标记",
+    "default": "置顶",
+    "type": "text"
+  },
+  "news_count_unit": {
+    "group": "新闻页",
+    "label": "计数单位",
+    "default": "条",
+    "type": "text"
+  },
+  "news_prev": {
+    "group": "新闻页",
+    "label": "上一条",
+    "default": "上一条",
+    "type": "text"
+  },
+  "news_next": {
+    "group": "新闻页",
+    "label": "下一条",
+    "default": "下一条",
+    "type": "text"
+  },
+  "news_back": {
+    "group": "新闻页",
+    "label": "返回列表按钮",
+    "default": "返回新闻列表",
+    "type": "text"
+  },
+  "news_empty": {
+    "group": "新闻页",
+    "label": "列表为空时提示",
+    "default": "暂无新闻。",
+    "type": "text"
+  },
+  "news_empty_tag": {
+    "group": "新闻页",
+    "label": "标签筛选为空时提示",
+    "default": "没有符合该标签的新闻。",
+    "type": "text"
+  },
+
   "publications_title": {
     "group": "成果页",
     "label": "页面标题",
@@ -129,8 +389,216 @@
     "group": "成果页",
     "label": "页面介绍",
     "default": "课题组近年发表的论文、专利、专著与获奖成果，共 {count} 项。",
+    "type": "text",
+    "multiline": true
+  },
+  "pub_filter_keyword": {
+    "group": "成果页",
+    "label": "筛选：关键词标题",
+    "default": "关键词",
     "type": "text"
   },
+  "pub_filter_placeholder": {
+    "group": "成果页",
+    "label": "搜索框提示语",
+    "default": "搜索标题、作者、期刊或会议",
+    "type": "text"
+  },
+  "pub_filter_year": {
+    "group": "成果页",
+    "label": "筛选：年份",
+    "default": "年份",
+    "type": "text"
+  },
+  "pub_filter_year_all": {
+    "group": "成果页",
+    "label": "筛选：全部年份",
+    "default": "全部年份",
+    "type": "text"
+  },
+  "pub_filter_type": {
+    "group": "成果页",
+    "label": "筛选：成果类型",
+    "default": "成果类型",
+    "type": "text"
+  },
+  "pub_filter_type_all": {
+    "group": "成果页",
+    "label": "筛选：全部类型",
+    "default": "全部类型",
+    "type": "text"
+  },
+  "pub_filter_area": {
+    "group": "成果页",
+    "label": "筛选：研究方向",
+    "default": "研究方向",
+    "type": "text"
+  },
+  "pub_filter_area_all": {
+    "group": "成果页",
+    "label": "筛选：全部方向",
+    "default": "全部方向",
+    "type": "text"
+  },
+  "pub_filter_reset": {
+    "group": "成果页",
+    "label": "清除筛选按钮",
+    "default": "清除筛选",
+    "type": "text"
+  },
+  "pub_export": {
+    "group": "成果页",
+    "label": "导出按钮",
+    "default": "导出筛选结果 (.bib)",
+    "type": "text"
+  },
+  "pub_export_hint": {
+    "group": "成果页",
+    "label": "导出按钮说明",
+    "default": "把当前筛选出的成果导出为一个 .bib 文件，可直接导入 Zotero / EndNote / BibDesk",
+    "type": "text",
+    "multiline": true
+  },
+  "pub_export_done": {
+    "group": "成果页",
+    "label": "导出成功提示",
+    "default": "已导出 {count} 条 ✓",
+    "type": "text",
+    "help": "支持 {count}，自动替换为导出条数。"
+  },
+  "pub_export_empty": {
+    "group": "成果页",
+    "label": "无可导出内容提示",
+    "default": "当前没有可导出的成果",
+    "type": "text"
+  },
+  "pub_export_header": {
+    "group": "成果页",
+    "label": "导出文件开头注释",
+    "default": "% {site} 科研成果导出\n% 导出时间：{date}，共 {count} 条\n% 引用前请与原文核对。",
+    "type": "text",
+    "multiline": true,
+    "help": "支持 {site}（课题组名称）、{date}（导出日期）、{count}（条数）。写在导出的 .bib 文件开头，以 % 开头表示注释。"
+  },
+  "pub_stat_total": {
+    "group": "成果页",
+    "label": "统计：成果总数",
+    "default": "成果总数",
+    "type": "text"
+  },
+  "pub_stat_span": {
+    "group": "成果页",
+    "label": "统计：年份跨度",
+    "default": "年份跨度",
+    "type": "text"
+  },
+  "pub_unit": {
+    "group": "成果页",
+    "label": "计数单位",
+    "default": "项",
+    "type": "text"
+  },
+  "pub_result_initial": {
+    "group": "成果页",
+    "label": "初始结果条数文案",
+    "default": "共 {count} 项成果",
+    "type": "text",
+    "help": "支持 {count}。"
+  },
+  "pub_result_count": {
+    "group": "成果页",
+    "label": "筛选后条数文案",
+    "default": "显示 {shown} / {total} 项成果",
+    "type": "text",
+    "help": "支持 {shown} 与 {total}。"
+  },
+  "pub_year_count": {
+    "group": "成果页",
+    "label": "年份分组计数",
+    "default": "{count} 项",
+    "type": "text",
+    "help": "支持 {count}。"
+  },
+  "pub_highlight_tag": {
+    "group": "成果页",
+    "label": "精选标记",
+    "default": "★ 精选",
+    "type": "text"
+  },
+  "pub_link_original": {
+    "group": "成果页",
+    "label": "链接：原文",
+    "default": "原文链接",
+    "type": "text"
+  },
+  "pub_link_pdf": {
+    "group": "成果页",
+    "label": "链接：PDF",
+    "default": "PDF",
+    "type": "text"
+  },
+  "pub_link_code": {
+    "group": "成果页",
+    "label": "链接：代码",
+    "default": "代码",
+    "type": "text"
+  },
+  "pub_abstract_toggle": {
+    "group": "成果页",
+    "label": "折叠：摘要",
+    "default": "查看摘要",
+    "type": "text"
+  },
+  "pub_bibtex_toggle": {
+    "group": "成果页",
+    "label": "折叠：引用",
+    "default": "BibTeX 引用",
+    "type": "text"
+  },
+  "pub_bibtex_download": {
+    "group": "成果页",
+    "label": "下载引用文件",
+    "default": "下载 .bib 文件",
+    "type": "text"
+  },
+  "pub_bibtex_note": {
+    "group": "成果页",
+    "label": "引用说明",
+    "default": "根据本站登记信息生成，引用前请核对原文。",
+    "type": "text",
+    "multiline": true
+  },
+  "pub_copy_cite": {
+    "group": "成果页",
+    "label": "复制引用按钮",
+    "default": "复制引用",
+    "type": "text"
+  },
+  "pub_copy_done": {
+    "group": "成果页",
+    "label": "复制成功提示",
+    "default": "已复制 ✓",
+    "type": "text"
+  },
+  "pub_copy_failed": {
+    "group": "成果页",
+    "label": "复制失败提示",
+    "default": "复制失败，请手动选中",
+    "type": "text"
+  },
+  "pub_empty": {
+    "group": "成果页",
+    "label": "列表为空时提示",
+    "default": "科研成果整理中，欢迎稍后查看。",
+    "type": "text"
+  },
+  "pub_empty_filter": {
+    "group": "成果页",
+    "label": "筛选无结果提示",
+    "default": "没有符合条件的成果。",
+    "type": "text"
+  },
+
   "contact_title": {
     "group": "联系页",
     "label": "页面标题",
@@ -141,12 +609,19 @@
     "group": "联系页",
     "label": "页面介绍",
     "default": "欢迎对课题组研究感兴趣的同学、老师与合作方与我们联系。",
-    "type": "text"
+    "type": "text",
+    "multiline": true
   },
   "contact_address_label": {
     "group": "联系页",
     "label": "地址标题",
     "default": "通讯地址",
+    "type": "text"
+  },
+  "contact_postcode_prefix": {
+    "group": "联系页",
+    "label": "邮编前缀",
+    "default": "邮编",
     "type": "text"
   },
   "contact_email_label": {
@@ -161,23 +636,11 @@
     "default": "联系电话",
     "type": "text"
   },
-  "contact_map_title": {
+  "contact_join_eyebrow": {
     "group": "联系页",
-    "label": "位置标题",
-    "default": "校园位置",
+    "label": "招生区块小标",
+    "default": "Join Us",
     "type": "text"
-  },
-  "contact_map_text": {
-    "group": "联系页",
-    "label": "到访说明",
-    "default": "",
-    "type": "text"
-  },
-  "contact_map_url": {
-    "group": "联系页",
-    "label": "地图链接",
-    "default": "",
-    "type": "url"
   },
   "contact_apply_label": {
     "group": "联系页",
@@ -191,6 +654,181 @@
     "default": "申请加入课题组",
     "type": "text"
   },
+  "contact_map_title": {
+    "group": "联系页",
+    "label": "位置标题",
+    "default": "校园位置",
+    "type": "text"
+  },
+  "contact_map_text": {
+    "group": "联系页",
+    "label": "到访说明",
+    "default": "",
+    "type": "text",
+    "multiline": true
+  },
+  "contact_map_url": {
+    "group": "联系页",
+    "label": "地图链接",
+    "default": "",
+    "type": "url"
+  },
+  "contact_map_action": {
+    "group": "联系页",
+    "label": "地图按钮",
+    "default": "在地图中查看",
+    "type": "text"
+  },
+
+  "platform_title": {
+    "group": "科研平台页",
+    "label": "页面标题",
+    "default": "科研平台",
+    "type": "text"
+  },
+  "platform_intro": {
+    "group": "科研平台页",
+    "label": "页面介绍",
+    "default": "查看实验室的机器人项目、3D 模型与运行演示。",
+    "type": "text",
+    "multiline": true
+  },
+  "platform_note_title": {
+    "group": "科研平台页",
+    "label": "说明区标题",
+    "default": "机器人项目",
+    "type": "text"
+  },
+  "platform_note_text": {
+    "group": "科研平台页",
+    "label": "说明区文字",
+    "default": "模型可用于展示、下载或继续建模；视频用于记录真实运行效果。",
+    "type": "text",
+    "multiline": true
+  },
+  "platform_model_action": {
+    "group": "科研平台页",
+    "label": "按钮：看模型",
+    "default": "查看 3D 模型",
+    "type": "text"
+  },
+  "platform_demo_action": {
+    "group": "科研平台页",
+    "label": "按钮：看演示",
+    "default": "观看运行演示",
+    "type": "text"
+  },
+  "platform_empty_title": {
+    "group": "科研平台页",
+    "label": "空状态标题",
+    "default": "添加第一个机器人项目",
+    "type": "text"
+  },
+  "platform_empty_text": {
+    "group": "科研平台页",
+    "label": "空状态说明",
+    "default": "在后台「科研平台·机器人项目」里填写项目名称、模型地址和演示视频即可。",
+    "type": "text",
+    "multiline": true
+  },
+  "platform_empty_action": {
+    "group": "科研平台页",
+    "label": "空状态按钮",
+    "default": "添加机器人项目",
+    "type": "text"
+  },
+
+  "search_label": {
+    "group": "站内搜索",
+    "label": "顶栏按钮文字",
+    "default": "搜索",
+    "type": "text"
+  },
+  "search_placeholder": {
+    "group": "站内搜索",
+    "label": "输入框提示语",
+    "default": "搜索研究方向、成员、新闻或成果…",
+    "type": "text"
+  },
+  "search_hint": {
+    "group": "站内搜索",
+    "label": "初始提示",
+    "default": "输入关键词开始搜索，支持按名字、方向、期刊或会议查找。",
+    "type": "text",
+    "multiline": true
+  },
+  "search_found": {
+    "group": "站内搜索",
+    "label": "结果条数",
+    "default": "找到 {count} 条结果。",
+    "type": "text",
+    "help": "支持 {count}。"
+  },
+  "search_empty": {
+    "group": "站内搜索",
+    "label": "无结果提示",
+    "default": "没有找到与「{query}」相关的内容。",
+    "type": "text",
+    "help": "支持 {query}。"
+  },
+  "search_failed": {
+    "group": "站内搜索",
+    "label": "加载失败提示",
+    "default": "搜索索引加载失败，请刷新页面后重试。",
+    "type": "text",
+    "multiline": true
+  },
+  "search_key_select": {
+    "group": "站内搜索",
+    "label": "快捷键说明：选择",
+    "default": "选择",
+    "type": "text"
+  },
+  "search_key_open": {
+    "group": "站内搜索",
+    "label": "快捷键说明：打开",
+    "default": "打开",
+    "type": "text"
+  },
+  "search_key_close": {
+    "group": "站内搜索",
+    "label": "快捷键说明：关闭",
+    "default": "关闭",
+    "type": "text"
+  },
+
+  "error_title": {
+    "group": "页面提示",
+    "label": "404 标题",
+    "default": "没有找到这个页面",
+    "type": "text"
+  },
+  "error_text": {
+    "group": "页面提示",
+    "label": "404 说明",
+    "default": "链接可能已经失效，或者地址拼写有误。可以直接在站内搜索，或从下面的入口继续浏览。",
+    "type": "text",
+    "multiline": true
+  },
+  "error_search_action": {
+    "group": "页面提示",
+    "label": "404 搜索按钮",
+    "default": "搜索站内内容",
+    "type": "text"
+  },
+  "error_home_action": {
+    "group": "页面提示",
+    "label": "404 返回按钮",
+    "default": "返回首页",
+    "type": "text"
+  },
+  "error_nav_label": {
+    "group": "页面提示",
+    "label": "404 栏目导航标题",
+    "default": "主要栏目",
+    "type": "text"
+  },
+
   "footer_nav_title": {
     "group": "页脚",
     "label": "导航标题",

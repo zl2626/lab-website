@@ -18,8 +18,8 @@ const research = await getResearch();
 
   <section class="section container">
     <div class="grid auto-grid">
-      {research.map((item, i) => <ResearchCard item={item} index={i} />)}
+      {research.map((item, i) => <ResearchCard item={item} index={i} copy={copy} />)}
     </div>
-    {research.length === 0 && <p class="muted">暂无研究方向内容。</p>}
+    {research.length === 0 && <p class="muted">{copy.research_empty}</p>}
   </section>
 </BaseLayout>

@@ -39,14 +39,14 @@ class LabAdminSite(admin.AdminSite):
         return redirect("admin:index")
 
     def index(self, request, extra_context=None):
-        from .models import Member, News, Publication, ResearchArea, RobotProject, SiteSetting
+        from .models import HomeSlide, Member, News, Publication, ResearchArea, RobotProject, SiteSetting
 
         cards = []
         site_setting = self._registry.get(SiteSetting)
         if site_setting and site_setting.has_view_or_change_permission(request):
             setting = SiteSetting.load()
             cards.append({
-                "label": "首页设置",
+                "label": "站点设置与页面文案",
                 "total": 1,
                 "published": 1,
                 "drafts": 0,
@@ -56,7 +56,7 @@ class LabAdminSite(admin.AdminSite):
             })
         recent = []
         name_models = (Member, RobotProject)
-        for model in (ResearchArea, Member, News, Publication, RobotProject):
+        for model in (HomeSlide, ResearchArea, Member, News, Publication, RobotProject):
             model_admin = self._registry[model]
             if not model_admin.has_view_or_change_permission(request):
                 continue

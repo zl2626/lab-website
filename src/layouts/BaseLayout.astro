@@ -156,7 +156,7 @@ const jsonLd = { '@context': 'https://schema.org', '@graph': graph };
     </main>
     <Footer site={site} />
 
-    <SearchDialog />
+    <SearchDialog copy={site.pageCopy} />
 
     <button id="back-to-top" class="back-to-top" type="button" aria-label="回到页面顶部" hidden>
       <span aria-hidden="true">↑</span>

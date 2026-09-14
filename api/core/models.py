@@ -43,6 +43,8 @@ class Member(Publishable):
     """团队成员。"""
 
     class Role(models.TextChoices):
+        """常用身份的默认取值。真正的 role 字段不限制取值，这里只用于提示和默认排序。"""
+
         PI = "导师", "导师"
         POSTDOC = "博士后", "博士后"
         PHD = "博士生", "博士生"
@@ -51,10 +53,19 @@ class Member(Publishable):
         ASSISTANT = "科研助理", "科研助理"
         ALUMNI = "校友", "校友"
 
+    DEFAULT_ROLES = [value for value, _ in Role.choices]
+
     slug = models.SlugField("URL 文件名", max_length=80, unique=True, help_text="拼音或英文，如 zhang-wei")
     name = models.CharField("姓名", max_length=60)
     name_en = models.CharField("英文名 / 拼音", max_length=120, blank=True)
-    role = models.CharField("身份", max_length=20, choices=Role.choices, default=Role.PHD)
+    role = models.CharField(
+        "身份",
+        max_length=30,
+        blank=True,
+        default=Role.PHD,
+        help_text="常用取值见输入框建议；也可以自己填，例如「访问学者」「联合培养博士」。"
+        "成员页的分组顺序在「站点设置 → 成员页文案 → 身份分组顺序」里调整。",
+    )
     title = models.CharField("职称 / 年级", max_length=120, blank=True)
     order = models.IntegerField("组内排序", default=99, help_text="数字越小越靠前")
     photo = models.CharField("照片路径", max_length=300, blank=True, help_text="如 /images/team/xxx.jpg；留空则显示姓名首字头像")
@@ -173,6 +184,35 @@ class RobotProject(Publishable):
 
     def __str__(self) -> str:
         return self.name
+
+
+class HomeSlide(Publishable):
+    """首页大图轮播的每一屏。
+
+    后台没有配置任何轮播时，首页会回退到「团队合照 + 前两个研究方向」的自动拼接，
+    因此老站点不配也能正常显示。
+    """
+
+    title = models.CharField("标题", max_length=200)
+    title_en = models.CharField("英文副标题", max_length=300, blank=True, help_text="显示在中文标题下方，可留空")
+    summary = models.TextField("说明文字", blank=True, help_text="一两句话介绍这一屏在讲什么")
+    image = models.CharField("背景图", max_length=500, blank=True, help_text="建议横向大图；留空则使用内置渐变背景")
+    link = models.CharField(
+        "按钮链接",
+        max_length=300,
+        blank=True,
+        help_text="站内路径（如 /research）或完整 http(s) 地址；留空则不显示按钮",
+    )
+    link_label = models.CharField("按钮文字", max_length=60, blank=True, help_text="留空则用「了解更多」")
+    order = models.IntegerField("排序", default=99, help_text="数字越小越靠前")
+
+    class Meta:
+        verbose_name = "首页轮播"
+        verbose_name_plural = "首页轮播"
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return self.title
 
 
 class SiteSetting(models.Model):

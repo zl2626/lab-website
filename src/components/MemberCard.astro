@@ -5,9 +5,11 @@ import { initials } from '../utils/format';
 
 interface Props {
   item: MemberItem;
+  /** 界面文案（来自后台「站点设置 → 页面文案」），由页面传入 */
+  copy: Record<string, string>;
 }
 
-const { item } = Astro.props;
+const { item, copy } = Astro.props;
 
 const roleClass: Record<string, string> = {
   导师: 'tag-gold',
@@ -38,8 +40,8 @@ const roleClass: Record<string, string> = {
     </span>
     {item.nameEn && <span class="en">{item.nameEn}</span>}
     {item.title && <span class="meta">{item.title}</span>}
-    {item.nowAt && <span class="now-at"><b>现在</b>{item.nowAt}</span>}
-    {item.researchFocus && <span class="meta">研究方向：{item.researchFocus}</span>}
+    {item.nowAt && <span class="now-at"><b>{copy.member_now_label}</b>{item.nowAt}</span>}
+    {item.researchFocus && <span class="meta">{copy.member_focus_label}：{item.researchFocus}</span>}
     {
       item.interests.length > 0 && (
         <span class="chips">

@@ -10,6 +10,9 @@ const news = await getNews();
 
 const years = groupByYear(news, (item) => Number(item.date.slice(0, 4)) || 0);
 const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
+
+// 分组的条数文案在筛选时由脚本更新，把单位与空状态文案下发给客户端
+const clientCopy = { countUnit: copy.news_count_unit, emptyTag: copy.news_empty_tag };
 ---
 
 <BaseLayout title={copy.news_title} description={`${site.name}的科研新闻与动态`}>
@@ -20,7 +23,7 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
       {
         allTags.length > 0 && (
           <div class="row filters" id="tag-filters">
-            <button class="chip active" aria-pressed="true">全部</button>
+            <button class="chip active" aria-pressed="true">{copy.news_tag_all}</button>
             {allTags.map((t) => (
               <button class="chip" data-tag={t} aria-pressed="false">#{t}</button>
             ))}
@@ -36,21 +39,23 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
         <div class="year-block">
           <div class="year-head">
             <h2>{year}</h2>
-            <span class="muted small year-count">{items.length} 条</span>
+            <span class="muted small year-count">{items.length} {copy.news_count_unit}</span>
           </div>
           <div class="grid grid-3">
             {items.map((item, i) => (
               <div class="news-cell" data-tags={JSON.stringify(item.tags)}>
-                <NewsCard item={item} index={i} />
+                <NewsCard item={item} index={i} copy={copy} />
               </div>
             ))}
           </div>
         </div>
       ))
     }
-    {news.length === 0 && <p class="muted">暂无新闻。</p>}
-    <p id="no-result" class="muted" hidden>没有符合该标签的新闻。</p>
+    {news.length === 0 && <p class="muted">{copy.news_empty}</p>}
+    <p id="no-result" class="muted" hidden>{copy.news_empty_tag}</p>
   </section>
+
+  <script type="application/json" id="news-client-copy" set:html={JSON.stringify(clientCopy)} />
 </BaseLayout>
 
 <style>
@@ -69,9 +74,16 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
 
 <script>
   import { matchesNewsTag } from '../../utils/news-filter.mjs';
+
   const filters = document.getElementById('tag-filters');
   const cells = Array.from(document.querySelectorAll<HTMLElement>('.news-cell'));
   const empty = document.getElementById('no-result');
+
+  // 文案由页面下发，避免把界面文字写死在脚本里
+  const clientCopy = JSON.parse(document.getElementById('news-client-copy')?.textContent || '{}') as {
+    countUnit?: string;
+  };
+  const countUnit = clientCopy.countUnit || '条';
 
   filters?.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip');
@@ -92,7 +104,7 @@ const allTags = [...new Set(news.flatMap((item) => item.tags))].sort();
       const total = Array.from(block.querySelectorAll<HTMLElement>('.news-cell'))
         .filter((cell) => cell.style.display !== 'none').length;
       block.hidden = total === 0;
-      block.querySelector('.year-count')!.textContent = `${total} 条`;
+      block.querySelector('.year-count')!.textContent = `${total} ${countUnit}`;
     });
     if (empty) empty.hidden = visible > 0;
   });

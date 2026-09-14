@@ -19,6 +19,7 @@ const newer = index > 0 ? all[index - 1] : null;
 
 // 结构化数据：帮助搜索引擎把它当作一条新闻而不是普通静态页
 const site = await getSite();
+const copy = site.pageCopy;
 const origin = (Astro.site ?? new URL('https://example.com')).origin;
 const cover = item.cover ? new URL(asset(item.cover), origin).toString() : '';
 const newsSchema = {
@@ -41,11 +42,11 @@ const newsSchema = {
 
 <BaseLayout title={item.title} description={item.summary || undefined} crumb={item.title} schema={newsSchema}>
   <article class="section-detail container-narrow">
-    <p class="crumb"><a href={u('/news')}>科研新闻</a></p>
+    <p class="crumb"><a href={u('/news')}>{copy.news_title}</a></p>
     <header>
       <div class="row meta">
         <time datetime={item.date}>{formatDate(item.date)}</time>
-        {item.pinned && <span class="tag tag-gold">置顶</span>}
+        {item.pinned && <span class="tag tag-gold">{copy.news_pinned}</span>}
         {item.tags.map((t) => <span class="tag tag-muted">#{t}</span>)}
       </div>
       <h1>{item.title}</h1>
@@ -60,7 +61,7 @@ const newsSchema = {
       {
         older ? (
           <a href={u(`/news/${older.slug}`)}>
-            <span class="dir">← 上一条</span>
+            <span class="dir">← {copy.news_prev}</span>
             <span class="t">{older.title}</span>
           </a>
         ) : (
@@ -70,7 +71,7 @@ const newsSchema = {
       {
         newer ? (
           <a class="next" href={u(`/news/${newer.slug}`)}>
-            <span class="dir">下一条 →</span>
+            <span class="dir">{copy.news_next} →</span>
             <span class="t">{newer.title}</span>
           </a>
         ) : (
@@ -80,7 +81,7 @@ const newsSchema = {
     </nav>
 
     <hr class="divider" style="margin:34px 0 22px" />
-    <a class="btn btn-ghost" href={u('/news')}>← 返回新闻列表</a>
+    <a class="btn btn-ghost" href={u('/news')}>← {copy.news_back}</a>
   </article>
 </BaseLayout>
 

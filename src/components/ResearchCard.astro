@@ -5,9 +5,11 @@ import { asset, u } from '../utils/url';
 interface Props {
   item: ResearchItem;
   index?: number;
+  /** 界面文案（来自后台「站点设置 → 页面文案」） */
+  copy: Record<string, string>;
 }
 
-const { item, index = 0 } = Astro.props;
+const { item, index = 0, copy } = Astro.props;
 ---
 
 <a
@@ -29,7 +31,7 @@ const { item, index = 0 } = Astro.props;
       </div>
     )
   }
-  <span class="more">查看详情 →</span>
+  <span class="more">{copy.research_card_action} →</span>
 </a>
 
 <style>
