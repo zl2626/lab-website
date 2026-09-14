@@ -253,18 +253,24 @@ class AdminCoverageTests(TestCase):
     # 有意不在后台直接编辑的字段：page_copy 由逐条文案字段（copy_xxx）代理
     INTENTIONALLY_HIDDEN = {"SiteSetting": {"page_copy"}}
 
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser("coverage", "", "test-password")
+        self.client.force_login(self.user)
+
     def _request(self):
         from django.test import RequestFactory
         request = RequestFactory().get("/admin/")
-        request.user = get_user_model().objects.create_superuser("coverage", "", "pw")
+        request.user = self.user
         return request
 
     def test_every_model_field_is_reachable_from_admin(self):
         from django.contrib import admin as dj_admin
-        from .models import HomeSlide, Member, News, Publication, ResearchArea, RobotProject, SiteSetting
+        from .models import (
+            HomeSlide, Member, News, Project, Publication, ResearchArea, RobotProject, SiteSetting,
+        )
 
         request = self._request()
-        models = (HomeSlide, ResearchArea, Member, News, Publication, RobotProject, SiteSetting)
+        models = (HomeSlide, ResearchArea, Member, News, Publication, Project, RobotProject, SiteSetting)
         for model in models:
             with self.subTest(model=model.__name__):
                 admin_class = dj_admin.site._registry[model]
@@ -319,6 +325,40 @@ class AdminCoverageTests(TestCase):
         self.assertEqual([slide["title"] for slide in slides], ["第一屏"])
         self.assertEqual(slides[0]["link"], "/team")
         self.assertEqual(slides[0]["linkLabel"], "看看团队")
+
+    def test_projects_are_manageable_and_link_members(self):
+        """科研项目要在后台维护，并能把参与成员链接到成员页。"""
+        from django.contrib import admin as dj_admin
+        from .models import Member, Project
+
+        self.assertIn(Project, dj_admin.site._registry)
+        response = self.client.post(reverse("admin:core_project_add"), {
+            "slug": "project-test", "name": "测试项目", "category": "基金项目",
+            "sponsor": "测试资助机构", "code": "TEST-001", "role": "主持",
+            "leader": "张伟", "members": "张伟\n李娜", "start_year": "2025",
+            "status": "在研", "order": "1", "published": "on",
+        })
+        # 302 可能是「保存成功」，也可能是「没登录被踢回登录页」，必须区分开
+        if response.status_code != 302:
+            self.fail(f"后台保存失败：{dict(response.context['adminform'].form.errors)}")
+        self.assertTrue(Project.objects.filter(slug="project-test").exists())
+
+        project = Project.objects.get(slug="project-test")
+        self.assertEqual(project.members, ["张伟", "李娜"])
+        self.assertEqual(project.start_year, 2025)
+
+        # 参与成员与成员页的姓名一致时，前端才能生成链接 —— 这里校验接口给出的原始数据
+        payload = self.client.get("/api/content/").json()["projects"][0]
+        self.assertEqual(payload["name"], "测试项目")
+        self.assertEqual(payload["members"], ["张伟", "李娜"])
+        self.assertEqual(payload["startYear"], 2025)
+        self.assertEqual(payload["status"], "在研")
+
+        Member.objects.create(slug="member-x", name="张伟", name_en="Wei Zhang", role=Member.Role.PI)
+        self.assertTrue(
+            any(m.name_en == "Wei Zhang" for m in Member.objects.all()),
+            "成员的英文名与成果署名共用同一套匹配规则",
+        )
 
     def test_member_role_accepts_custom_values(self):
         """成员身份不再写死：实验室自己的叫法（访问学者等）也要能填、能按顺序分组。"""

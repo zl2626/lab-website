@@ -90,6 +90,25 @@ export interface HomeSlideItem {
   order: number;
 }
 
+export interface ProjectItem {
+  slug: string;
+  name: string;
+  category: string;
+  sponsor: string;
+  code: string;
+  role: string;
+  leader: string;
+  members: string[];
+  startYear: number | null;
+  endYear: number | null;
+  status: string;
+  amount: string;
+  summary: string;
+  link: string;
+  order: number;
+  bodyHtml: string;
+}
+
 export interface NewsItem {
   slug: string;
   title: string;
@@ -126,6 +145,7 @@ export interface ContentBundle {
   members: MemberItem[];
   news: NewsItem[];
   publications: PublicationItem[];
+  projects: ProjectItem[];
   robotProjects: RobotProjectItem[];
 }
 
@@ -139,7 +159,9 @@ const DEFAULT_NAV: NavLink[] = [
   { label: '团队成员', href: '/team' },
   { label: '科研新闻', href: '/news' },
   { label: '科研成果', href: '/publications' },
+  { label: '科研项目', href: '/projects' },
   { label: '科研平台', href: '/platform' },
+  { label: '加入我们', href: '/join' },
   { label: '联系我们', href: '/contact' },
 ];
 
@@ -291,6 +313,7 @@ async function fetchFromApi(): Promise<ContentBundle | null> {
         publications: (Array.isArray(data.publications) ? data.publications : []).map(
           normalizePublication
         ),
+        projects: (Array.isArray(data.projects) ? data.projects : []).map(normalizeProject),
         robotProjects: (Array.isArray(data.robotProjects) ? data.robotProjects : []).map(normalizeRobotProject),
       };
     } catch (error) {
@@ -404,16 +427,39 @@ function normalizeHomeSlide(raw: unknown): HomeSlideItem {
   };
 }
 
+function normalizeProject(raw: unknown): ProjectItem {
+  const item = (raw ?? {}) as Record<string, unknown>;
+  return {
+    slug: str(item.slug),
+    name: str(item.name),
+    category: str(item.category),
+    sponsor: str(item.sponsor),
+    code: str(item.code),
+    role: str(item.role),
+    leader: str(item.leader),
+    members: strList(item.members),
+    startYear: Number.isFinite(Number(item.startYear)) && item.startYear !== null && item.startYear !== '' ? Number(item.startYear) : null,
+    endYear: Number.isFinite(Number(item.endYear)) && item.endYear !== null && item.endYear !== '' ? Number(item.endYear) : null,
+    status: str(item.status),
+    amount: str(item.amount),
+    summary: str(item.summary),
+    link: str(item.link),
+    order: num(item.order, 99),
+    bodyHtml: str(item.bodyHtml),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // 数据源二：本地 Markdown（兜底）
 // ---------------------------------------------------------------------------
 
 async function buildFromMarkdown(): Promise<ContentBundle> {
-  const [researchEntries, memberEntries, newsEntries, pubEntries] = await Promise.all([
+  const [researchEntries, memberEntries, newsEntries, pubEntries, projectEntries] = await Promise.all([
     getCollection('research', ({ data }) => !data.draft),
     getCollection('members', ({ data }) => !data.draft),
     getCollection('news', ({ data }) => !data.draft),
     getCollection('publications', ({ data }) => !data.draft),
+    getCollection('projects', ({ data }) => !data.draft),
   ]);
 
   const research: ResearchItem[] = researchEntries
@@ -486,6 +532,27 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
     }))
     .sort((a, b) => b.year - a.year || a.title.localeCompare(b.title));
 
+  const projects: ProjectItem[] = projectEntries
+    .map((entry) => ({
+      slug: entry.data.slug || entry.id,
+      name: entry.data.name,
+      category: entry.data.category,
+      sponsor: entry.data.sponsor,
+      code: entry.data.code,
+      role: entry.data.role,
+      leader: entry.data.leader,
+      members: entry.data.members,
+      startYear: entry.data.startYear ?? null,
+      endYear: entry.data.endYear ?? null,
+      status: entry.data.status,
+      amount: entry.data.amount,
+      summary: entry.data.summary,
+      link: entry.data.link,
+      order: entry.data.order,
+      bodyHtml: md(entry.body),
+    }))
+    .sort((a, b) => (b.startYear ?? 0) - (a.startYear ?? 0) || a.order - b.order);
+
   return {
     source: 'markdown',
     site: normalizeSite(siteJson as unknown as Record<string, unknown>),
@@ -494,6 +561,7 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
     members,
     news,
     publications,
+    projects,
     robotProjects: [],
   };
 }
@@ -536,3 +604,5 @@ export async function getPublications(): Promise<PublicationItem[]> {
 export async function getRobotProjects(): Promise<RobotProjectItem[]> { return (await loadContent()).robotProjects; }
 
 export async function getHomeSlides(): Promise<HomeSlideItem[]> { return (await loadContent()).homeSlides; }
+
+export async function getProjects(): Promise<ProjectItem[]> { return (await loadContent()).projects; }

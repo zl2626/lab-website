@@ -1,6 +1,6 @@
 """把模型转换成前端直接可用的 JSON 结构。"""
 
-from .models import HomeSlide, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
+from .models import HomeSlide, Member, News, Project, Publication, ResearchArea, SiteSetting, RobotProject
 from .utils import as_dict, as_list, render_markdown
 
 DEFAULT_NAV = [
@@ -9,14 +9,30 @@ DEFAULT_NAV = [
     {"label": "团队成员", "href": "/team"},
     {"label": "科研新闻", "href": "/news"},
     {"label": "科研成果", "href": "/publications"},
+    {"label": "科研项目", "href": "/projects"},
+    {"label": "科研平台", "href": "/platform"},
+    {"label": "加入我们", "href": "/join"},
     {"label": "联系我们", "href": "/contact"},
 ]
 
 
+def _with_extra_nav(nav: list) -> list:
+    """把后来新增的栏目补进老站点已经保存的导航里（插在「联系我们」之前）。"""
+    result = list(nav)
+    for label, href in (("科研平台", "/platform"), ("科研项目", "/projects"), ("加入我们", "/join")):
+        if not any(isinstance(item, dict) and item.get("href") == href for item in result):
+            index = next(
+                (i for i, item in enumerate(result) if isinstance(item, dict) and item.get("href") == "/contact"),
+                len(result),
+            )
+            result.insert(index, {"label": label, "href": href})
+    return result
+
+
 def serialize_site(obj: SiteSetting) -> dict:
-    nav = as_list(obj.nav) or DEFAULT_NAV
-    if not any(isinstance(item, dict) and item.get("href") == "/platform" for item in nav):
-        nav = [*nav[:-1], {"label": "科研平台", "href": "/platform"}, nav[-1]] if nav else DEFAULT_NAV
+    nav = _with_extra_nav(as_list(obj.nav) or DEFAULT_NAV)
+    if not nav:
+        nav = DEFAULT_NAV
     return {
         "name": obj.name,
         "nameEn": obj.name_en,
@@ -142,6 +158,28 @@ def serialize_home_slide(obj: HomeSlide) -> dict:
     }
 
 
+def serialize_project(obj: Project) -> dict:
+    return {
+        "slug": obj.slug,
+        "name": obj.name,
+        "category": obj.category,
+        "sponsor": obj.sponsor,
+        "code": obj.code,
+        "role": obj.role,
+        "leader": obj.leader,
+        "members": [str(m) for m in as_list(obj.members)],
+        "startYear": obj.start_year,
+        "endYear": obj.end_year,
+        "status": obj.status,
+        "amount": obj.amount,
+        "summary": obj.summary,
+        "link": obj.link,
+        "order": obj.order,
+        "bodyHtml": render_markdown(obj.body),
+        "updatedAt": obj.updated_at.isoformat(),
+    }
+
+
 def serialize_content() -> dict:
     """一次性返回全站内容，构建前端时只需请求一次。"""
     return {
@@ -151,5 +189,6 @@ def serialize_content() -> dict:
         "members": [serialize_member(o) for o in Member.objects.filter(published=True)],
         "news": [serialize_news(o) for o in News.objects.filter(published=True)],
         "publications": [serialize_publication(o) for o in Publication.objects.filter(published=True)],
+        "projects": [serialize_project(o) for o in Project.objects.filter(published=True)],
         "robotProjects": [serialize_robot_project(o) for o in RobotProject.objects.filter(published=True)],
     }

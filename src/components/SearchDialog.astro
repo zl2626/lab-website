@@ -16,8 +16,9 @@ const { copy } = Astro.props;
 const typeLabels: { type: string; label: string }[] = [
   { type: 'research', label: copy.research_title },
   { type: 'member', label: copy.team_title },
-  { type: 'news', label: copy.news_title },
   { type: 'publication', label: copy.publications_title },
+  { type: 'project', label: copy.projects_title },
+  { type: 'news', label: copy.news_title },
 ];
 
 const clientCopy = {
@@ -162,7 +163,7 @@ const clientCopy = {
   import { fillCopy } from '../utils/copy.mjs';
 
   interface Entry {
-    type: 'research' | 'member' | 'news' | 'publication';
+    type: 'research' | 'member' | 'news' | 'publication' | 'project';
     title: string;
     subtitle: string;
     url: string;
@@ -189,6 +190,7 @@ const clientCopy = {
     member: clientCopy.labels?.member || '团队成员',
     news: clientCopy.labels?.news || '科研新闻',
     publication: clientCopy.labels?.publication || '科研成果',
+    project: clientCopy.labels?.project || '科研项目',
   };
   const MAX_RESULTS = 18;
 

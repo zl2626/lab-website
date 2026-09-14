@@ -20,7 +20,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from core.models import HomeSlide, Member, News, Publication, ResearchArea, SiteSetting
+from core.models import HomeSlide, Member, News, Project, Publication, ResearchArea, SiteSetting
 from core.utils import as_list
 
 
@@ -70,6 +70,7 @@ class Command(BaseCommand):
             "publications": self._seed(
                 content_dir / "publications", Publication, self._publication_fields
             ),
+            "projects": self._seed(content_dir / "projects", Project, self._project_fields),
             "home_slides": self._seed_home_slides(content_dir / "research"),
         }
 
@@ -231,5 +232,27 @@ class Command(BaseCommand):
             "pdf": front.get("pdf", "") or "",
             "code": front.get("code", "") or "",
             "abstract": body,
+            "published": not bool(front.get("draft", False)),
+        }
+
+    def _project_fields(self, front: dict, body: str, stem: str, slug: str) -> dict:
+        start = front.get("startYear")
+        end = front.get("endYear")
+        return {
+            "name": front.get("name", stem),
+            "category": front.get("category", "") or "",
+            "sponsor": front.get("sponsor", "") or "",
+            "code": str(front.get("code", "") or ""),
+            "role": front.get("role", "") or "",
+            "leader": front.get("leader", "") or "",
+            "members": as_list(front.get("members")),
+            "start_year": int(start) if start not in (None, "") else None,
+            "end_year": int(end) if end not in (None, "") else None,
+            "status": front.get("status", "") or "",
+            "amount": front.get("amount", "") or "",
+            "summary": front.get("summary", "") or "",
+            "link": front.get("link", "") or "",
+            "order": int(front.get("order", 99)),
+            "body": body,
             "published": not bool(front.get("draft", False)),
         }

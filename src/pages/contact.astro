@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getSite } from '../lib/content';
+import { u } from '../utils/url';
 
 const site = await getSite();
 const copy = site.pageCopy;
@@ -49,6 +50,9 @@ const { contact, openings } = site;
             </a>
           )}
           {openings.detailsHtml && <div class="prose join-details" set:html={openings.detailsHtml} />}
+          <a class="more-link join-more" href={u('/join')}>
+            {copy.join_title} <span aria-hidden="true">→</span>
+          </a>
         </section>
       )
     }
@@ -86,6 +90,8 @@ const { contact, openings } = site;
   .join-details h2:first-of-type { margin-top: 0; }
   .join-details ul, .join-details ol { margin: 0 0 1em; }
   .join-details li { margin-bottom: .35em; }
+  /* 详情摘要较长时，给一个「去加入我们页」的出口 */
+  .join-more { display: inline-flex; margin-top: 24px; }
   .eyebrow {
     font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
   }

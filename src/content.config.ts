@@ -58,6 +58,31 @@ const members = defineCollection({
   }),
 });
 
+// 科研项目 / 基金
+const projects = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
+  schema: z.object({
+    name: z.string(), // 项目名称
+    /** 常用：国家级项目 / 省部级项目 / 基金项目 / 企业合作 / 国际合作 */
+    category: z.string().default(''),
+    sponsor: z.string().default(''), // 资助机构
+    code: z.string().default(''), // 项目编号
+    role: z.string().default(''), // 承担角色，如 主持 / 参与
+    leader: z.string().default(''), // 负责人
+    /** 参与成员，填团队成员里的姓名 */
+    members: z.array(z.string()).default([]),
+    startYear: z.coerce.number().optional(),
+    endYear: z.coerce.number().optional(),
+    /** 常用：在研 / 已结题 */
+    status: z.string().default(''),
+    amount: z.string().default(''), // 经费，留空则不显示
+    summary: z.string().default(''),
+    link: z.string().default(''),
+    order: z.number().default(99),
+    draft: z.boolean().default(false),
+  }),
+});
+
 // 科研新闻
 const news = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/news' }),
@@ -95,4 +120,4 @@ const publications = defineCollection({
   }),
 });
 
-export const collections = { research, members, news, publications };
+export const collections = { research, members, news, publications, projects };

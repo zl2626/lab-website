@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fillCopy, getMembers, getProjects, getSite } from '../lib/content';
+import { u } from '../utils/url';
+import { buildAuthorIndex, normalizeName } from '../utils/authors.mjs';
+
+const site = await getSite();
+const copy = site.pageCopy;
+const [projects, members] = await Promise.all([getProjects(), getMembers()]);
+
+// 参与成员按姓名匹配到成员页（成员资料里填中文名或英文名都可以）
+const memberByAuthor = buildAuthorIndex(members);
+const resolveMember = (name: string) => memberByAuthor[normalizeName(name)] ?? null;
+
+const running = projects.filter((item) => item.status && item.status.includes('在研'));
+
+/** 起止时间：只有起始年份时显示成「2025 至今」 */
+function period(item: (typeof projects)[number]): string {
+  const start = item.startYear ? String(item.startYear) : '';
+  const end = item.endYear ? String(item.endYear) : '';
+  if (start && end) return `${start} – ${end}`;
+  if (start) return `${start} ${copy.projects_period_ongoing}`;
+  if (end) return end;
+  return '';
+}
+
+// 按起始年份倒序分组；没填年份的放到最后
+const groups: { year: number | null; items: typeof projects }[] = [];
+for (const item of projects) {
+  const year = item.startYear ?? null;
+  const bucket = groups.find((group) => group.year === year);
+  if (bucket) bucket.items.push(item);
+  else groups.push({ year, items: [item] });
+}
+groups.sort((a, b) => (b.year ?? -1) - (a.year ?? -1));
+---
+
+<BaseLayout title={copy.projects_title} description={`${site.name}的科研项目与基金`} crumb={copy.projects_title}>
+  <div class="page-head">
+    <div class="container">
+      <h1>{copy.projects_title}</h1>
+      <p>{copy.projects_intro}</p>
+    </div>
+  </div>
+
+  <section class="section container">
+    {
+      projects.length > 0 && (
+        <div class="stat-strip">
+          <div class="item">
+            <b>{projects.length}</b>
+            <span>{copy.projects_stat_total}</span>
+          </div>
+          <div class="item">
+            <b>{running.length}</b>
+            <span>{copy.projects_stat_running}</span>
+          </div>
+        </div>
+      )
+    }
+
+    {
+      groups.map((group) => (
+        <div class="year-block">
+          <div class="year-head">
+            <h2>{group.year ?? copy.projects_undated_label}</h2>
+            <span class="muted small year-count">
+              {group.items.length} {copy.projects_unit}
+            </span>
+          </div>
+          <div class="project-grid">
+            {group.items.map((item) => (
+              <article class="card project-card" id={item.slug}>
+                <div class="pc-top">
+                  {item.category && <span class="tag">{item.category}</span>}
+                  {item.status && (
+                    <span class={`tag ${item.status.includes('在研') ? 'tag-gold' : 'tag-muted'}`}>{item.status}</span>
+                  )}
+                  {item.role && <span class="tag tag-muted">{item.role}</span>}
+                  {period(item) && <span class="pc-period">{period(item)}</span>}
+                </div>
+
+                <h3>{item.name}</h3>
+                {item.summary && <p class="pc-summary">{item.summary}</p>}
+
+                <dl class="pc-meta">
+                  {item.sponsor && (
+                    <div>
+                      <dt>{copy.projects_sponsor_label}</dt>
+                      <dd>{item.sponsor}</dd>
+                    </div>
+                  )}
+                  {item.code && (
+                    <div>
+                      <dt>{copy.projects_code_label}</dt>
+                      <dd class="mono">{item.code}</dd>
+                    </div>
+                  )}
+                  {item.amount && (
+                    <div>
+                      <dt>{copy.projects_amount_label}</dt>
+                      <dd>{item.amount}</dd>
+                    </div>
+                  )}
+                  {item.leader && (
+                    <div>
+                      <dt>{copy.projects_leader_label}</dt>
+                      <dd>
+                        {resolveMember(item.leader) ? (
+                          <a href={u(`/team/${resolveMember(item.leader)!.slug}/`)}>{item.leader}</a>
+                        ) : (
+                          item.leader
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                  {item.members.length > 0 && (
+                    <div>
+                      <dt>{copy.projects_members_label}</dt>
+                      <dd class="pc-members">
+                        {item.members.map((name) =>
+                          resolveMember(name) ? (
+                            <a href={u(`/team/${resolveMember(name)!.slug}/`)}>{name}</a>
+                          ) : (
+                            <span>{name}</span>
+                          )
+                        )}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+
+                {item.link && (
+                  <a class="btn btn-ghost sm pc-link" href={item.link} target="_blank" rel="noopener">
+                    {copy.projects_link_action} ↗
+                  </a>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+
+    {projects.length === 0 && <p class="muted">{copy.projects_empty}</p>}
+  </section>
+</BaseLayout>
+
+<style>
+  .year-block { margin-bottom: 40px; }
+  .year-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px;
+    position: sticky; top: var(--header-h); background: var(--bg);
+    padding: 14px 0 8px; z-index: 5; border-bottom: 1px solid var(--border);
+  }
+  .year-head h2 { margin: 0; font-size: 1.4rem; }
+
+  .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 16px; }
+  .project-card { display: flex; flex-direction: column; padding: 22px; scroll-margin-top: calc(var(--header-h) + 24px); }
+  /* 从站内搜索直接跳到某个项目时，给一个短暂的落点提示 */
+  @keyframes project-flash {
+    0%, 25% { background-color: var(--accent-soft); }
+    100% { background-color: var(--bg); }
+  }
+  .project-card:target { animation: project-flash 2.4s ease; }
+  .pc-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+  .pc-period {
+    margin-left: auto; font-size: 0.8rem; color: var(--muted);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .project-card h3 { font-size: 1.05rem; line-height: 1.5; margin: 0 0 0.5em; }
+
+  /* 简介多行时截断，保证同一行的卡片高度接近 */
+  .pc-summary {
+    font-size: 0.9rem; margin: 0 0 1em;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .pc-meta { margin: 0 0 4px; font-size: 0.84rem; display: flex; flex-direction: column; gap: 6px; }
+  .pc-meta > div { display: flex; gap: 10px; align-items: baseline; }
+  .pc-meta dt {
+    flex: 0 0 62px; color: var(--muted); font-size: 0.78rem;
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .pc-meta dd { margin: 0; color: var(--text-soft); min-width: 0; }
+  .pc-meta .mono { font-family: var(--font-mono); font-size: 0.8rem; }
+  .pc-members { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .pc-meta a { font-weight: 600; }
+  .pc-link { margin-top: auto; align-self: flex-start; padding-top: 8px; }
+
+  @media (max-width: 560px) {
+    .pc-period { margin-left: 0; width: 100%; }
+    .pc-meta > div { flex-direction: column; gap: 2px; }
+    .pc-meta dt { flex: none; }
+  }
+</style>

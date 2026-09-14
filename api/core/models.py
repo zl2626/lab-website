@@ -186,6 +186,77 @@ class RobotProject(Publishable):
         return self.name
 
 
+class Project(Publishable):
+    """科研项目 / 基金。
+
+    对合作方与基金评审来说，「你们在做什么项目、谁资助的、在研还是结题」
+    比论文列表更能说明课题组的活跃程度，所以单独成一个板块。
+    """
+
+    class Status(models.TextChoices):
+        """常用状态，仅用于输入建议，字段本身不限制取值。"""
+
+        ACTIVE = "在研", "在研"
+        FINISHED = "已结题", "已结题"
+
+    DEFAULT_STATUSES = [value for value, _ in Status.choices]
+
+    slug = models.SlugField("URL 文件名", max_length=140, unique=True)
+    name = models.CharField("项目名称", max_length=300)
+    category = models.CharField(
+        "项目类别",
+        max_length=40,
+        blank=True,
+        help_text="常用：国家级项目 / 省部级项目 / 基金项目 / 企业合作 / 国际合作；也可以自己填。",
+    )
+    sponsor = models.CharField("资助机构", max_length=200, blank=True, help_text="如 国家自然科学基金委员会")
+    code = models.CharField("项目编号", max_length=80, blank=True)
+    role = models.CharField(
+        "承担角色",
+        max_length=40,
+        blank=True,
+        help_text="如 主持 / 参与 / 子课题负责人",
+    )
+    leader = models.CharField("负责人", max_length=120, blank=True)
+    members = models.JSONField(
+        "参与成员",
+        default=list,
+        blank=True,
+        help_text="每行一位，填「团队成员」里的姓名；会在项目页链接到对应成员。",
+    )
+    start_year = models.IntegerField("起始年份", null=True, blank=True)
+    end_year = models.IntegerField("结束年份", null=True, blank=True, help_text="在研项目可以留空")
+    status = models.CharField(
+        "状态",
+        max_length=20,
+        blank=True,
+        help_text="常用：在研 / 已结题；留空则只显示起止年份。",
+    )
+    amount = models.CharField(
+        "经费",
+        max_length=60,
+        blank=True,
+        help_text="可留空。不方便公开就不填，前台不会显示这一行。",
+    )
+    summary = models.TextField("项目简介", blank=True, help_text="两三句话说明研究问题与目标")
+    link = models.CharField(
+        "项目主页链接",
+        max_length=300,
+        blank=True,
+        help_text="站内路径或完整 http(s) 地址；留空则不显示按钮。",
+    )
+    order = models.IntegerField("排序", default=99, help_text="同一年份内数字越小越靠前")
+    body = models.TextField("详细说明（Markdown）", blank=True)
+
+    class Meta:
+        verbose_name = "科研项目"
+        verbose_name_plural = "科研项目"
+        ordering = ["-start_year", "order", "id"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class HomeSlide(Publishable):
     """首页大图轮播的每一屏。
 

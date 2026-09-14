@@ -39,7 +39,7 @@ class LabAdminSite(admin.AdminSite):
         return redirect("admin:index")
 
     def index(self, request, extra_context=None):
-        from .models import HomeSlide, Member, News, Publication, ResearchArea, RobotProject, SiteSetting
+        from .models import HomeSlide, Member, News, Project, Publication, ResearchArea, RobotProject, SiteSetting
 
         cards = []
         site_setting = self._registry.get(SiteSetting)
@@ -55,8 +55,8 @@ class LabAdminSite(admin.AdminSite):
                 "add_url": None,
             })
         recent = []
-        name_models = (Member, RobotProject)
-        for model in (HomeSlide, ResearchArea, Member, News, Publication, RobotProject):
+        name_models = (Member, RobotProject, Project)
+        for model in (HomeSlide, ResearchArea, Member, News, Publication, Project, RobotProject):
             model_admin = self._registry[model]
             if not model_admin.has_view_or_change_permission(request):
                 continue

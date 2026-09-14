@@ -11,7 +11,7 @@ import { u } from '../utils/url';
 
 interface SearchEntry {
   /** 结果分组用的类型标识 */
-  type: 'research' | 'member' | 'news' | 'publication';
+  type: 'research' | 'member' | 'news' | 'publication' | 'project';
   title: string;
   subtitle: string;
   url: string;
@@ -24,7 +24,7 @@ function clean(parts: (string | undefined | null)[]): string {
 }
 
 export const GET: APIRoute = async () => {
-  const { research, members, news, publications } = await loadContent();
+  const { research, members, news, publications, projects } = await loadContent();
 
   const entries: SearchEntry[] = [
     ...research.map((item) => ({
@@ -63,6 +63,17 @@ export const GET: APIRoute = async () => {
       subtitle: clean([String(item.year), item.venueShort || item.venue, item.type]),
       url: u('/publications/') + `#${item.slug}`,
       text: clean([item.authors.join(' '), item.venue, item.venueShort, item.area, item.abstract]),
+    })),
+    ...projects.map((item) => ({
+      type: 'project' as const,
+      title: item.name,
+      subtitle: clean([
+        item.category,
+        item.status,
+        item.startYear ? `${item.startYear}${item.endYear ? `–${item.endYear}` : ''}` : '',
+      ]),
+      url: u('/projects/') + `#${item.slug}`,
+      text: clean([item.sponsor, item.code, item.leader, item.members.join(' '), item.role, item.summary]),
     })),
   ];
 

@@ -7,12 +7,13 @@
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
-from .models import HomeSlide, MediaFile, Member, News, Publication, ResearchArea, SiteSetting
+from .models import HomeSlide, MediaFile, Member, News, Project, Publication, ResearchArea, SiteSetting
 from .serializers import (
     serialize_content,
     serialize_home_slide,
     serialize_member,
     serialize_news,
+    serialize_project,
     serialize_publication,
     serialize_research,
     serialize_site,
@@ -39,6 +40,7 @@ def api_root(request):
                 "/api/content/",
                 "/api/site/",
                 "/api/home-slides/",
+                "/api/projects/",
                 "/api/research/",
                 "/api/research/<slug>/",
                 "/api/members/",
@@ -82,6 +84,11 @@ def content(request):
 @require_GET
 def home_slide_list(request):
     return _json([serialize_home_slide(o) for o in HomeSlide.objects.filter(published=True)])
+
+
+@require_GET
+def project_list(request):
+    return _json([serialize_project(o) for o in Project.objects.filter(published=True)])
 
 
 @require_GET

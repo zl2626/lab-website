@@ -150,6 +150,15 @@ p { margin: 0 0 1em; color: var(--text-soft); }
 html[data-theme='dark'] .tag-gold { background: rgba(226, 181, 82, .16); }
 .tag-accent { background: var(--accent); color: var(--on-accent); }
 
+/* ---------- 「更多 / 查看全部」胶囊按钮（首页、联系页、加入我们页共用） ---------- */
+.more-link {
+  display: inline-flex; align-items: center; gap: 16px; flex-shrink: 0;
+  border: 1px solid var(--accent); border-radius: 28px; padding: 9px 20px;
+  font-size: .85rem; font-weight: 600; color: var(--accent); max-width: 100%;
+}
+.more-link:hover { background: var(--accent-soft); text-decoration: none; }
+@media (max-width: 600px) { .more-link { padding: 8px 15px; gap: 10px; } }
+
 /* ---------- 卡片 ---------- */
 .card {
   background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
@@ -179,6 +188,30 @@ html[data-theme='dark'] .tag-gold { background: rgba(226, 181, 82, .16); }
 .prose > :first-child { margin-top: 0; }
 .prose h2 { margin-top: 1.7em; padding-top: .2em; }
 .prose h3 { margin-top: 1.4em; }
+/* 从目录跳转过来时，标题不要被吸顶顶栏挡住 */
+.prose :is(h2, h3, h4) { scroll-margin-top: calc(var(--header-h) + 20px); }
+
+/* ---------- 长文目录（研究方向 / 新闻详情页） ---------- */
+.toc {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-soft); padding: 16px 20px 14px;
+  margin: 0 0 30px; max-width: 780px;
+}
+.toc-label {
+  margin: 0 0 8px; font-size: .76rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.toc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.toc-item { line-height: 1.5; }
+.toc-item + .toc-item { border-top: 1px solid var(--border); }
+.toc-item a {
+  display: block; padding: 7px 0; color: var(--text-soft);
+  font-size: .9rem; text-decoration: none !important;
+}
+.toc-item.lvl-3 a { padding-left: 18px; font-size: .86rem; }
+.toc-item a:hover { color: var(--accent); }
+.toc-item a::before { content: '·'; margin-right: 7px; color: var(--border-strong); }
+.toc-item.lvl-3 a::before { content: '–'; margin-left: 6px; margin-right: 7px; }
 .prose ul, .prose ol { color: var(--text-soft); padding-left: 1.3em; }
 .prose li { margin-bottom: .4em; }
 .prose li::marker { color: var(--accent); }

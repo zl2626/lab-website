@@ -5,6 +5,7 @@ import { getMembers, getPublications, getResearch, getSite } from '../../lib/con
 import { asset, u } from '../../utils/url';
 import { initials } from '../../utils/format';
 import { buildAuthorIndex } from '../../utils/authors.mjs';
+import { shouldShowToc, withHeadingAnchors } from '../../utils/toc.mjs';
 
 export async function getStaticPaths() {
   const research = await getResearch();
@@ -13,6 +14,9 @@ export async function getStaticPaths() {
 
 const { item } = Astro.props;
 const copy = (await getSite()).pageCopy;
+
+// 正文标题补锚点，并收集目录（小节太少时不显示目录）
+const { html: bodyHtml, headings } = withHeadingAnchors(item.bodyHtml);
 
 const allResearch = await getResearch();
 const others = allResearch.filter((r) => r.slug !== item.slug);
@@ -46,7 +50,23 @@ const memberByAuthor = buildAuthorIndex(members);
 
   <section class="section-detail container">
     {item.cover && <img class="research-cover" src={asset(item.cover)} alt={item.title} />}
-    <div class="prose" set:html={item.bodyHtml} />
+
+    {
+      shouldShowToc(headings) && (
+        <nav class="toc" aria-labelledby="toc-title">
+          <p class="toc-label" id="toc-title">{copy.toc_title}</p>
+          <ol class="toc-list">
+            {headings.map((heading) => (
+              <li class={`toc-item lvl-${heading.level}`}>
+                <a href={`#${heading.id}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="prose" set:html={bodyHtml} />
   </section>
 
   {

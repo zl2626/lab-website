@@ -732,8 +732,7 @@
     "label": "页面标题",
     "default": "科研平台",
     "type": "text"
-  },
-  "platform_intro": {
+  },  "platform_intro": {
     "group": "科研平台页",
     "label": "页面介绍",
     "default": "查看实验室的机器人项目、3D 模型与运行演示。",
@@ -783,6 +782,134 @@
     "label": "空状态按钮",
     "default": "添加机器人项目",
     "type": "text"
+  },
+
+  "projects_title": {
+    "group": "科研项目页",
+    "label": "页面标题",
+    "default": "科研项目",
+    "type": "text"
+  },
+  "projects_intro": {
+    "group": "科研项目页",
+    "label": "页面介绍",
+    "default": "课题组承担的国家级、省部级、基金与企业合作项目，包含在研与已结题项目。",
+    "type": "text",
+    "multiline": true
+  },
+  "projects_empty": {
+    "group": "科研项目页",
+    "label": "列表为空时提示",
+    "default": "科研项目整理中，欢迎稍后查看。",
+    "type": "text"
+  },
+  "projects_stat_total": {
+    "group": "科研项目页",
+    "label": "统计：项目总数",
+    "default": "项目总数",
+    "type": "text"
+  },
+  "projects_stat_running": {
+    "group": "科研项目页",
+    "label": "统计：在研项目",
+    "default": "在研项目",
+    "type": "text"
+  },
+  "projects_unit": {
+    "group": "科研项目页",
+    "label": "计数单位",
+    "default": "项",
+    "type": "text"
+  },
+  "projects_period_ongoing": {
+    "group": "科研项目页",
+    "label": "起止时间：仍在进行",
+    "default": "至今",
+    "type": "text",
+    "help": "项目没填结束年份时，显示成「2025 至今」。"
+  },
+  "projects_undated_label": {
+    "group": "科研项目页",
+    "label": "未填年份时的分组名",
+    "default": "其他项目",
+    "type": "text",
+    "help": "项目没填起始年份时，归到这一组。"
+  },
+  "projects_leader_label": {
+    "group": "科研项目页",
+    "label": "负责人标签",
+    "default": "负责人",
+    "type": "text"
+  },
+  "projects_members_label": {
+    "group": "科研项目页",
+    "label": "参与成员标签",
+    "default": "参与成员",
+    "type": "text"
+  },
+  "projects_sponsor_label": {
+    "group": "科研项目页",
+    "label": "资助机构标签",
+    "default": "资助机构",
+    "type": "text"
+  },
+  "projects_code_label": {
+    "group": "科研项目页",
+    "label": "项目编号标签",
+    "default": "项目编号",
+    "type": "text"
+  },
+  "projects_amount_label": {
+    "group": "科研项目页",
+    "label": "经费标签",
+    "default": "经费",
+    "type": "text"
+  },
+  "projects_link_action": {
+    "group": "科研项目页",
+    "label": "项目主页按钮",
+    "default": "查看项目主页",
+    "type": "text"
+  },
+
+  "join_title": {
+    "group": "加入我们页",
+    "label": "页面标题",
+    "default": "加入我们",
+    "type": "text"
+  },
+  "join_intro": {
+    "group": "加入我们页",
+    "label": "页面介绍",
+    "default": "课题组长期招收博士、硕士研究生与本科生科研助理，也欢迎博士后与合作研究。",
+    "type": "text",
+    "multiline": true
+  },
+  "join_directions_title": {
+    "group": "加入我们页",
+    "label": "方向区块标题",
+    "default": "我们正在做的方向",
+    "type": "text"
+  },
+  "join_directions_hint": {
+    "group": "加入我们页",
+    "label": "方向区块说明",
+    "default": "申请前建议先看看这些方向，在邮件里说明你对哪个方向感兴趣。",
+    "type": "text",
+    "multiline": true
+  },
+  "join_contact_title": {
+    "group": "加入我们页",
+    "label": "联系区块标题",
+    "default": "怎么联系我们",
+    "type": "text"
+  },
+  "join_empty": {
+    "group": "加入我们页",
+    "label": "未开放招生时提示",
+    "default": "当前没有公开的招生信息，但仍欢迎邮件咨询合作与访问事宜。",
+    "type": "text",
+    "multiline": true
   },
 
   "search_label": {
@@ -849,6 +976,13 @@
     "label": "404 标题",
     "default": "没有找到这个页面",
     "type": "text"
+  },
+  "toc_title": {
+    "group": "页面提示",
+    "label": "正文目录标题",
+    "default": "本页目录",
+    "type": "text",
+    "help": "研究方向、新闻等详情页正文小节达到 3 个以上时，会自动显示目录。"
   },
   "error_text": {
     "group": "页面提示",

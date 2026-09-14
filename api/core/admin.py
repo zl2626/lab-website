@@ -16,7 +16,7 @@ from django.utils.html import format_html
 
 from .ai import AIError, generate_summary
 from .forms import LineListField, LinkListField, MemberLinksField, PAGE_COPY, SingleLinkField
-from .models import HomeSlide, MediaFile, Member, News, Publication, ResearchArea, SiteSetting, RobotProject
+from .models import HomeSlide, MediaFile, Member, News, Project, Publication, ResearchArea, SiteSetting, RobotProject
 from .utils import trigger_deploy
 from .widgets import DatalistTextInput, ImageOrUrlField
 
@@ -129,6 +129,36 @@ class HomeSlideForm(forms.ModelForm):
 
     class Meta:
         model = HomeSlide
+        fields = "__all__"
+
+
+class ProjectForm(forms.ModelForm):
+    category = forms.CharField(
+        label="项目类别",
+        required=False,
+        widget=DatalistTextInput(
+            options=["国家级项目", "省部级项目", "基金项目", "企业合作", "国际合作"],
+            attrs={"size": 30},
+        ),
+        help_text="可以直接选建议里的常用类别，也可以自己填。",
+    )
+    status = forms.CharField(
+        label="状态",
+        required=False,
+        widget=DatalistTextInput(options=Project.DEFAULT_STATUSES, attrs={"size": 20}),
+        help_text="常用「在研 / 已结题」；留空则前台只显示起止年份。",
+    )
+    members = LineListField(
+        label="参与成员",
+        help_text="每行一位，填「团队成员」里的姓名；会链接到对应成员页。",
+    )
+    link = SingleLinkField(
+        label="项目主页链接",
+        help_text="站内路径或完整 http(s) 地址；留空则不显示按钮。",
+    )
+
+    class Meta:
+        model = Project
         fields = "__all__"
 
 
@@ -280,6 +310,30 @@ class RobotProjectAdmin(AutoRebuildMixin, admin.ModelAdmin):
         ("项目基本信息", {"fields": ("name", "slug", "summary", "research_focus", "order")}),
         ("文件和演示", {"fields": ("model_url", "model_format", "demo_url"), "description": "填写模型或视频的公开地址。建议使用对象存储、GitHub Releases 或网盘链接；大文件不建议直接放进网站服务器。"}),
         ("详细说明", {"fields": ("body",)}),
+        ("发布", {"fields": ("published",)}),
+    )
+
+
+@admin.register(Project)
+class ProjectAdmin(AutoRebuildMixin, admin.ModelAdmin):
+    form = ProjectForm
+    list_display = ("name", "category", "sponsor", "start_year", "status", "published")
+    list_editable = ("published",)
+    list_filter = ("category", "status", "published")
+    search_fields = ("name", "sponsor", "code", "leader", "summary", "slug")
+    actions = [rebuild_site]
+    fieldsets = (
+        (
+            "项目信息",
+            {
+                "fields": ("name", "slug", "category", "sponsor", "code", "role"),
+                "description": "类别、资助机构、编号会显示在项目卡片上；不必全填。",
+            },
+        ),
+        ("时间与经费", {"fields": ("start_year", "end_year", "status", "amount")}),
+        ("团队", {"fields": ("leader", "members")}),
+        ("展示", {"fields": ("summary", "link", "order")}),
+        ("详细说明（支持 Markdown）", {"fields": ("body",)}),
         ("发布", {"fields": ("published",)}),
     )
 

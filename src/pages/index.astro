@@ -221,7 +221,7 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
             <h2>{site.openings.title}</h2>
             <p>{site.openings.text}</p>
           </div>
-          <a class="more-link" href={u('/contact')}>{copy.home_join_action} <span aria-hidden="true">→</span></a>
+          <a class="more-link" href={u('/join')}>{copy.home_join_action} <span aria-hidden="true">→</span></a>
         </div>
       </section>
     )
@@ -278,8 +278,6 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
 .home-heading h2:before{content:'';position:absolute;left:-12px;top:-6px;width:38px;height:38px;border-radius:50%;background:var(--accent-soft);z-index:-1}
 .home-heading>div>span{color:var(--muted);letter-spacing:.05em;font-size:.9rem}
 .home-lead{max-width:60ch;margin:0 0 34px;font-size:.98rem}
-.more-link{border:1px solid var(--accent);border-radius:28px;padding:9px 20px;display:inline-flex;align-items:center;gap:16px;font-size:.85rem;flex-shrink:0;max-width:100%}
-.more-link:hover{background:var(--accent-soft);text-decoration:none}
 
 /* ---------- 研究方向 ---------- */
 .research-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:16px}
@@ -365,7 +363,6 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
   .banner-summary,.banner-english{font-size:.98rem}
   .banner-decoration{right:-140px;width:260px}
   .home-heading{align-items:flex-start;gap:14px;flex-wrap:wrap}
-  .more-link{padding:8px 15px;gap:10px}
   .home-lead{margin-bottom:26px}
   .news-grid{gap:14px}
   .news-text{padding:16px}
