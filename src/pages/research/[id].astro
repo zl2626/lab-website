@@ -4,6 +4,7 @@ import PublicationItem from '../../components/PublicationItem.astro';
 import { getMembers, getPublications, getResearch, getSite } from '../../lib/content';
 import { asset, u } from '../../utils/url';
 import { initials } from '../../utils/format';
+import { buildAuthorIndex } from '../../utils/authors.mjs';
 
 export async function getStaticPaths() {
   const research = await getResearch();
@@ -20,7 +21,9 @@ const pubs = await getPublications();
 const related = pubs.filter((p) => p.area && p.area === item.title);
 
 // 该方向的成员：由成员资料里的「所属研究方向」反向关联
-const members = (await getMembers()).filter((m) => m.areas.includes(item.title));
+const members = await getMembers();
+const areaMembers = members.filter((m) => m.areas.includes(item.title));
+const memberByAuthor = buildAuthorIndex(members);
 ---
 
 <BaseLayout title={item.title} description={item.summary} crumb={item.title}>
@@ -47,11 +50,11 @@ const members = (await getMembers()).filter((m) => m.areas.includes(item.title))
   </section>
 
   {
-    members.length > 0 && (
+    areaMembers.length > 0 && (
       <section class="section-tight container">
         <h2 class="sub-head">{copy.research_members}</h2>
         <ul class="area-members">
-          {members.map((member) => (
+          {areaMembers.map((member) => (
             <li>
               <a href={u(`/team/${member.slug}/`)}>
                 <span class="area-avatar">
@@ -95,7 +98,7 @@ const members = (await getMembers()).filter((m) => m.areas.includes(item.title))
           <h2 class="sub-head">{copy.research_related}</h2>
           <div class="pub-list">
             {related.map((p) => (
-              <PublicationItem item={p} copy={copy} />
+              <PublicationItem item={p} copy={copy} memberByAuthor={memberByAuthor} />
             ))}
           </div>
         </div>
@@ -105,7 +108,14 @@ const members = (await getMembers()).filter((m) => m.areas.includes(item.title))
 </BaseLayout>
 
 <style>
-  .research-cover { max-height: 420px; object-fit: cover; border-radius: var(--radius); margin-bottom: 28px; }
+  /*
+   * 封面图：用固定比例占位，避免图片加载完成后把下方正文顶下去（布局抖动）。
+   * 这是「封面」而不是正文插图，按 16:9 裁切是常规做法，正文里的图片走 Markdown 不受影响。
+   */
+  .research-cover {
+    width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
+    border-radius: var(--radius); margin-bottom: 28px;
+  }
   .crumb { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
   .icon { font-size: 0.85em; }
   .en { color: var(--muted); font-size: 1rem; margin: 0 0 0.8em; }

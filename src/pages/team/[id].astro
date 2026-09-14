@@ -1,8 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getMembers, getResearch, getSite } from '../../lib/content';
+import PublicationItem from '../../components/PublicationItem.astro';
+import { getMembers, getPublications, getResearch, getSite } from '../../lib/content';
 import { asset, u } from '../../utils/url';
 import { initials } from '../../utils/format';
+import { buildAuthorIndex, publicationsByMember } from '../../utils/authors.mjs';
 
 export async function getStaticPaths() {
   const members = await getMembers();
@@ -19,6 +21,11 @@ const site = await getSite();
 const copy = site.pageCopy;
 const origin = (Astro.site ?? new URL('https://example.com')).origin;
 const portrait = item.photo ? new URL(asset(item.photo), origin).toString() : '';
+
+// 这位成员参与过的成果：按作者署名与成员的英文名/中文名精确匹配
+const [allMembers, allPublications] = await Promise.all([getMembers(), getPublications()]);
+const ownPublications = publicationsByMember(allPublications, item);
+const memberByAuthor = buildAuthorIndex(allMembers);
 
 const linkItems = [
   { key: 'homepage', label: copy.member_link_homepage },
@@ -129,6 +136,27 @@ const personSchema = {
         </>
       )
     }
+
+    {
+      ownPublications.length > 0 && (
+        <>
+          <hr class="divider" style="margin:38px 0 0" />
+          <section class="member-pubs">
+            <div class="member-pubs-head">
+              <h2>{copy.member_publications_title}</h2>
+              <a class="more-link" href={u('/publications')}>
+                {copy.member_publications_more} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+            <div class="pub-list">
+              {ownPublications.map((pub) => (
+                <PublicationItem item={pub} copy={copy} memberByAuthor={memberByAuthor} />
+              ))}
+            </div>
+          </section>
+        </>
+      )
+    }
   </section>
 </BaseLayout>
 
@@ -158,6 +186,25 @@ const personSchema = {
   .tags a.tag { text-decoration: none !important; }
   .tags a.tag:hover { background: var(--accent); color: var(--on-accent); }
   .block { margin-top: 20px; }
+
+  /* 参与过的成果：复用成果页的条目样式，保持两处观感一致 */
+  .member-pubs { margin-top: 34px; }
+  .member-pubs-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    margin-bottom: 6px;
+  }
+  .member-pubs-head h2 {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1.12rem; font-weight: 700; margin: 0;
+  }
+  .member-pubs-head h2::before {
+    content: ''; width: 3px; height: 1.05em;
+    background: var(--accent); border-radius: 2px;
+  }
+  .member-pubs .pub-list { border-top: 1px solid var(--border); margin-top: 16px; }
+  @media (max-width: 560px) {
+    .member-pubs-head { flex-wrap: wrap; gap: 10px; }
+  }
   .block h4 {
     font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
     color: var(--muted); margin-bottom: 10px;

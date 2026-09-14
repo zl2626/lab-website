@@ -112,6 +112,20 @@
     "default": "Selected publications",
     "type": "text"
   },
+  "home_publications_count": {
+    "group": "首页",
+    "label": "成果栏目显示条数",
+    "default": "4",
+    "type": "text",
+    "help": "填数字，建议 3～6。优先展示勾了「设为精选」的成果，不足时按年份从新到旧补齐。"
+  },
+  "home_news_count": {
+    "group": "首页",
+    "label": "近况栏目显示条数",
+    "default": "4",
+    "type": "text",
+    "help": "填数字。首页近况卡片每行最多 4 个，4 或 8 排版最整齐。"
+  },
   "home_about_title": {
     "group": "首页",
     "label": "关于我们标题",
@@ -271,6 +285,19 @@
     "group": "成员页",
     "label": "区块：相关链接",
     "default": "相关链接",
+    "type": "text"
+  },
+  "member_publications_title": {
+    "group": "成员页",
+    "label": "区块：参与论文",
+    "default": "参与论文",
+    "type": "text",
+    "help": "显示在成员个人页下方。作者的署名与成员的英文名（或中文名）完全一致时才会关联上。"
+  },
+  "member_publications_more": {
+    "group": "成员页",
+    "label": "参与论文按钮",
+    "default": "完整成果列表",
     "type": "text"
   },
   "member_email_label": {
@@ -440,6 +467,19 @@
     "default": "全部方向",
     "type": "text"
   },
+  "pub_filter_author": {
+    "group": "成果页",
+    "label": "筛选：作者",
+    "default": "作者",
+    "type": "text",
+    "help": "下拉项来自「成员参与过的成果」——作者的署名与成员的英文名一致时才会关联。"
+  },
+  "pub_filter_author_all": {
+    "group": "成果页",
+    "label": "筛选：全部作者",
+    "default": "全部成员",
+    "type": "text"
+  },
   "pub_filter_reset": {
     "group": "成果页",
     "label": "清除筛选按钮",
@@ -530,6 +570,13 @@
     "label": "链接：原文",
     "default": "原文链接",
     "type": "text"
+  },
+  "pub_author_separator": {
+    "group": "成果页",
+    "label": "作者之间的分隔符",
+    "default": "，",
+    "type": "text",
+    "help": "英文署名习惯用「, 」，中文名单习惯用「，」。"
   },
   "pub_link_pdf": {
     "group": "成果页",

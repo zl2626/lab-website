@@ -90,5 +90,9 @@ const newsSchema = {
   .meta { gap: 10px; margin-bottom: 14px; }
   .meta time { font-size: 0.86rem; color: var(--muted); }
   h1 { margin-bottom: 0.6em; }
-  .cover { border-radius: var(--radius); margin: 8px 0 28px; border: 1px solid var(--border); }
+  /* 封面图用固定比例占位，避免图片加载后把正文顶下去（布局抖动） */
+  .cover {
+    width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
+    border-radius: var(--radius); margin: 8px 0 28px; border: 1px solid var(--border);
+  }
 </style>

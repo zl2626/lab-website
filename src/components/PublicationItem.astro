@@ -1,15 +1,34 @@
 ---
 import type { PublicationItem as Pub } from '../lib/content';
 import { publicationBibtex } from '../utils/bibtex.mjs';
+import { normalizeName } from '../utils/authors.mjs';
+import { u } from '../utils/url';
+
+interface AuthorRef {
+  slug: string;
+  name: string;
+  role: string;
+}
 
 interface Props {
   item: Pub;
   /** 界面文案（来自后台「站点设置 → 页面文案」） */
   copy: Record<string, string>;
+  /** 「归一化作者名 -> 本站成员」的索引；命中时作者名会变成可点击的链接 */
+  memberByAuthor?: Record<string, AuthorRef>;
 }
 
-const { item, copy } = Astro.props;
+const { item, copy, memberByAuthor = {} } = Astro.props;
 const bibtex = publicationBibtex(item);
+
+// 作者列表：本站成员加链接，外部合作者保持纯文本
+const authorParts = item.authors.map((author) => ({
+  name: author,
+  member: memberByAuthor[normalizeName(author)] ?? null,
+}));
+
+// 分隔符会被写进 CSS 变量，去掉引号与换行，避免把样式写坏
+const authorSeparator = (copy.pub_author_separator || '，').replace(/['"\\\r\n]/g, '') || '，';
 
 const typeClass: Record<string, string> = {
   期刊论文: '',
@@ -33,7 +52,21 @@ const typeClass: Record<string, string> = {
     </div>
 
     <h3 class="pub-title">{item.title}</h3>
-    {item.authors.length > 0 && <p class="authors">{item.authors.join('，')}</p>}
+    {
+      authorParts.length > 0 && (
+        <p class="authors" style={`--author-sep: '${authorSeparator}'`}>
+          {authorParts.map((part) =>
+            part.member ? (
+              <a class="author is-member" href={u(`/team/${part.member.slug}/`)} title={`${part.member.name}（${part.member.role}）`}>
+                {part.name}
+              </a>
+            ) : (
+              <span class="author">{part.name}</span>
+            )
+          )}
+        </p>
+      )
+    }
     <p class="venue">{item.venue}</p>
 
     {
@@ -138,6 +171,14 @@ const typeClass: Record<string, string> = {
   .area { font-size: 0.76rem; color: var(--muted); margin-left: auto; }
   .pub-title { font-size: 1.06rem; margin: 0 0 0.4em; line-height: 1.45; }
   .authors { font-size: 0.88rem; color: var(--text-soft); margin: 0 0 0.25em; }
+  /* 作者之间的分隔符由后台文案控制（中英文常见的分隔符不一样） */
+  .authors > .author + .author::before { content: var(--author-sep, '，'); }
+  /* 本站成员：虚线标注「可点」，鼠标悬停才变成实线，平时不喧宾夺主 */
+  .author.is-member {
+    font-weight: 600; text-decoration: underline dotted;
+    text-decoration-color: var(--border-strong); text-underline-offset: 3px;
+  }
+  .author.is-member:hover { color: var(--accent); text-decoration-style: solid; text-decoration-color: currentColor; }
   .venue { font-size: 0.88rem; color: var(--muted); font-style: italic; margin: 0; }
   .links { gap: 14px; margin-top: 10px; }
   .links a { font-size: 0.85rem; font-weight: 600; }

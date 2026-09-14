@@ -1,16 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PublicationItem from '../components/PublicationItem.astro';
-import { fillCopy, getPublications, getSite } from '../lib/content';
+import { fillCopy, getMembers, getPublications, getSite } from '../lib/content';
 import { groupByYear } from '../utils/format';
+import { buildAuthorIndex, membersWithPublications, normalizeName } from '../utils/authors.mjs';
 
 const site = await getSite();
 const copy = site.pageCopy;
-const pubs = await getPublications();
+const [pubs, members] = await Promise.all([getPublications(), getMembers()]);
 
 const years = groupByYear(pubs, (p) => p.year);
 const types = [...new Set(pubs.map((p) => p.type))];
 const areas = [...new Set(pubs.map((p) => p.area).filter(Boolean))];
+
+// 作者联动：把成果里的作者名匹配到本站成员，用于「作者可点」与「按作者筛选」
+const memberByAuthor = buildAuthorIndex(members);
+const authorOptions = membersWithPublications(members, pubs);
 
 const typeCounts = types
   .map((type) => ({ type, count: pubs.filter((p) => p.type === type).length }))
@@ -44,6 +49,20 @@ const clientCopy = {
         <label>{copy.pub_filter_year}<select id="pub-year"><option value="">{copy.pub_filter_year_all}</option>{years.map(({ year }) => <option value={year}>{year}</option>)}</select></label>
         <label>{copy.pub_filter_type}<select id="pub-type"><option value="">{copy.pub_filter_type_all}</option>{types.map((t) => <option value={t}>{t}</option>)}</select></label>
         <label>{copy.pub_filter_area}<select id="pub-area"><option value="">{copy.pub_filter_area_all}</option>{areas.map((a) => <option value={a}>{a}</option>)}</select></label>
+        {
+          authorOptions.length > 0 && (
+            <label>{copy.pub_filter_author}
+              <select id="pub-author">
+                <option value="">{copy.pub_filter_author_all}</option>
+                {authorOptions.map((member) => (
+                  <option value={normalizeName(member.nameEn) || normalizeName(member.name)}>
+                    {member.name}{member.role ? `（${member.role}）` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )
+        }
         <button type="reset" class="reset-filter">{copy.pub_filter_reset}</button>
         <button type="button" class="export-filter" id="export-bib" data-site={site.name} title={copy.pub_export_hint}>
           {copy.pub_export}
@@ -83,8 +102,15 @@ const clientCopy = {
           </div>
           <div class="pub-list">
             {items.map((item) => (
-              <div class="pub-cell" data-type={item.type} data-area={item.area} data-year={item.year} data-search={[item.title, ...item.authors, item.venue, item.venueShort].join(" ").toLocaleLowerCase()}>
-                <PublicationItem item={item} copy={copy} />
+              <div
+                class="pub-cell"
+                data-type={item.type}
+                data-area={item.area}
+                data-year={item.year}
+                data-authors={item.authors.map(normalizeName).join('|')}
+                data-search={[item.title, ...item.authors, item.venue, item.venueShort].join(" ").toLocaleLowerCase()}
+              >
+                <PublicationItem item={item} copy={copy} memberByAuthor={memberByAuthor} />
               </div>
             ))}
           </div>
@@ -155,6 +181,7 @@ const clientCopy = {
   const year = document.querySelector<HTMLSelectElement>('#pub-year')!;
   const type = document.querySelector<HTMLSelectElement>('#pub-type')!;
   const area = document.querySelector<HTMLSelectElement>('#pub-area')!;
+  const author = document.querySelector<HTMLSelectElement>('#pub-author');
   const cells = Array.from(document.querySelectorAll<HTMLElement>('.pub-cell'));
   const blocks = Array.from(document.querySelectorAll<HTMLElement>('.year-block'));
   const empty = document.getElementById('no-result')!;
@@ -163,11 +190,13 @@ const clientCopy = {
 
   function update() {
     const words = search.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    const authorKey = author?.value ?? '';
     let visible = 0;
     cells.forEach((cell) => {
       const show = (!year.value || cell.dataset.year === year.value)
         && (!type.value || cell.dataset.type === type.value)
         && (!area.value || cell.dataset.area === area.value)
+        && (!authorKey || (cell.dataset.authors || '').split('|').includes(authorKey))
         && words.every((word) => (cell.dataset.search || '').includes(word));
       cell.style.display = show ? '' : 'none';
       if (show) visible++;

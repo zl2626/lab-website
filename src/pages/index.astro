@@ -20,9 +20,19 @@ const stats = [
   { value: pubs.length, label: copy.home_stat_publications },
 ];
 
-// 首页「代表性成果」：优先精选，不足时按年份从新到旧补齐
+/** 把后台填的条数收进合理范围：填错也不至于把首页撑爆或什么都不显示 */
+function clampCount(value: string, fallback: number): number {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, 1), 12);
+}
+
+// 首页「代表性成果」：条数可在后台调；优先精选，不足时按年份从新到旧补齐
+const pubLimit = clampCount(copy.home_publications_count, 4);
+const newsLimit = clampCount(copy.home_news_count, 4);
+
 const highlights = pubs.filter((p) => p.highlight);
-const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4);
+const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, pubLimit);
 ---
 
 <BaseLayout>
@@ -161,7 +171,7 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, 4
       </div>
       {copy.home_news_intro && <p class="home-lead">{copy.home_news_intro}</p>}
       <div class="news-grid">
-        {news.slice(0, 4).map((item) => (
+        {news.slice(0, newsLimit).map((item) => (
           <a class="news-tile" href={u(`/news/${item.slug}`)}>
             <div class="news-visual">
               {item.cover ? (
