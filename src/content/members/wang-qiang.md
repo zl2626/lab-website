@@ -6,6 +6,7 @@ order: 20
 email: qiang.wang@example.edu.cn
 joinYear: 2022
 interests: [目标检测, 三维视觉]
+areas: [计算机视觉]
 links:
   github: https://github.com/
 ---

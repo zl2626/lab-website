@@ -205,3 +205,38 @@ class ContentPersistenceTests(TestCase):
         self.assertEqual(media.status_code, 200)
         self.assertEqual(media["Content-Type"], "image/jpeg")
         self.assertGreater(len(media.content), 0)
+
+    def test_member_areas_and_alumni_destination_round_trip(self):
+        """成员的去向与所属研究方向需要能通过后台逐行填写，并出现在公开接口里。"""
+        from .models import Member
+        response = self.client.post(reverse("admin:core_member_add"), {
+            "slug": "alumni-test", "name": "测试校友", "role": "校友", "order": 5,
+            "published": "on", "now_at": "某公司 算法研究员",
+            "areas": "计算机视觉\n多模态学习",
+        })
+        self.assertEqual(response.status_code, 302)
+
+        obj = Member.objects.get(slug="alumni-test")
+        self.assertEqual(obj.now_at, "某公司 算法研究员")
+        self.assertEqual(obj.areas, ["计算机视觉", "多模态学习"])
+
+        member = next(item for item in self.client.get("/api/members/").json() if item["slug"] == "alumni-test")
+        self.assertEqual(member["nowAt"], "某公司 算法研究员")
+        self.assertEqual(member["areas"], ["计算机视觉", "多模态学习"])
+
+    def test_openings_details_renders_markdown_in_content_api(self):
+        """招生详情存 Markdown，接口输出渲染后的 HTML，供联系页直接注入。"""
+        from .models import SiteSetting
+        obj = SiteSetting.load()
+        response = self.client.post(reverse("admin:core_sitesetting_change", args=[obj.pk]), {
+            "name": obj.name, "abbr": obj.abbr, "openings_enabled": "on",
+            "openings_details": "## 申请材料\n\n- 个人简历\n- 成绩单",
+        })
+        self.assertEqual(response.status_code, 302)
+        obj.refresh_from_db()
+        self.assertIn("## 申请材料", obj.openings_details)
+
+        html = self.client.get("/api/content/").json()["site"]["openings"]["detailsHtml"]
+        self.assertIn("<h2", html)
+        self.assertIn("个人简历", html)
+        self.assertIn("<li>", html)

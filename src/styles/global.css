@@ -254,3 +254,53 @@ html[data-theme='dark'] .tag-gold { background: rgba(226, 181, 82, .16); }
   .pager { grid-template-columns: 1fr; }
   .pager .next { text-align: left; }
 }
+
+/* ---------- 回到顶部 ---------- */
+.back-to-top {
+  position: fixed; right: 22px; bottom: 22px; z-index: 55;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
+  box-shadow: var(--shadow); font-size: 1.05rem; line-height: 1;
+  display: grid; place-items: center; transition: 0.18s ease;
+}
+.back-to-top:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+@media (max-width: 620px) { .back-to-top { right: 14px; bottom: 14px; width: 40px; height: 40px; } }
+
+/* ---------- 打印 ---------- */
+@media print {
+  .site-header, .site-footer, .back-to-top, .skip-link,
+  .pager, .filters, .more-link, .banner-controls, #site-search { display: none !important; }
+
+  :root {
+    --bg: #fff;
+    --bg-soft: #fff;
+    --bg-inset: #fff;
+    --text: #000;
+    --text-soft: #222;
+    --muted: #444;
+    --border: #bbb;
+    --border-strong: #999;
+    --shadow: none;
+    --shadow-lg: none;
+  }
+  html[data-theme='dark'] {
+    --bg: #fff; --bg-soft: #fff; --bg-inset: #fff;
+    --text: #000; --text-soft: #222; --muted: #444;
+    --border: #bbb; --border-strong: #999; --accent: #1442a8; --gold: #7a5210;
+  }
+  body { font-size: 11.5pt; line-height: 1.6; }
+  main { padding: 0; }
+  .page-head, .section, .section-tight, .section-detail, .home-section { padding-block: 10px; }
+  .page-head { background: none; border-bottom: 1px solid #999; }
+  a { color: #000; text-decoration: none; }
+  /* 展开所有折叠内容，纸质版才能看到摘要与引用 */
+  details { display: block !important; }
+  details > summary { display: none; }
+  .card, .pub-highlight, .news-tile { box-shadow: none !important; border: 1px solid var(--border); }
+  .research-tile, .banner-slide, .about-visual { background: #fff !important; color: #000 !important; }
+  .research-tile h3, .research-tile p, .banner-copy h1 { color: #000 !important; }
+  .grid, .news-grid, .research-grid, .pub-highlight-grid { display: block; }
+  .grid > *, .news-grid > *, .research-grid > *, .pub-highlight-grid > * { margin-bottom: 12px; }
+  h1, h2, h3 { break-after: avoid; }
+  .pub, .member-card, .pub-highlight { break-inside: avoid; }
+}

@@ -60,6 +60,18 @@ class Member(Publishable):
     photo = models.CharField("照片路径", max_length=300, blank=True, help_text="如 /images/team/xxx.jpg；留空则显示姓名首字头像")
     email = models.EmailField("邮箱", blank=True)
     join_year = models.CharField("加入年份", max_length=10, blank=True)
+    now_at = models.CharField(
+        "现在在哪 / 毕业去向",
+        max_length=160,
+        blank=True,
+        help_text="例如「某大学 助理教授」「某公司 算法工程师」；校友填写后会在成员页突出显示",
+    )
+    areas = models.JSONField(
+        "所属研究方向",
+        default=list,
+        blank=True,
+        help_text='JSON 数组，填「研究方向」的中文标题，如 ["计算机视觉"]；会在对应方向详情页展示',
+    )
     interests = models.JSONField("研究兴趣", default=list, blank=True)
     hobbies = models.JSONField("兴趣爱好", default=list, blank=True)
     research_focus = models.CharField("主要研究方向", max_length=200, blank=True)
@@ -181,7 +193,12 @@ class SiteSetting(models.Model):
 
     openings_enabled = models.BooleanField("显示招生信息", default=True)
     openings_title = models.CharField("招生标题", max_length=200, blank=True)
-    openings_text = models.TextField("招生说明", blank=True)
+    openings_text = models.TextField("招生说明", blank=True, help_text="一两句话说明在招什么方向的人")
+    openings_details = models.TextField(
+        "招生详情（Markdown）",
+        blank=True,
+        help_text="可写申请材料清单、流程、常见问题；支持 Markdown 列表与链接",
+    )
     openings_email = models.EmailField("接收申请邮箱", blank=True)
 
     nav = models.JSONField(

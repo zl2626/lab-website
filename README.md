@@ -1,5 +1,26 @@
 # 课题组网站
 
+## 前台能力补充（2026-09-14 · 第二轮）
+
+对标 academicpages / al-folio / HugoBlox / Academic-project-page-template 这批主流开源学术站点后补齐的能力：
+
+- **站内搜索**：按 `⌘K`（Windows 为 `Ctrl+K`）或点顶栏搜索按钮打开，也支持在页面空白处按 `/`。
+  支持中英文关键词、按栏目分组、`↑↓` 选择、`Enter` 打开、命中高亮。
+  索引在构建时生成（`/search-index.json`），第一次打开搜索框时才拉取，不拖慢首屏；
+  也支持 `/?q=关键词` 直接带词进入。
+- **引用**：成果条目新增「复制引用」（写入剪贴板并给出反馈）；
+  成果页可按当前筛选结果一键导出 `.bib`，用于 Zotero / EndNote / BibDesk。
+- **学术结构化数据**：全站输出 `ResearchOrganization` + `WebSite`（含 `SearchAction`）+ 面包屑；
+  成员页额外输出 `Person`（含 `sameAs` 学术主页），新闻页额外输出 `NewsArticle`。
+- **成员去向**：后台「团队成员」新增「现在在哪 / 毕业去向」，校友卡片与个人页会突出显示。
+- **方向关联成员**：后台成员填「所属研究方向」后，研究方向详情页会自动列出该方向成员。
+- **招生详情**：后台「站点设置 → 招生信息」新增 Markdown 详情字段，
+  可写申请材料、流程、常见问题，展示在联系页招生区块下方。
+- **其他**：新闻 RSS（`/rss.xml`）、长页面回到顶部、404 页搜索与栏目快捷入口、打印样式。
+- 新增自检脚本 `npm run verify:dist`，并新增 `tests/search.test.mjs` 覆盖搜索排序与高亮逻辑。
+
+调研结论、参考项目与已知取舍记录在 [docs/project-references.md](docs/project-references.md)。
+
 ## 内容导入补充（2026-09-14）
 
 `seed_content` 支持从 `src/data/site.json` 导入 `groupPhoto`（团队合影）和 `pageCopy`（页面文案）。文案按键合并，未提供的键保留后台现有值。
@@ -237,14 +258,13 @@ AI 生成新闻摘要需要新闻修改权限；摘要保存成功后也会按�
 
 ```powershell
 .venv/Scripts/python.exe api/manage.py test core --settings=labbackend.test_settings
-node --test tests/bibtex.test.mjs
+npm test
 npm run build
 npm run verify:dist
-npm test
 ```
 
 测试配置强制使用内存 SQLite，发布请求和 AI 请求在测试中模拟，不连接 `.env.local` 中的业务数据库或触发线上重建。
-`npm run verify:dist` 检查构建产物的站内断链与基础 SEO / 可访问性规范。
+`npm test` 覆盖 BibTeX 生成、新闻标签筛选与站内搜索排序；`npm run verify:dist` 检查构建产物的站内断链与基础 SEO / 可访问性规范。
 
 ---
 

@@ -20,7 +20,7 @@ const typeClass: Record<string, string> = {
 };
 ---
 
-<article class="pub" data-type={item.type} data-year={item.year} data-area={item.area}>
+<article class="pub" id={item.slug} data-type={item.type} data-year={item.year} data-area={item.area}>
   <div class="pub-year">{item.year}</div>
   <div class="pub-body">
     <div class="row top">
@@ -75,15 +75,45 @@ const typeClass: Record<string, string> = {
           </p>
         </div>
       </details>
+      <button type="button" class="cite-copy" data-cite-copy aria-live="polite">复制引用</button>
     </div>
   </div>
 </article>
+
+<script>
+  import { copyText } from '../utils/clipboard.mjs';
+
+  // 组件的 script 在整页只执行一次，所以这里用事件委托处理页面上所有的成果条目
+  document.addEventListener('click', async (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-cite-copy]');
+    if (!button) return;
+
+    const code = button.closest('.publication-details')?.querySelector('pre code');
+    const bibtex = code?.textContent ?? '';
+    if (!bibtex.trim()) return;
+
+    const ok = await copyText(bibtex);
+    button.textContent = ok ? '已复制 ✓' : '复制失败，请手动选中';
+    button.classList.toggle('is-done', ok);
+    window.setTimeout(() => {
+      button.textContent = '复制引用';
+      button.classList.remove('is-done');
+    }, 1800);
+  });
+</script>
 
 <style>
   .pub {
     display: grid; grid-template-columns: 62px 1fr; gap: 18px;
     padding: 22px 0; border-bottom: 1px solid var(--border);
+    scroll-margin-top: calc(var(--header-h) + 24px);
   }
+  /* 从站内搜索直接跳到某条成果时，给一个短暂的落点提示 */
+  @keyframes pub-flash {
+    0%, 25% { background-color: var(--accent-soft); }
+    100% { background-color: transparent; }
+  }
+  .pub:target { animation: pub-flash 2.4s ease; }
   .pub-year {
     font-size: 0.92rem; font-weight: 700; color: var(--muted);
     font-variant-numeric: tabular-nums; padding-top: 3px;
@@ -113,6 +143,17 @@ const typeClass: Record<string, string> = {
   details[open] summary::after { content: '−'; }
   summary:hover { border-color: var(--accent); background: var(--accent-soft); }
   summary:focus-visible { outline-offset: 2px; }
+  /* 复制引用：与摘要在同一行的第三个胶囊按钮 */
+  .cite-copy {
+    display: inline-flex; align-items: center; gap: 6px; width: fit-content;
+    padding: 5px 13px; border: 1px solid var(--border); border-radius: 999px;
+    background: var(--bg); color: var(--accent);
+    font: inherit; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+    transition: 0.16s ease;
+  }
+  .cite-copy:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .cite-copy.is-done { color: var(--gold); border-color: var(--gold); background: transparent; }
+  .cite-copy:focus-visible { outline-offset: 2px; }
   .detail-body { margin-top: 10px; }
   .abstract {
     background: var(--bg-soft); padding: 14px 16px; border-radius: var(--radius-sm);

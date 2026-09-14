@@ -102,6 +102,9 @@ class Command(BaseCommand):
         site.openings_enabled = bool(openings.get("enabled", True))
         site.openings_title = openings.get("title", "")
         site.openings_text = openings.get("text", "")
+        # 招生详情属于后台长期维护的内容，site.json 未提供时保留现有值
+        if "details" in openings:
+            site.openings_details = openings["details"] or ""
         site.openings_email = openings.get("email", "")
         site.nav = data.get("nav", [])
         site.social = data.get("social", [])
@@ -151,6 +154,8 @@ class Command(BaseCommand):
             "email": front.get("email", "") or "",
             "join_year": str(front.get("joinYear", "") or ""),
             "interests": as_list(front.get("interests")),
+            **({"now_at": front["nowAt"] or ""} if "nowAt" in front else {}),
+            **({"areas": as_list(front["areas"])} if "areas" in front else {}),
             **({"hobbies": as_list(front["hobbies"])} if "hobbies" in front else {}),
             **({"research_focus": front["researchFocus"] or ""} if "researchFocus" in front else {}),
             **({"achievement_summary": front["achievementSummary"] or ""} if "achievementSummary" in front else {}),

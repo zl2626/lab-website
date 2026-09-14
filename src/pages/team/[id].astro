@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getMembers } from '../../lib/content';
+import { getMembers, getResearch, getSite } from '../../lib/content';
 import { asset, u } from '../../utils/url';
 import { initials } from '../../utils/format';
 
@@ -11,6 +11,9 @@ export async function getStaticPaths() {
 
 const { item } = Astro.props;
 
+// 研究方向标题 -> slug，用于把成员的「所在研究方向」变成可点击的链接
+const areaSlug = new Map((await getResearch()).map((area) => [area.title, area.slug]));
+
 const linkItems = [
   { key: 'homepage', label: '个人主页' },
   { key: 'scholar', label: 'Google Scholar' },
@@ -18,9 +21,28 @@ const linkItems = [
   { key: 'dblp', label: 'DBLP' },
   { key: 'orcid', label: 'ORCID' },
 ].filter((l) => Boolean(item.links[l.key]));
+
+// 结构化数据：让搜索引擎把这位成员识别为一个研究者（而不是普通页面）
+const site = await getSite();
+const origin = (Astro.site ?? new URL('https://example.com')).origin;
+const portrait = item.photo ? new URL(asset(item.photo), origin).toString() : '';
+const personSchema = {
+  '@type': 'Person',
+  '@id': `${origin}${u(`/team/${item.slug}/`)}#person`,
+  name: item.name,
+  ...(item.nameEn ? { alternateName: item.nameEn } : {}),
+  url: new URL(u(`/team/${item.slug}/`), origin).toString(),
+  ...(item.title ? { jobTitle: item.title } : {}),
+  ...(item.email ? { email: `mailto:${item.email}` } : {}),
+  ...(portrait ? { image: portrait } : {}),
+  ...(item.researchFocus ? { description: item.researchFocus } : {}),
+  ...(item.interests.length ? { knowsAbout: item.interests } : {}),
+  ...(site.affiliation ? { affiliation: { '@type': 'Organization', name: site.affiliation } } : {}),
+  ...(Object.values(item.links).length ? { sameAs: Object.values(item.links) } : {}),
+};
 ---
 
-<BaseLayout title={item.name} description={`${item.name} · ${item.role}`}>
+<BaseLayout title={item.name} description={`${item.name} · ${item.role}`} crumb={item.name} schema={personSchema}>
   <section class="section-detail container">
     <p class="crumb"><a href={u('/team')}>团队成员</a> / {item.name}</p>
 
@@ -43,7 +65,26 @@ const linkItems = [
           {item.joinYear && <span class="muted small">{item.joinYear} 年加入</span>}
         </div>
         {item.nameEn && <p class="en">{item.nameEn}</p>}
+        {item.nowAt && <p class="now-at"><span class="now-at-label">现在</span>{item.nowAt}</p>}
         {item.researchFocus && <p class="small">研究方向：{item.researchFocus}</p>}
+
+        {
+          item.areas.length > 0 && (
+            <div class="block">
+              <h4>所在研究方向</h4>
+              <div class="row tags">
+                {item.areas.map((areaTitle) =>
+                  areaSlug.get(areaTitle) ? (
+                    <a class="tag" href={u(`/research/${areaSlug.get(areaTitle)}/`)}>{areaTitle}</a>
+                  ) : (
+                    <span class="tag tag-muted">{areaTitle}</span>
+                  )
+                )}
+              </div>
+            </div>
+          )
+        }
+
         {item.hobbies.length > 0 && <div class="block"><h4>兴趣爱好</h4><div class="row tags">{item.hobbies.map((h) => <span class="tag tag-muted">{h}</span>)}</div></div>}
         {item.achievementSummary && <div class="block"><h4>成果产出</h4><p>{item.achievementSummary}</p></div>}
         {item.email && <p class="small">邮箱：<a href={`mailto:${item.email}`}>{item.email}</a></p>}
@@ -101,6 +142,19 @@ const linkItems = [
   .intro h1 { margin-bottom: 0.3em; }
   .meta { gap: 10px; margin-bottom: 10px; }
   .en { color: var(--muted); margin: 0 0 0.6em; }
+  /* 校友去向：用一条左侧色条突出，比普通正文更容易被看到 */
+  .now-at {
+    display: flex; align-items: baseline; gap: 8px; margin: 0 0 .7em;
+    padding: 8px 14px; border-left: 3px solid var(--gold);
+    background: var(--bg-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: .92rem; color: var(--text);
+  }
+  .now-at-label {
+    flex: 0 0 auto; font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--gold);
+  }
+  .tags a.tag { text-decoration: none !important; }
+  .tags a.tag:hover { background: var(--accent); color: var(--on-accent); }
   .block { margin-top: 20px; }
   .block h4 {
     font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;

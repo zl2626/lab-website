@@ -37,6 +37,10 @@ const members = defineCollection({
     hobbies: z.array(z.string()).default([]),
     researchFocus: z.string().default(''),
     achievementSummary: z.string().default(''),
+    /** 毕业/离开后的去向，例如「某大学 助理教授」 */
+    nowAt: z.string().default(''),
+    /** 所属研究方向的中文标题，需与研究方向页标题一致，用于在方向详情页列出成员 */
+    areas: z.array(z.string()).default([]),
     /** 个人主页 / 学术主页链接 */
     links: z
       .object({

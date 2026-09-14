@@ -35,6 +35,7 @@ def serialize_site(obj: SiteSetting) -> dict:
             "enabled": obj.openings_enabled,
             "title": obj.openings_title,
             "text": obj.openings_text,
+            "detailsHtml": render_markdown(obj.openings_details),
             "email": obj.openings_email,
         },
         "nav": [
@@ -78,6 +79,8 @@ def serialize_member(obj: Member) -> dict:
         "photo": obj.photo,
         "email": obj.email,
         "joinYear": obj.join_year,
+        "nowAt": obj.now_at,
+        "areas": [str(a) for a in as_list(obj.areas)],
         "interests": [str(i) for i in as_list(obj.interests)],
         "hobbies": [str(i) for i in as_list(obj.hobbies)],
         "researchFocus": obj.research_focus,

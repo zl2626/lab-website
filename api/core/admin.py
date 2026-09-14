@@ -102,6 +102,10 @@ class MemberForm(forms.ModelForm):
     photo = ImageOrUrlField(label="照片")
     interests = LineListField(label="研究兴趣")
     hobbies = LineListField(label="兴趣爱好")
+    areas = LineListField(
+        label="所属研究方向",
+        help_text="每行填一个「研究方向」的中文标题，需与研究方向页的标题完全一致，才会在该方向详情页列出此人。",
+    )
     links = MemberLinksField(label="相关链接", help_text="每行：homepage | https://…；支持 homepage、scholar、github、dblp、orcid。")
 
     class Meta:
@@ -130,6 +134,12 @@ class SiteSettingForm(forms.ModelForm):
     group_photo = ImageOrUrlField(label="首页团队合照")
     nav = LinkListField(label="导航菜单", help_text="每行：名称 | 链接。留空使用默认导航。")
     social = LinkListField(label="页脚链接")
+    openings_details = forms.CharField(
+        label="招生详情（Markdown）",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 10, "cols": 80}),
+        help_text="可写申请材料清单、申请流程、常见问题。支持 Markdown：# 小标题、- 列表、**加粗**、[链接](https://…)",
+    )
     for key, spec in PAGE_COPY.items():
         locals()[f"copy_{key}"] = (forms.URLField if spec["type"] == "url" else forms.CharField)(
             label=spec["label"], required=False,
@@ -184,7 +194,7 @@ class MemberAdmin(AutoRebuildMixin, admin.ModelAdmin):
     search_fields = ("name", "name_en", "slug", "email")
     actions = [rebuild_site]
     fieldsets = (
-        ("基本信息", {"fields": ("name", "name_en", "slug", "role", "title", "join_year")}),
+        ("基本信息", {"fields": ("name", "name_en", "slug", "role", "title", "join_year", "now_at")}),
         (
             "照片",
             {
@@ -193,7 +203,7 @@ class MemberAdmin(AutoRebuildMixin, admin.ModelAdmin):
             },
         ),
         ("联系方式", {"fields": ("email", "links")}),
-        ("展示", {"fields": ("research_focus", "interests", "hobbies", "achievement_summary", "order")}),
+        ("展示", {"fields": ("areas", "research_focus", "interests", "hobbies", "achievement_summary", "order")}),
         ("个人简介（支持 Markdown）", {"fields": ("bio",)}),
         ("发布", {"fields": ("published",)}),
     )
@@ -257,7 +267,7 @@ class SiteSettingAdmin(AutoRebuildMixin, admin.ModelAdmin):
     fieldsets = (
         ("课题组信息", {"fields": ("name", "name_en", "abbr", "tagline", "affiliation", "description", "group_photo")}),
         ("联系方式", {"fields": ("address", "postcode", "email", "phone")}),
-        ("招生信息", {"fields": ("openings_enabled", "openings_title", "openings_text", "openings_email")}),
+        ("招生信息", {"fields": ("openings_enabled", "openings_title", "openings_text", "openings_details", "openings_email")}),
         (
             "导航与页脚",
             {

@@ -7,6 +7,7 @@ order: 1
 email: wei.zhang@example.edu.cn
 joinYear: 2015
 interests: [计算机视觉, 多模态学习, 可信人工智能]
+areas: [计算机视觉, 多模态学习, 可信人工智能]
 links:
   homepage: https://www.example.edu.cn/~weizhang
   scholar: https://scholar.google.com/

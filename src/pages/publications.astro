@@ -34,6 +34,9 @@ const yearRange =
         <label>成果类型<select id="pub-type"><option value="">全部类型</option>{types.map((t) => <option value={t}>{t}</option>)}</select></label>
         <label>研究方向<select id="pub-area"><option value="">全部方向</option>{areas.map((a) => <option value={a}>{a}</option>)}</select></label>
         <button type="reset" class="reset-filter">清除筛选</button>
+        <button type="button" class="export-filter" id="export-bib" data-site={site.name} title="把当前筛选出的成果导出为一个 .bib 文件，可直接导入 Zotero / EndNote / BibDesk">
+          导出筛选结果 (.bib)
+        </button>
       </form>
       <p id="result-count" class="small muted" role="status" aria-live="polite">共 {pubs.length} 项成果</p>
     </div>
@@ -103,6 +106,9 @@ const yearRange =
   .filters select { max-width: 100%; }
   .reset-filter { cursor: pointer; color: var(--accent); font-weight: 600; }
   .reset-filter:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .export-filter { cursor: pointer; color: var(--text-soft); font-weight: 600; }
+  .export-filter:hover { border-color: var(--accent); color: var(--accent); }
+  .export-filter.is-done { color: var(--gold); border-color: var(--gold); }
   @media (max-width: 600px) { .filters label { flex: 1 1 100%; min-width: 0; } }
 
   .year-block { margin-bottom: 40px; }
@@ -117,6 +123,8 @@ const yearRange =
 </style>
 
 <script>
+  import { downloadText } from '../utils/clipboard.mjs';
+
   const form = document.querySelector<HTMLFormElement>('.filters')!;
   const search = document.querySelector<HTMLInputElement>('#pub-search')!;
   const year = document.querySelector<HTMLSelectElement>('#pub-year')!;
@@ -126,6 +134,7 @@ const yearRange =
   const blocks = Array.from(document.querySelectorAll<HTMLElement>('.year-block'));
   const empty = document.getElementById('no-result')!;
   const count = document.getElementById('result-count')!;
+  const exportButton = document.getElementById('export-bib') as HTMLButtonElement | null;
 
   function update() {
     const words = search.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
@@ -147,8 +156,41 @@ const yearRange =
     count.textContent = `显示 ${visible} / ${cells.length} 项成果`;
     empty.hidden = visible > 0 || cells.length === 0;
   }
+
   form.addEventListener('input', update);
   form.addEventListener('change', update);
   form.addEventListener('reset', () => { setTimeout(update, 0); });
   update();
+
+  // 把当前筛选结果导出成一个 .bib 文件；引用文本直接取自各条目已渲染的 BibTeX 区块，不重复计算
+  exportButton?.addEventListener('click', () => {
+    const chunks = cells
+      .filter((cell) => cell.style.display !== 'none')
+      .map((cell) => cell.querySelector('article.pub pre code')?.textContent ?? '')
+      .map((text) => text.trim())
+      .filter(Boolean);
+
+    const original = exportButton.textContent ?? '';
+    if (chunks.length === 0) {
+      exportButton.textContent = '当前没有可导出的成果';
+      exportButton.classList.add('is-done');
+      window.setTimeout(() => {
+        exportButton.textContent = original;
+        exportButton.classList.remove('is-done');
+      }, 1800);
+      return;
+    }
+
+    const today = new Date();
+    const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const header = `% ${exportButton.dataset.site || 'Lab'} 科研成果导出\n% 导出时间：${stamp}，共 ${chunks.length} 条\n% 引用前请与原文核对。\n\n`;
+    downloadText(`publications-${stamp}.bib`, header + chunks.join('\n'));
+
+    exportButton.textContent = `已导出 ${chunks.length} 条 ✓`;
+    exportButton.classList.add('is-done');
+    window.setTimeout(() => {
+      exportButton.textContent = original;
+      exportButton.classList.remove('is-done');
+    }, 2200);
+  });
 </script>

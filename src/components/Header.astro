@@ -27,10 +27,17 @@ const isHome = path === (u('/').replace(/\/+$/, '') || '/');
       </span>
     </a>
 
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深色模式">
-      <span class="icon-sun" aria-hidden="true">☀</span>
-      <span class="icon-moon" aria-hidden="true">☾</span>
-    </button>
+    <div class="header-actions">
+      <button type="button" class="search-trigger" data-search-open aria-label="站内搜索">
+        <span class="search-glyph" aria-hidden="true">⌕</span>
+        <span class="search-label">搜索</span>
+        <kbd class="search-kbd" aria-hidden="true">⌘K</kbd>
+      </button>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深色模式">
+        <span class="icon-sun" aria-hidden="true">☀</span>
+        <span class="icon-moon" aria-hidden="true">☾</span>
+      </button>
+    </div>
   </div>
 
   <nav class="nav-bar" aria-label="主导航">
@@ -108,7 +115,21 @@ const isHome = path === (u('/').replace(/\/+$/, '') || '/');
   .nav-link.active::after { transform: scaleX(1); }
   .nav-link:focus-visible { outline-offset: -3px; }
 
-  /* ---------- 主题切换 ---------- */
+  /* ---------- 搜索入口 / 主题切换 ---------- */
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .search-trigger {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    height: 42px; padding: 0 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
+    font-size: 0.86rem; font-weight: 600; transition: 0.16s ease;
+  }
+  .search-trigger:hover { border-color: var(--border-strong); color: var(--accent); }
+  .search-glyph { font-size: 1.15rem; line-height: 1; }
+  .search-kbd {
+    font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600;
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--bg-soft); color: var(--muted); line-height: 1.6;
+  }
   .theme-toggle {
     width: 42px; height: 42px; border-radius: 10px; cursor: pointer; flex-shrink: 0;
     border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
@@ -138,6 +159,13 @@ const isHome = path === (u('/').replace(/\/+$/, '') || '/');
     background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.4);
   }
   .site-header[data-home='true'] .theme-toggle:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  .site-header[data-home='true'] .search-trigger {
+    background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.4);
+  }
+  .site-header[data-home='true'] .search-trigger:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  .site-header[data-home='true'] .search-kbd {
+    background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.3); color: #eaf1f6;
+  }
   .site-header[data-home='true'] .nav-bar { background: transparent; border-top-color: transparent; }
   .site-header[data-home='true'] .nav-link { color: #e8eef3; }
   .site-header[data-home='true'] .nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
@@ -171,6 +199,9 @@ const isHome = path === (u('/').replace(/\/+$/, '') || '/');
     .nav-items { justify-content: flex-start; padding-inline: 10px; gap: 0; }
     .nav-link { padding: 13px 12px; }
     .nav-link::after { left: 12px; right: 12px; }
+    /* 窄屏只留图标，节省横向空间 */
+    .search-label, .search-kbd { display: none; }
+    .search-trigger { padding: 0; width: 42px; justify-content: center; }
   }
   @media (max-width: 480px) {
     .header-inner { gap: 10px; }
@@ -179,6 +210,7 @@ const isHome = path === (u('/').replace(/\/+$/, '') || '/');
     .brand-mark { width: 32px; height: 32px; flex-basis: 32px; }
     .brand { gap: 8px; }
     .theme-toggle { width: 38px; height: 38px; }
+    .search-trigger { width: 38px; height: 38px; }
   }
 </style>
 

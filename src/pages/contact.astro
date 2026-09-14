@@ -36,7 +36,7 @@ const { contact, openings } = site;
 
     {
       openings.enabled && openings.title && (
-        <div class="join">
+        <section class="join">
           <span class="eyebrow">Join Us</span>
           <h2>{openings.title}</h2>
           {openings.text && <p>{openings.text}</p>}
@@ -48,7 +48,8 @@ const { contact, openings } = site;
               {copy.contact_apply_label}
             </a>
           )}
-        </div>
+          {openings.detailsHtml && <div class="prose join-details" set:html={openings.detailsHtml} />}
+        </section>
       )
     }
 
@@ -75,6 +76,16 @@ const { contact, openings } = site;
   }
   .join h2 { margin: 0.3em 0 0.5em; }
   .join p { max-width: 66ch; }
+  /* 招生详情：Markdown 渲染，限定在区块内阅读 */
+  .join-details {
+    max-width: 72ch; margin-top: 30px; padding-top: 26px;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  }
+  .join-details > :first-child { margin-top: 0; }
+  .join-details h2 { font-size: 1.08rem; margin: 1.6em 0 .5em; }
+  .join-details h2:first-of-type { margin-top: 0; }
+  .join-details ul, .join-details ol { margin: 0 0 1em; }
+  .join-details li { margin-bottom: .35em; }
   .eyebrow {
     font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
   }

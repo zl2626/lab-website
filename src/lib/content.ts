@@ -32,7 +32,7 @@ export interface SiteInfo {
   description: string;
   groupPhoto: string;
   contact: { address: string; postcode: string; email: string; phone: string };
-  openings: { enabled: boolean; title: string; text: string; email: string };
+  openings: { enabled: boolean; title: string; text: string; detailsHtml: string; email: string };
   nav: NavLink[];
   social: NavLink[];
   icp: string;
@@ -61,6 +61,10 @@ export interface MemberItem {
   photo: string;
   email: string;
   joinYear: string;
+  /** 毕业 / 离开后的去向 */
+  nowAt: string;
+  /** 所属研究方向的中文标题 */
+  areas: string[];
   interests: string[];
   hobbies: string[];
   researchFocus: string;
@@ -203,6 +207,8 @@ function normalizeSite(raw: Record<string, unknown> | null | undefined): SiteInf
       enabled: Boolean(openings.enabled),
       title: str(openings.title),
       text: str(openings.text),
+      // 接口模式给的是渲染好的 HTML；Markdown 兜底模式下 site.json 里是原始 Markdown，这里补一次渲染
+      detailsHtml: str(openings.detailsHtml) || md(str(openings.details)),
       email: str(openings.email),
     },
     nav: linkList(raw.nav).length ? linkList(raw.nav) : DEFAULT_NAV,
@@ -313,6 +319,8 @@ function normalizeMember(raw: unknown): MemberItem {
     photo: str(item.photo),
     email: str(item.email),
     joinYear: str(item.joinYear),
+    nowAt: str(item.nowAt),
+    areas: strList(item.areas),
     interests: strList(item.interests),
     hobbies: strList(item.hobbies),
     researchFocus: str(item.researchFocus),
@@ -402,6 +410,8 @@ async function buildFromMarkdown(): Promise<ContentBundle> {
       photo: entry.data.photo ?? '',
       email: entry.data.email ?? '',
       joinYear: entry.data.joinYear ?? '',
+      nowAt: entry.data.nowAt ?? '',
+      areas: entry.data.areas ?? [],
       interests: entry.data.interests,
       hobbies: entry.data.hobbies,
       researchFocus: entry.data.researchFocus,

@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getNews } from '../../lib/content';
+import { getNews, getSite } from '../../lib/content';
 import { asset, u } from '../../utils/url';
 import { formatDate } from '../../utils/format';
 
@@ -16,9 +16,30 @@ const all = await getNews();
 const index = all.findIndex((n) => n.slug === item.slug);
 const older = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
 const newer = index > 0 ? all[index - 1] : null;
+
+// 结构化数据：帮助搜索引擎把它当作一条新闻而不是普通静态页
+const site = await getSite();
+const origin = (Astro.site ?? new URL('https://example.com')).origin;
+const cover = item.cover ? new URL(asset(item.cover), origin).toString() : '';
+const newsSchema = {
+  '@type': 'NewsArticle',
+  '@id': `${origin}${u(`/news/${item.slug}/`)}#article`,
+  headline: item.title,
+  datePublished: item.date,
+  dateModified: item.date,
+  url: new URL(u(`/news/${item.slug}/`), origin).toString(),
+  inLanguage: 'zh-CN',
+  ...(item.summary ? { description: item.summary } : {}),
+  ...(cover ? { image: [cover] } : {}),
+  ...(item.tags.length ? { keywords: item.tags.join(', ') } : {}),
+  articleSection: '科研新闻',
+  author: { '@type': 'Organization', name: site.name },
+  publisher: { '@id': `${origin}/#organization` },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': new URL(u(`/news/${item.slug}/`), origin).toString() },
+};
 ---
 
-<BaseLayout title={item.title} description={item.summary || undefined}>
+<BaseLayout title={item.title} description={item.summary || undefined} crumb={item.title} schema={newsSchema}>
   <article class="section-detail container-narrow">
     <p class="crumb"><a href={u('/news')}>科研新闻</a></p>
     <header>

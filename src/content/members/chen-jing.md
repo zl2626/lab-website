@@ -6,6 +6,7 @@ order: 21
 email: jing.chen@example.edu.cn
 joinYear: 2023
 interests: [医学影像分析, 弱监督学习]
+areas: [医学影像分析]
 ---
 
 陈静，2023 级博士研究生，与附属医院合作开展医学影像分割研究，

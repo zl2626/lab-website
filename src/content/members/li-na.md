@@ -7,6 +7,7 @@ order: 10
 email: na.li@example.edu.cn
 joinYear: 2024
 interests: [多模态学习, 视觉语言模型]
+areas: [多模态学习]
 links:
   scholar: https://scholar.google.com/
   github: https://github.com/

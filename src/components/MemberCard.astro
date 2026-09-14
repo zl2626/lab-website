@@ -38,6 +38,7 @@ const roleClass: Record<string, string> = {
     </span>
     {item.nameEn && <span class="en">{item.nameEn}</span>}
     {item.title && <span class="meta">{item.title}</span>}
+    {item.nowAt && <span class="now-at"><b>现在</b>{item.nowAt}</span>}
     {item.researchFocus && <span class="meta">研究方向：{item.researchFocus}</span>}
     {
       item.interests.length > 0 && (
@@ -69,6 +70,14 @@ const roleClass: Record<string, string> = {
   .name { font-size: 1.05rem; font-weight: 700; color: var(--text); line-height: 1.35; }
   .en { font-size: 0.79rem; color: var(--muted); letter-spacing: 0.01em; }
   .meta { font-size: 0.84rem; color: var(--text-soft); line-height: 1.55; }
+  .now-at {
+    display: inline-flex; align-items: baseline; gap: 6px; margin-top: 3px;
+    font-size: 0.82rem; color: var(--text); line-height: 1.5;
+  }
+  .now-at b {
+    flex: 0 0 auto; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--gold); text-transform: uppercase;
+  }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
 
   .member-card:hover { text-decoration: none; }
