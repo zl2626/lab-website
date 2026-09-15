@@ -1,0 +1,74 @@
+# 把 Astro 前端发布到 GitHub Pages（纯静态演示站）—— GitHub Actions 方案（可选）
+#
+# ⚠ 本文件放在 scripts/ 下是**有意为之**：它是一份备用模板，不会被 Actions 执行。
+#   想改用 Actions 发布时，把它移动到 .github/workflows/pages.yml 即可。
+#   放在这里的原因：推送 .github/workflows/ 下的文件要求 token 具备 workflow 权限，
+#   当前用于推送的 token 只有 repo 权限，GitHub 会直接拒收该文件。
+#   现在实际使用的发布方式是 `npm run publish:pages`（见 README 第五节 步骤 8）。
+#
+# 定位说明：
+#   GitHub Pages 只能托管静态文件，没有后端。
+#   因此这里**不设置 API_BASE** —— 构建时拿不到接口，会自动回退到
+#   src/content/ 里的 Markdown，页面照常显示；后台改的数据库内容不会出现在 Pages 上。
+#   要「后台改完就能上线」，请用 Vercel（见 README 第五节）。
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 只保留最新的发布任务，避免连续推送时排队积压
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建静态站点
+        env:
+          # 子路径部署：站点挂在 /lab-website 下。
+          # 换仓库名时，这里的 BASE_PATH / SITE_URL 以及 scripts/publish-pages.mjs
+          # 顶部的 REPO_SLUG 要一起改。
+          BASE_PATH: /lab-website
+          SITE_URL: https://zl2626.github.io
+        run: npm run build
+
+      - name: 构建产物自检（断链 / SEO）
+        env:
+          BASE_PATH: /lab-website
+        run: npm run verify:dist
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

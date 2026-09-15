@@ -464,11 +464,11 @@ npm run publish:pages
 首次启用需要在仓库里开一次开关：**Settings** → **Pages** → **Build and deployment**
 → Source 选 **Deploy from a branch** → 分支选 `gh-pages`、目录选 `/(root)`。
 
-> 仓库里另带了 `.github/workflows/pages.yml`（GitHub Actions 方式），但**默认不走这条路**：
-> 推送 `.github/workflows/` 下的文件要求 token 具备 `workflow` 权限，
-> 而用于推送的主机 token 只有 `repo` 权限，GitHub 会直接拒收该文件。
-> 所以 Pages 改用上面的脚本发布；等你换成带 `workflow` 权限的 token 后，
-> 可以删掉 `scripts/publish-pages.mjs` 改用 Actions，Source 相应改回 **GitHub Actions**。
+> 仓库里还存了一份 GitHub Actions 的配置模板：`scripts/github-pages.workflow.yml`。
+> 它**特意不放在 `.github/workflows/` 下**：推送该目录的文件要求 token 具备 `workflow` 权限，
+> 而当前用于推送的 token 只有 `repo` 权限，GitHub 会直接拒收整次推送。
+> 想改用 Actions 时，把它移回 `.github/workflows/pages.yml`、并换成带 `workflow` 权限的 token，
+> 再把 Pages 的 Source 改回 **GitHub Actions** 即可（那时可以删掉 `scripts/publish-pages.mjs`）。
 
 需要知道两者的分工：
 
