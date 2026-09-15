@@ -9,6 +9,20 @@ if (!fs.existsSync(DIST)) {
   process.exit(1);
 }
 
+// BASE_PATH=/lab-website 这类子路径部署（GitHub Pages）时，
+// 产物里的站内链接都会带上 /lab-website 前缀。自检脚本必须先把前缀剥掉
+// 再比对文件，否则会把所有链接都误报成断链。
+const BASE = (process.env.BASE_PATH || '').replace(/\/+$/, '');
+function stripBase(url) {
+  // 必须要求边界（BASE 本身，或 BASE + '/'），否则 /lab-websitefavicon.svg
+  // 这种「少一个斜杠」的真 bug 会被误当成合法链接放过。
+  if (BASE && (url === BASE || url.startsWith(BASE + '/'))) {
+    const rest = url.slice(BASE.length);
+    return rest === '' ? '/' : rest;
+  }
+  return url;
+}
+
 function walk(dir, acc = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
@@ -31,15 +45,17 @@ for (const file of htmlFiles) {
   let m;
   while ((m = re.exec(html))) {
     const url = m[1];
-    if (url.startsWith('/api/')) continue;
-    if (files.has(url)) continue;
-    const candidates = [url.replace(/\/$/, '') + '/index.html', url + '/index.html', url + 'index.html'];
+    const rel = stripBase(url);
+    // /api/* 由后端函数处理，不属于静态产物；子路径部署下也要能识别
+    if (rel.startsWith('/api/')) continue;
+    if (files.has(rel)) continue;
+    const candidates = [rel.replace(/\/$/, '') + '/index.html', rel + '/index.html', rel + 'index.html'];
     if (candidates.some((c) => files.has(c))) continue;
     broken.set(url, (broken.get(url) || 0) + 1);
   }
 }
 
-console.log(`页面数 ${htmlFiles.length}，资源数 ${files.size}`);
+console.log(`页面数 ${htmlFiles.length}，资源数 ${files.size}${BASE ? `（子路径前缀 ${BASE}）` : ''}`);
 console.log(`断链 ${broken.size} 处`);
 for (const [url, count] of broken) console.log(`  ${url} (${count} 处)`);
 

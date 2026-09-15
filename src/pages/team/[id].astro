@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PublicationItem from '../../components/PublicationItem.astro';
 import { getMembers, getPublications, getResearch, getSite } from '../../lib/content';
-import { asset, u } from '../../utils/url';
+import { abs, asset, u } from '../../utils/url';
 import { initials } from '../../utils/format';
 import { buildAuthorIndex, publicationsByMember } from '../../utils/authors.mjs';
 
@@ -11,7 +11,14 @@ export async function getStaticPaths() {
   return members.map((item) => ({ params: { id: item.slug }, props: { item } }));
 }
 
-const { item } = Astro.props;
+// Astro 开发服务器会缓存 getStaticPaths 返回的 props：后台改完内容后，
+// 已经渲染过的详情页不会跟着刷新（列表页是实时的，详情页却停在旧数据）。
+// 开发时按 slug 重新读一次最新内容，保证「后台改 → 本地详情页立刻可见」；
+// 生产构建仍然走 getStaticPaths，静态产物不受影响。
+let item = Astro.props.item;
+if (import.meta.env.DEV) {
+  item = (await getMembers()).find((entry) => entry.slug === Astro.params.id) ?? item;
+}
 
 // 研究方向标题 -> slug，用于把成员的「所在研究方向」变成可点击的链接
 const areaSlug = new Map((await getResearch()).map((area) => [area.title, area.slug]));
@@ -37,10 +44,10 @@ const linkItems = [
 
 const personSchema = {
   '@type': 'Person',
-  '@id': `${origin}${u(`/team/${item.slug}/`)}#person`,
+  '@id': `${abs(`/team/${item.slug}/`)}#person`,
   name: item.name,
   ...(item.nameEn ? { alternateName: item.nameEn } : {}),
-  url: new URL(u(`/team/${item.slug}/`), origin).toString(),
+  url: abs(`/team/${item.slug}/`),
   ...(item.title ? { jobTitle: item.title } : {}),
   ...(item.email ? { email: `mailto:${item.email}` } : {}),
   ...(portrait ? { image: portrait } : {}),

@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getNews, getSite } from '../../lib/content';
-import { asset, u } from '../../utils/url';
+import { abs, asset, u } from '../../utils/url';
 import { formatDate } from '../../utils/format';
 
 import { shouldShowToc, withHeadingAnchors } from '../../utils/toc.mjs';
@@ -11,7 +11,14 @@ export async function getStaticPaths() {
   return news.map((item) => ({ params: { id: item.slug }, props: { item } }));
 }
 
-const { item } = Astro.props;
+// Astro 开发服务器会缓存 getStaticPaths 返回的 props：后台改完内容后，
+// 已经渲染过的详情页不会跟着刷新（列表页是实时的，详情页却停在旧数据）。
+// 开发时按 slug 重新读一次最新内容，保证「后台改 → 本地详情页立刻可见」；
+// 生产构建仍然走 getStaticPaths，静态产物不受影响。
+let item = Astro.props.item;
+if (import.meta.env.DEV) {
+  item = (await getNews()).find((entry) => entry.slug === Astro.params.id) ?? item;
+}
 
 // 列表已按日期倒序，据此找出相邻的两条新闻
 const all = await getNews();
@@ -29,19 +36,19 @@ const origin = (Astro.site ?? new URL('https://example.com')).origin;
 const cover = item.cover ? new URL(asset(item.cover), origin).toString() : '';
 const newsSchema = {
   '@type': 'NewsArticle',
-  '@id': `${origin}${u(`/news/${item.slug}/`)}#article`,
+  '@id': `${abs(`/news/${item.slug}/`)}#article`,
   headline: item.title,
   datePublished: item.date,
   dateModified: item.date,
-  url: new URL(u(`/news/${item.slug}/`), origin).toString(),
+  url: abs(`/news/${item.slug}/`),
   inLanguage: 'zh-CN',
   ...(item.summary ? { description: item.summary } : {}),
   ...(cover ? { image: [cover] } : {}),
   ...(item.tags.length ? { keywords: item.tags.join(', ') } : {}),
   articleSection: '科研新闻',
   author: { '@type': 'Organization', name: site.name },
-  publisher: { '@id': `${origin}/#organization` },
-  mainEntityOfPage: { '@type': 'WebPage', '@id': new URL(u(`/news/${item.slug}/`), origin).toString() },
+  publisher: { '@id': `${abs('/')}#organization` },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': abs(`/news/${item.slug}/`) },
 };
 ---
 

@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getRobotProjects, getSite } from '../lib/content';
-import { u } from '../utils/url';
+import { abs, u } from '../utils/url';
 
 const site = await getSite();
 const copy = site.pageCopy;
@@ -46,7 +46,7 @@ const projects = await getRobotProjects();
         <div class="empty">
           <h2>{copy.platform_empty_title}</h2>
           <p>{copy.platform_empty_text}</p>
-          <a class="btn btn-primary" href={u('/api/admin/core/robotproject/add/')}>{copy.platform_empty_action}</a>
+          <a class="btn btn-primary" href={abs('/api/admin/core/robotproject/add/')}>{copy.platform_empty_action}</a>
         </div>
       )
     }

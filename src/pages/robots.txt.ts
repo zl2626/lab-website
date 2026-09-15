@@ -8,8 +8,9 @@
 
 import type { APIRoute } from 'astro';
 
-export const GET: APIRoute = ({ site, url }) => {
-  const origin = (site ?? url).origin;
+import { abs } from '../utils/url';
+
+export const GET: APIRoute = () => {
 
   const body = [
     'User-agent: *',
@@ -17,7 +18,7 @@ export const GET: APIRoute = ({ site, url }) => {
     'Disallow: /api/',
     '',
     '# 百度 / Google 通用：提交站点地图可加快收录',
-    `Sitemap: ${origin}/sitemap.xml`,
+    `Sitemap: ${abs('/sitemap.xml')}`,
     '',
   ].join('\n');
 

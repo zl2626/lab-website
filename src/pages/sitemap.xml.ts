@@ -8,6 +8,7 @@
 import type { APIRoute } from 'astro';
 
 import { loadContent } from '../lib/content';
+import { abs } from '../utils/url';
 
 const ESCAPES: Record<string, string> = {
   '<': '&lt;',
@@ -28,9 +29,8 @@ interface Entry {
   lastmod?: string;
 }
 
-export const GET: APIRoute = async ({ site, url }) => {
-  const { research, members, news, robotProjects } = await loadContent();
-  const origin = (site ?? url).origin;
+export const GET: APIRoute = async () => {
+  const { research, members, news } = await loadContent();
 
   const entries: Entry[] = [
     { path: '/', priority: '1.0', changefreq: 'weekly' },
@@ -61,7 +61,8 @@ export const GET: APIRoute = async ({ site, url }) => {
 
   const body = entries
     .map((entry) => {
-      const lines = [`    <loc>${esc(`${origin}${entry.path}`)}</loc>`];
+      // abs() 会带上子路径前缀（GitHub Pages 的 /lab-website）
+      const lines = [`    <loc>${esc(abs(entry.path))}</loc>`];
       if (entry.lastmod) lines.push(`    <lastmod>${entry.lastmod}</lastmod>`);
       lines.push(`    <changefreq>${entry.changefreq}</changefreq>`);
       lines.push(`    <priority>${entry.priority}</priority>`);

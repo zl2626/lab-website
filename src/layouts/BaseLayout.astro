@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import { getSite } from '../lib/content';
-import { u } from '../utils/url';
+import { abs, stripBase, u } from '../utils/url';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import SearchDialog from '../components/SearchDialog.astro';
@@ -29,7 +29,8 @@ const origin = canonical.origin;
 // ---------------------------------------------------------------------------
 // 面包屑：一级目录取自导航菜单，末级由详情页通过 crumb 传入
 // ---------------------------------------------------------------------------
-const segments = Astro.url.pathname.split('/').filter(Boolean);
+// 面包屑按「站内相对路径」计算，否则子路径部署下第一段会变成 lab-website
+const segments = stripBase(Astro.url.pathname).split('/').filter(Boolean);
 const trail: { name: string; href: string }[] = [{ name: '首页', href: u('/') }];
 if (segments.length >= 1) {
   const top = `/${segments[0]}`;
@@ -37,7 +38,7 @@ if (segments.length >= 1) {
   const name = navItem?.label ?? crumb ?? segments[0];
   trail.push({ name, href: u(top + '/') });
   if (segments.length >= 2 && crumb) {
-    trail.push({ name: crumb, href: u(Astro.url.pathname) });
+    trail.push({ name: crumb, href: canonical.pathname });
   }
 }
 
@@ -46,11 +47,11 @@ if (segments.length >= 1) {
 // ---------------------------------------------------------------------------
 const organization = {
   '@type': 'ResearchOrganization',
-  '@id': `${origin}/#organization`,
+  '@id': `${abs('/')}#organization`,
   name: site.name,
   ...(site.nameEn ? { alternateName: site.nameEn } : {}),
   ...(site.tagline ? { description: site.tagline } : {}),
-  url: `${origin}/`,
+  url: abs('/'),
   ...(site.affiliation ? { parentOrganization: { '@type': 'Organization', name: site.affiliation } } : {}),
   ...(site.contact.email ? { email: site.contact.email } : {}),
   ...(site.contact.phone ? { telephone: site.contact.phone } : {}),
@@ -68,14 +69,14 @@ const organization = {
 
 const website = {
   '@type': 'WebSite',
-  '@id': `${origin}/#website`,
-  url: `${origin}/`,
+  '@id': `${abs('/')}#website`,
+  url: abs('/'),
   name: site.name,
   inLanguage: 'zh-CN',
-  publisher: { '@id': `${origin}/#organization` },
+  publisher: { '@id': `${abs('/')}#organization` },
   potentialAction: {
     '@type': 'SearchAction',
-    target: { '@type': 'EntryPoint', urlTemplate: `${origin}/?q={search_term_string}` },
+    target: { '@type': 'EntryPoint', urlTemplate: abs('/?q={search_term_string}') },
     'query-input': 'required name=search_term_string',
   },
 };
@@ -110,7 +111,7 @@ const jsonLd = { '@context': 'https://schema.org', '@graph': graph };
     <title>{pageTitle}</title>
     <meta name="description" content={metaDescription} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="icon" type="image/svg+xml" href={u('/favicon.svg')} />
     <link rel="alternate" type="application/rss+xml" title={`${site.name} · 科研新闻`} href={u('/rss.xml')} />
 
     <!-- Open Graph -->

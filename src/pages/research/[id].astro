@@ -12,7 +12,14 @@ export async function getStaticPaths() {
   return research.map((item) => ({ params: { id: item.slug }, props: { item } }));
 }
 
-const { item } = Astro.props;
+// Astro 开发服务器会缓存 getStaticPaths 返回的 props：后台改完内容后，
+// 已经渲染过的详情页不会跟着刷新（列表页是实时的，详情页却停在旧数据）。
+// 开发时按 slug 重新读一次最新内容，保证「后台改 → 本地详情页立刻可见」；
+// 生产构建仍然走 getStaticPaths，静态产物不受影响。
+let item = Astro.props.item;
+if (import.meta.env.DEV) {
+  item = (await getResearch()).find((entry) => entry.slug === Astro.params.id) ?? item;
+}
 const copy = (await getSite()).pageCopy;
 
 // 正文标题补锚点，并收集目录（小节太少时不显示目录）
