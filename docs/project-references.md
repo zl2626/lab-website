@@ -68,3 +68,79 @@ npm run build
 - 没有接入 Google Scholar 引用数：需要第三方服务或爬取，与「只使用已有元数据、不编造数据」的原则冲突，
   因此只通过 `sameAs` 指向学者的 Scholar 主页。
 
+## 第三轮：部署链路、分享卡片与导航可用性（2026-09-15）
+
+这一轮的出发点不是「再加功能」，而是把**已经上线的东西逐个实测一遍**，
+把「看起来能用」和「真的能用」之间的差补上。对标对象仍是主流开源学术站点，
+但重点放在那些 star 数高、issue 里反复出现的**部署类坑**。
+
+| 参考项目 / 现象 | 学到的点 | 本项目修复 |
+| --- | --- | --- |
+| [al-folio](https://github.com/alshedivat/al-folio) 支持的 `url` + `baseurl` 双变量子路径部署 | 子路径部署时**不能直接拿 `Astro.url.pathname` 比路径**，必须先剥掉 base | `Header.astro` 引入 `stripBase()`；修复前 29 页 HTML 里 `aria-current="page"` 出现 0 次，修复后 28 个内容页各恰好 1 次 |
+| [academicpages](https://github.com/academicpages/academicpages.github.io) 的页面分享预览 | 分享卡片要靠 `og:image` / `twitter:image` 才有缩略图，缺了就只显示纯文字 | `BaseLayout.astro` 新增 `image` prop，详情页传封面，缺失时回退到新生成的 `public/og-default.png`（1200×630）；现 29/29 页四类标签齐全 |
+| 高校实验室站点的部署清单普遍要求 favicon 明确存在 | 浏览器会默认去 `/favicon.ico` 取图标，缺了会在控制台报 404 | 生成多尺寸 `public/favicon.ico`（16~256）并在 `<head>` 显式声明 |
+| [Astro 子路径部署issue](https://github.com/withastro/astro/issues) 里反复出现的「产物自检漏检绝对地址」 | 自检脚本只查相对链接时，`abs()` 生成的同源绝对 URL 会绕过断链检测 | `tests/check-dist.mjs` 增加 `SITE_URL` 维度；`/api/*` 白名单改为只在产物自带后端时才跳过 |
+
+### 这一轮的具体改动
+
+**导航与可访问性**
+
+- `src/components/Header.astro`：`path` 改为 `stripBase(Astro.url.pathname)`，
+  `isHome` / `isActive('/')` 全部改成与 `'/'` 精确比较。
+  这是子路径部署（GitHub Pages `/lab-website/`）下导航高亮整体失效的根因。
+
+**分享与图标**
+
+- `src/layouts/BaseLayout.astro`：新增可选 `image` prop，输出 `og:image`、`og:image:alt`、
+  `twitter:image`、`twitter:image:alt`，并回退到站点默认图。
+- 新增 `scripts/make_og.py`（生成 `public/og-default.png`）与 `scripts/make_favicon.py`
+  （生成多尺寸 `public/favicon.ico`），两个脚本都可重复执行。
+
+**平台页与后端判据**
+
+- `src/lib/content.ts` 新增 `hasBackend()` / `adminUrl()`：
+  判据故意**不看 `API_BASE`**，因为那只是「构建时去哪读内容」，可以指向别的后端；
+  只看「这个产物自己有没有 `/api`」——dev 有代理、Vercel 有 `vercel.json` 重写、
+  GitHub Pages 纯静态没有。
+- `src/pages/platform.astro` 只在 `hasBackend()` 为真时渲染后台入口，
+  修复了 Pages 上必 404 的 `/api/admin/...` 死链。
+
+**构建自检**
+
+- `tests/check-dist.mjs`：新增 `SITE`（读 `SITE_URL`）把同源绝对 URL 纳入断链检查；
+  `/api/*` 白名单改为 `HAS_BACKEND`；候选路径补 `rel.replace(/\/$/, '') + '.html'`。
+- `scripts/publish-pages.mjs`：`verify:dist` 调用补传 `SITE_URL`，否则上面那条检查形同虚设。
+
+**构建期读取真实后端（可选能力）**
+
+- `API_RESOLVE=host=ip1,ip2` 让构建机绕过被污染的 DNS，直连指定边缘 IP；
+  走 `node:https` 而非 `fetch`，TLS 仍按原域名校验（`servername`），只换 TCP 目标。
+- 内置多 IP 轮换重试（每轮每 IP 各试一次，`>=500` 视为打错节点继续换），
+  单次请求 10 秒超时，避免一个挂住的节点拖垮整次构建。
+- 保护逻辑保持不变：显式指定 `API_BASE` 后接口失败默认**停止构建**，
+  只有 `ALLOW_CONTENT_FALLBACK=1` 才回退 Markdown——避免用示例数据覆盖正式站。
+
+### 端到端验证
+
+本轮所有结论都有实测输出，探针在 `_shots/e2e_admin_to_front.py`（临时目录，不入库）：
+
+```
+PASS  后台保存文案落库
+PASS  A/Pages 纯静态构建 / 无后端时走 Markdown / platform 页无 /api/admin 死链
+PASS  A/导航高亮 28 内容页（team=1 research-detail=1）
+PASS  A/og:image 全站覆盖 29/29 ；A/twitter:image 全站覆盖 29/29
+PASS  A/favicon.ico 已产出 ；A/og-default.png 已产出
+PASS  B/构建期读后端（本地 Django）/ 构建日志确认走 API / 后台文案进入静态产物
+PASS  C/dev 页实时反映后台改动
+PASS  文案已复原
+TOUTIAO_E2E_OK
+```
+
+### 已知取舍
+
+- GitHub Pages 仍是**纯静态副本**，内容默认来自 `src/content/` 的 Markdown。
+  想让 Pages 也反映后台数据，需要在构建时显式给 `API_BASE`（并在 DNS 被污染时配 `API_RESOLVE`）；
+  这一步是可选能力，不做默认，避免构建依赖外部网络稳定性。
+- `API_RESOLVE` 里的 IP 是 Vercel 边缘节点地址，会随平台调度变化，属于应急手段；
+  在 DNS 正常的 CI 环境（GitHub Actions / Vercel 自身构建）不需要它。
+- 本轮没有引入图片压缩 / CDN 优化：站点图片总量很小，收益不明显。

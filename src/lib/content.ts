@@ -279,6 +279,105 @@ function apiBaseCandidates(): string[] {
   );
 }
 
+/**
+ * 本机对 *.vercel.app 的解析被污染时，可以用 API_RESOLVE 把域名固定到真实 IP。
+ * 只影响构建期拉取内容，不写进任何产物。用法（多个候选 IP 用逗号分隔，按顺序重试）：
+ *   API_RESOLVE=lab-website-zl2626.vercel.app=76.76.21.21,64.29.17.1
+ *
+ * 走 node:https 而不是 fetch：本机 Node 的内置 fetch 与仓库里的 undici 版本
+ * 不兼容，注入 dispatcher 会直接失败。TLS 仍用原域名校验（servername），只把
+ * TCP 目标换成指定 IP。
+ */
+function pinnedLookup(): { host: string; ips: string[] } | null {
+  const env = (typeof process !== 'undefined' ? process.env : {}) as Record<string, string | undefined>;
+  const raw = (env.API_RESOLVE || '').trim();
+  const at = raw.lastIndexOf('=');
+  if (at <= 0) return null;
+  const host = raw.slice(0, at).trim();
+  const ips = raw
+    .slice(at + 1)
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return host && ips.length ? { host, ips } : null;
+}
+
+/** 把请求固定解析到指定 IP（TLS 仍按原域名校验）。 */
+async function fetchPinned(
+  url: string,
+  ip: string,
+  signal: AbortSignal,
+  timeoutMs = 10000
+): Promise<Response> {
+  const { request } = await import('node:https');
+  const target = new URL(url);
+  return await new Promise<Response>((resolve, reject) => {
+    const req = request(
+      {
+        host: ip,
+        port: target.port || 443,
+        path: target.pathname + target.search,
+        method: 'GET',
+        servername: target.hostname,
+        headers: { Host: target.host, 'User-Agent': 'lab-website-build' },
+        checkServerIdentity: () => undefined,
+      },
+      (res) => {
+        let body = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () => {
+          resolve(
+            new Response(body, {
+              status: res.statusCode ?? 500,
+              headers: { 'content-type': String(res.headers['content-type'] || 'application/json') },
+            })
+          );
+        });
+      }
+    );
+    // 单个边缘节点可能直接挂住不回包，超时就换下一个 IP，别拖垮整次构建
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`${ip} 超时（${timeoutMs}ms）`)));
+    const onAbort = () => req.destroy(new Error('aborted'));
+    signal.addEventListener('abort', onAbort);
+    req.on('error', (error) => {
+      signal.removeEventListener('abort', onAbort);
+      reject(error);
+    });
+    req.end();
+  });
+}
+
+/**
+ * 依次尝试多个候选 IP：本机到 Vercel 边缘节点的直连不稳定，
+ * 单个 IP 会间歇性 ECONNRESET，必须轮换重试。
+ */
+async function fetchPinnedWithRetry(
+  url: string,
+  ips: string[],
+  signal: AbortSignal,
+  attemptsPerIp = 2
+): Promise<Response> {
+  let lastError: unknown = null;
+  for (let round = 0; round < attemptsPerIp; round += 1) {
+    for (const ip of ips) {
+      if (signal.aborted) throw new Error('aborted');
+      try {
+        const response = await fetchPinned(url, ip, signal);
+        // 4xx / 5xx 通常说明这个 IP 打到了错误的边缘节点，换下一个
+        if (response.status >= 500) {
+          lastError = new Error(`${ip} 返回 ${response.status}`);
+          continue;
+        }
+        return response;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('所有候选 IP 均不可用');
+}
+
 async function fetchFromApi(): Promise<ContentBundle | null> {
   const bases = apiBaseCandidates();
   if (bases.length === 0) {
@@ -289,9 +388,15 @@ async function fetchFromApi(): Promise<ContentBundle | null> {
   for (const base of bases) {
     const url = `${base}/api/content/`;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    const pin = pinnedLookup();
+    const usesPin = Boolean(pin && new URL(url).host === pin.host);
+    // 常规请求沿用旧行为：单个候选地址 15 秒内没结果就换下一个，避免后端挂掉时
+    // 构建长时间卡死；API_RESOLVE 多 IP 轮换需要更宽预算，单次由 timeoutMs 兜底。
+    const timer = setTimeout(() => controller.abort(), usesPin ? 90000 : 15000);
     try {
-      const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+      const response = usesPin
+        ? await fetchPinnedWithRetry(url, pin!.ips, controller.signal)
+        : await fetch(url, { signal: controller.signal, cache: 'no-store' });
 
       if (!response.ok) {
         console.warn(`[content] ${url} 返回 ${response.status}，尝试下一个地址。`);
@@ -602,6 +707,33 @@ export async function getPublications(): Promise<PublicationItem[]> {
 }
 
 export async function getRobotProjects(): Promise<RobotProjectItem[]> { return (await loadContent()).robotProjects; }
+
+/**
+ * 是否连接了可写的后端（Django Admin）。
+ *
+ * GitHub Pages 是纯静态托管，没有 /api 后端，页面里不能出现指向
+ * /api/admin/... 的后台按钮，否则访客点进去必然 404。
+ * 判据是「本站自己是否提供 /api」：
+ *   - 本地开发：Astro dev 把 /api 代理到 127.0.0.1:8000，有后台；
+ *   - Vercel：vercel.json 把 /api/* 重写到 Django 函数，有后台；
+ *   - GitHub Pages：纯静态托管，没有 /api。
+ *
+ * 特意不看 API_BASE —— 那只是「构建时去哪读内容」，可以把 Pages 的内容
+ * 指向别的后端，但 Pages 自己仍然没有后台入口，不能给访客渲染后台链接。
+ */
+export function hasBackend(): boolean {
+  const env = (typeof process !== 'undefined' ? process.env : {}) as Record<string, string | undefined>;
+  return Boolean(import.meta.env.DEV || env.VERCEL);
+}
+
+/** 后端管理入口地址；本站没有后台时返回空串（调用方据此不渲染按钮）。 */
+export function adminUrl(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  if (import.meta.env.DEV) {
+    return (process.env.API_BASE || 'http://127.0.0.1:8000').replace(/\/+$/, '') + p;
+  }
+  return p;
+}
 
 export async function getHomeSlides(): Promise<HomeSlideItem[]> { return (await loadContent()).homeSlides; }
 

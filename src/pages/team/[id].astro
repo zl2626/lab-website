@@ -58,7 +58,7 @@ const personSchema = {
 };
 ---
 
-<BaseLayout title={item.name} description={`${item.name} · ${item.role}`} crumb={item.name} schema={personSchema}>
+<BaseLayout title={item.name} description={`${item.name} · ${item.role}`} crumb={item.name} schema={personSchema} image={item.photo}>
   <section class="section-detail container">
     <p class="crumb"><a href={u('/team')}>{copy.team_title}</a> / {item.name}</p>
 

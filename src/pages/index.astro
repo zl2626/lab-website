@@ -35,7 +35,7 @@ const highlights = pubs.filter((p) => p.highlight);
 const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, pubLimit);
 ---
 
-<BaseLayout>
+<BaseLayout image={site.groupPhoto}>
   <section
     class="home-banner"
     id="home-carousel"

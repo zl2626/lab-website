@@ -37,7 +37,7 @@ const areaMembers = members.filter((m) => m.areas.includes(item.title));
 const memberByAuthor = buildAuthorIndex(members);
 ---
 
-<BaseLayout title={item.title} description={item.summary} crumb={item.title}>
+<BaseLayout title={item.title} description={item.summary} crumb={item.title} image={item.cover}>
   <div class="page-head">
     <div class="container">
       <p class="crumb"><a href={u('/research')}>{copy.research_title}</a> / {item.title}</p>

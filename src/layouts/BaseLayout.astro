@@ -13,10 +13,12 @@ interface Props {
   crumb?: string;
   /** 额外的结构化数据（Person / NewsArticle 等），会并入同一份 @graph */
   schema?: Record<string, unknown> | Record<string, unknown>[];
+  /** 社交分享大图（详情页传封面 / 照片，不传则用站点默认分享图） */
+  image?: string;
 }
 
 const site = await getSite();
-const { title, description, crumb, schema } = Astro.props;
+const { title, description, crumb, schema, image } = Astro.props;
 const metaDescription = description || site.description || site.tagline;
 const pageTitle = title
   ? `${title} · ${site.name}`
@@ -25,6 +27,10 @@ const pageTitle = title
     : site.name;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
 const origin = canonical.origin;
+
+// 分享图统一用绝对地址：优先用页面自己的封面，没有就用站点默认卡片，
+// 避免 twitter:card=summary_large_image 却没有图的「空卡片」。
+const ogImage = image ? /^https?:\/\//i.test(image) ? image : abs(image) : abs('/og-default.png');
 
 // ---------------------------------------------------------------------------
 // 面包屑：一级目录取自导航菜单，末级由详情页通过 crumb 传入
@@ -112,6 +118,7 @@ const jsonLd = { '@context': 'https://schema.org', '@graph': graph };
     <meta name="description" content={metaDescription} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href={u('/favicon.svg')} />
+    <link rel="icon" type="image/x-icon" sizes="any" href={u('/favicon.ico')} />
     <link rel="alternate" type="application/rss+xml" title={`${site.name} · 科研新闻`} href={u('/rss.xml')} />
 
     <!-- Open Graph -->
@@ -121,7 +128,11 @@ const jsonLd = { '@context': 'https://schema.org', '@graph': graph };
     <meta property="og:description" content={metaDescription} />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content="zh_CN" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={pageTitle} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={pageTitle} />
     <meta name="theme-color" content="#1a56db" />
 
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

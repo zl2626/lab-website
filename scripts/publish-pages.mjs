@@ -41,7 +41,9 @@ run('npm', ['run', 'build'], {
 console.log('\n▶ 2/3 自检构建产物');
 run('npm', ['run', 'verify:dist'], {
   shell: process.platform === 'win32',
-  env: { ...process.env, BASE_PATH },
+  // SITE_URL 让自检脚本把 abs() 生成的同源绝对地址也当成站内链接检查，
+  // 否则 /api/admin/... 这类死链会绕过检测（GitHub Pages 上没有后端）。
+  env: { ...process.env, BASE_PATH, SITE_URL },
 });
 
 console.log('\n▶ 3/3 推送到 ' + BRANCH + ' 分支');

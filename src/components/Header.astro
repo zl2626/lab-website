@@ -1,6 +1,6 @@
 ---
 import type { SiteInfo } from '../lib/content';
-import { u } from '../utils/url';
+import { stripBase, u } from '../utils/url';
 
 interface Props {
   site: SiteInfo;
@@ -9,13 +9,15 @@ interface Props {
 const { site } = Astro.props;
 const copy = site.pageCopy;
 
-const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
+// Astro.url.pathname 在子路径部署（GitHub Pages）下是 /lab-website/team/，
+// 导航项里存的却是 /team，必须先剥掉 base 再比较，否则高亮永远不生效。
+const path = stripBase(Astro.url.pathname).replace(/\/+$/, '') || '/';
 const isActive = (href: string) => {
   const h = href.replace(/\/+$/, '') || '/';
-  if (h === '/') return path === '' || path === '/';
+  if (h === '/') return path === '/';
   return path === h || path.startsWith(h + '/');
 };
-const isHome = path === (u('/').replace(/\/+$/, '') || '/');
+const isHome = path === '/';
 ---
 
 <header class="site-header" data-home={isHome ? 'true' : 'false'}>

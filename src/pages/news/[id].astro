@@ -52,7 +52,7 @@ const newsSchema = {
 };
 ---
 
-<BaseLayout title={item.title} description={item.summary || undefined} crumb={item.title} schema={newsSchema}>
+<BaseLayout title={item.title} description={item.summary || undefined} crumb={item.title} schema={newsSchema} image={item.cover}>
   <article class="section-detail container-narrow">
     <p class="crumb"><a href={u('/news')}>{copy.news_title}</a></p>
     <header>

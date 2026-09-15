@@ -1,11 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getRobotProjects, getSite } from '../lib/content';
-import { abs, u } from '../utils/url';
+import { adminUrl, getRobotProjects, getSite, hasBackend } from '../lib/content';
 
 const site = await getSite();
 const copy = site.pageCopy;
 const projects = await getRobotProjects();
+// GitHub Pages 等纯静态部署没有 /api 后端：此时不渲染后台入口，避免必然 404。
+const backendUrl = hasBackend() ? adminUrl('/api/admin/core/robotproject/add/') : '';
 ---
 
 <BaseLayout title={copy.platform_title} description={`${site.name}的机器人科研平台`}>
@@ -46,7 +47,7 @@ const projects = await getRobotProjects();
         <div class="empty">
           <h2>{copy.platform_empty_title}</h2>
           <p>{copy.platform_empty_text}</p>
-          <a class="btn btn-primary" href={abs('/api/admin/core/robotproject/add/')}>{copy.platform_empty_action}</a>
+          {backendUrl && <a class="btn btn-primary" href={backendUrl}>{copy.platform_empty_action}</a>}
         </div>
       )
     }

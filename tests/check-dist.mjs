@@ -38,24 +38,41 @@ const all = walk(DIST).filter((f) => !skip(f));
 const files = new Set(all.map((f) => '/' + path.relative(DIST, f).split(path.sep).join('/')));
 const htmlFiles = all.filter((f) => f.endsWith('.html'));
 
+// 站点自身的绝对地址（https://owner.github.io/repo/...）也要当成站内链接检查，
+// 否则 abs() 生成的「指向本站的绝对 URL」会绕过断链检测（历史上就这样漏过 404）。
+const SITE = (process.env.SITE_URL || '').replace(/\/+$/, '');
+// 只有「这个产物自己就有后端」时，/api/* 才不算断链：
+// Vercel 由 vercel.json 把 /api/* 交给 Django 函数，本地联调也代理到后端；
+// GitHub Pages 是纯静态托管，产物里出现 /api/admin/... 就是必然 404。
+// 判据不能只看 API_BASE（那是构建时读内容的地址，可以指向别的后端）。
+const HAS_BACKEND = Boolean(process.env.VERCEL || process.env.LOCAL_API === '1');
+
 const broken = new Map();
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, 'utf8');
   const re = /(?:href|src)="(\/[^"#?]*)/g;
+  const absRe = SITE ? new RegExp('(?:href|src)="' + SITE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/[^"#?]*)', 'g') : null;
+  const found = [];
   let m;
-  while ((m = re.exec(html))) {
-    const url = m[1];
+  while ((m = re.exec(html))) found.push(m[1]);
+  if (absRe) while ((m = absRe.exec(html))) found.push(m[1]);
+  for (const url of found) {
     const rel = stripBase(url);
-    // /api/* 由后端函数处理，不属于静态产物；子路径部署下也要能识别
-    if (rel.startsWith('/api/')) continue;
+    // /api/* 由后端函数处理，不属于静态产物；但没有后端时它就是死链
+    if (HAS_BACKEND && rel.startsWith('/api/')) continue;
     if (files.has(rel)) continue;
-    const candidates = [rel.replace(/\/$/, '') + '/index.html', rel + '/index.html', rel + 'index.html'];
+    const candidates = [
+      rel.replace(/\/$/, '') + '/index.html',
+      rel + '/index.html',
+      rel + 'index.html',
+      rel.replace(/\/$/, '') + '.html',
+    ];
     if (candidates.some((c) => files.has(c))) continue;
     broken.set(url, (broken.get(url) || 0) + 1);
   }
 }
 
-console.log(`页面数 ${htmlFiles.length}，资源数 ${files.size}${BASE ? `（子路径前缀 ${BASE}）` : ''}`);
+console.log(`页面数 ${htmlFiles.length}，资源数 ${files.size}${BASE ? `（子路径前缀 ${BASE}）` : ''}${SITE ? `，站内绝对地址前缀 ${SITE}` : ''}`);
 console.log(`断链 ${broken.size} 处`);
 for (const [url, count] of broken) console.log(`  ${url} (${count} 处)`);
 

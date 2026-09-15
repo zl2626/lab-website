@@ -276,6 +276,20 @@ API_BASE=http://127.0.0.1:8000 npm run build
 
 不设 `API_BASE` 时走 Markdown 兜底，两种模式都能构建成功。
 
+如果拉取时报 `ECONNRESET` / 超时，多半是本机到 `*.vercel.app` 的 DNS 被污染
+（解析结果不是 Vercel 的 IP）。这时可以用 `API_RESOLVE` 把域名固定到真实的边缘节点，
+脚本会按顺序轮换重试，全部失败才放弃：
+
+```bash
+# Windows PowerShell
+$env:API_BASE="https://<项目>.vercel.app"
+$env:API_RESOLVE="<项目>.vercel.app=76.76.21.98,216.198.79.65"
+npm run build
+```
+
+`API_RESOLVE` 只影响构建期的抓取，不会写进任何产物；CI 环境（GitHub Actions、Vercel 自身构建）
+DNS 正常，不需要配置它。
+
 ---
 
 ## 四、内容管理（Django Admin）
@@ -295,6 +309,12 @@ API_BASE=http://127.0.0.1:8000 npm run build
 团队成员编辑页提供照片、兴趣爱好、主要研究方向和成果产出，字段名称按日常语言设计；成员详情页会展示这些内容。
 
 「科研平台·机器人项目」用于记录机器人项目。每个项目可以填写项目介绍、研究方向、3D 模型格式和模型地址、演示视频地址、详细说明，并用“发布”控制是否在前台显示。3D 模型和视频建议上传到 GitHub Releases、对象存储、网盘或视频平台后粘贴公开地址；Vercel 函数不适合保存大文件。前台入口是 `/platform`。
+
+> 平台页上的「进入内容管理后台」按钮**只在产物自带后端时才渲染**
+> （本地开发走 `/api` 代理、Vercel 由 `vercel.json` 重写 `/api/*`）。
+> GitHub Pages 是纯静态托管，产物里不会出现任何 `/api/admin/...` 链接，
+> 免得访客点进去必然是 404。判据由 `src/lib/content.ts` 的 `hasBackend()` 提供，
+> 它故意只看「产物自己有没有后端」，不看 `API_BASE`（那只是构建时读内容的地址，可以指向别的后端）。
 
 登录 `/api/admin/` 后，工作台会展示当前账号可管理内容的总数、已发布数、草稿数和新增入口。
 这些数量表示数据库里的内容状态，不表示当前线上构建已经同步。
@@ -406,6 +426,9 @@ git push -u origin main
 | `VERCEL_DEPLOY_HOOK_URL` | 建议 | 后台「重建前台站点」用，见步骤 6 |
 | `DEEPSEEK_API_KEY` | 可选 | 只用 AI 生成摘要时才需要 |
 | `API_BASE` | 可选 | 前端构建时拉取内容的地址；不填会自动用 Vercel 的域名 |
+| `VERCEL_API_TOKEN` | 建议 | 后台「重建并发布官网」用；项目没连 Git 仓库时靠它调 REST API 重建，见步骤 6 |
+| `VERCEL_PROJECT_ID` / `VERCEL_TEAM_ID` | 建议 | 同上，`prj_` / `team_` 开头的 ID |
+| `API_RESOLVE` | 可选 | 仅本机构建用。本机 DNS 被污染时把域名固定到边缘 IP，多个 IP 用逗号分隔 |
 
 ### 步骤 5：执行数据库迁移
 
@@ -433,14 +456,36 @@ python api/manage.py createsuperuser --noinput
 > 注意：`vercel env pull` 会把 `DATABASE_URL` 一并拉到 `.env.local`，
 > Django 的 `settings.py` 会自动读取该文件，所以上面几条命令直接操作的就是**线上数据库**。
 
-### 步骤 6：配置自动重建（Deploy Hook）
+### 步骤 6：配置自动重建
+
+线上是静态站点，后台保存只改数据库，**必须重建一次**才会反映到前台。
+后台提供两种重建方式，配好任意一种，点「🚀 重建并发布官网」即可生效。
+
+**方式一：Deploy Hook（要求项目已连接 Git 仓库）**
 
 1. Vercel 项目 → **Settings** → **Git** → **Deploy Hooks** → 新建一个
    （名字随意，Branch 选 `main`），复制生成的 URL。
 2. 把它填到环境变量 `VERCEL_DEPLOY_HOOK_URL`。
 3. **Redeploy 一次**让变量生效。
 
-之后在后台点「🚀 重建前台站点」，网站就会自动更新。
+**方式二：Vercel REST API（项目没连 Git 仓库时用这个）**
+
+没连 Git 仓库的项目在 Vercel 上**创建不了 Deploy Hook**，此时改用 API 触发：
+取最近一次生产部署作为源，重新构建一份，生产域名会自动指过去。
+
+| 变量 | 从哪里拿 |
+| --- | --- |
+| `VERCEL_API_TOKEN` | Vercel → **Settings** → **Tokens**，新建一个（`vca_` 开头）。建议单独建，别复用登录令牌 |
+| `VERCEL_PROJECT_ID` | 项目 → **Settings** → **General** → Project ID（`prj_` 开头） |
+| `VERCEL_TEAM_ID` | 团队 → **Settings** → Team ID（`team_` 开头）；个人账号留空 |
+
+三个变量填好后 **Redeploy 一次**让它们生效，之后后台按钮就会走 API 重建。
+
+> 没配任何一种时，后台会明确提示「未配置发布服务，内容已保存但不会同步到官网」——
+> 不是静默失败，但内容确实不会上线，请务必配好。
+>
+> 想让保存后自动重建，保持 `AUTO_REBUILD_ON_SAVE` 为默认的开启状态即可；
+> 想改成手动点按钮，把它设为 `0`。
 
 ### 步骤 7：验证
 
@@ -481,6 +526,17 @@ npm run publish:pages
 
 > Pages 版**不设置 `API_BASE`**：构建时接口不可用，会自动回退到仓库里的 Markdown，
 > 页面照常显示。想在 Pages 上换内容，只能改 `src/content/` 里的 Markdown 再推送。
+>
+> 如果希望 Pages 也反映后台数据，可以在构建时显式传 `API_BASE`（DNS 被污染时再加 `API_RESOLVE`）：
+>
+> ```bash
+> API_BASE=https://<项目>.vercel.app \
+> API_RESOLVE="<项目>.vercel.app=76.76.21.98,216.198.79.65" \
+> BASE_PATH=/lab-website SITE_URL=https://<用户名>.github.io npm run build
+> ```
+>
+> 注意：显式设置 `API_BASE` 后接口失败会**直接停止构建**（除非 `ALLOW_CONTENT_FALLBACK=1`），
+> 这是为了防止一次网络抖动就把示例内容覆盖到正式站上。
 >
 > 子路径坑见第六节第 3 条。
 
@@ -585,8 +641,13 @@ Settings → Deployment Protection 里关掉。
 - [ ] 后台「团队成员」：8 位示例成员
 - [ ] 后台「科研新闻」：6 条示例新闻
 - [ ] 后台「科研成果」：14 项示例成果
-- [ ] `public/favicon.svg` 站点图标
+- [ ] `public/favicon.svg` 站点图标（配套的 `favicon.ico` 由 `scripts/make_favicon.py` 生成）
+- [ ] `public/og-default.png` 社交分享默认图（1200×630，由 `scripts/make_og.py` 生成）
 - [ ] `public/images/team/`、`public/images/research/` 真实图片
+
+> 各条目的「封面 / 照片」字段留空时不会产生坏图：详情页会自动回退到 `og-default.png`，
+> 页面里的 `og:image` / `twitter:image` 始终存在（当前线上数据库的图片字段全为空，实测 29/29 页走默认图）。
+> 两个生成脚本都可重复执行，改完配色或文案后重跑一次、再 `npm run build` 即可。
 
 ---
 
