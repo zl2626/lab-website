@@ -448,9 +448,31 @@ python api/manage.py createsuperuser --noinput
 - 接口：`https://<你的项目>.vercel.app/api/content/`
 - 后台：`https://<你的项目>.vercel.app/api/admin/`
 
+### 步骤 8（可选）：同时发布一份到 GitHub Pages
+
+仓库里带了 `.github/workflows/pages.yml`，push 到 `main` 会自动把 **Astro 前端**
+发布到 GitHub Pages：`https://<用户名>.github.io/<仓库名>/`。
+
+首次启用需要手动开一次开关：仓库 → **Settings** → **Pages** → **Build and deployment**
+→ Source 选 **GitHub Actions**（选完即生效，无需再建分支）。
+
+需要知道两者的分工：
+
+| | GitHub Pages | Vercel |
+| --- | --- | --- |
+| 内容来源 | `src/content/` 里的 Markdown | 数据库（后台维护） |
+| 有没有后台 | ❌ 纯静态，没有 `/api/` | ✅ Django Admin + PostgreSQL |
+| 后台改完会更新吗 | ❌ 不会 | ✅ 触发重建后更新 |
+| 适合用来 | 对外演示、给不熟悉 Vercel 的人看 | 正式运营 |
+
+> Pages 版**不设置 `API_BASE`**：构建时接口不可用，会自动回退到仓库里的 Markdown，
+> 页面照常显示。想在 Pages 上换内容，只能改 `src/content/` 里的 Markdown 再推送。
+>
+> 子路径坑见第六节第 3 条。
+
 ---
 
-## 六、两个必须知道的部署坑
+## 六、必须知道的部署坑
 
 ### 1. `vercel.json` 里的 `"framework": "astro"` 不能删
 
@@ -471,6 +493,27 @@ WHITENOISE_USE_FINDERS = True   # 直接从已安装的 app 里取文件，无�
 ```
 
 如果你把 `STATIC_URL` 改回 `/static/`，后台会变成没有样式的裸 HTML 页面。
+
+### 3. GitHub Pages 是子路径部署，必须显式传 `BASE_PATH`
+
+仓库站挂在 `https://<用户名>.github.io/<仓库名>/` 下，也就是**子路径**而不是域名根。
+workflow 里已经写好了：
+
+```yaml
+env:
+  BASE_PATH: /lab-website        # 换成你的仓库名
+  SITE_URL: https://<用户名>.github.io
+```
+
+漏了 `BASE_PATH` 的话，产物里所有站内链接、favicon、sitemap、RSS 都会指向域名根而 404。
+本地想复现 Pages 效果：
+
+```bash
+BASE_PATH=/lab-website SITE_URL=https://<用户名>.github.io npm run build
+BASE_PATH=/lab-website npm run verify:dist   # 断链自检会把 base 前缀剥掉再比对
+```
+
+> 换仓库名时，`pages.yml` 里的 `BASE_PATH` / `SITE_URL` 两处都要一起改。
 
 ---
 
