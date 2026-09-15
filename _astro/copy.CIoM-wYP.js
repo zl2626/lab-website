@@ -1,0 +1,1 @@
+function e(e,t={}){return String(e??``).replace(/\{(\w+)\}/g,(e,n)=>Object.prototype.hasOwnProperty.call(t,n)?String(t[n]):e)}export{e as t};
