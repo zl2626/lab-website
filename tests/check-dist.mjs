@@ -88,6 +88,13 @@ for (const file of htmlFiles) {
   if (!/rel="canonical"/.test(html)) issues.push(`${rel}: 缺少 canonical`);
   if (h1Count !== 1) issues.push(`${rel}: h1 数量为 ${h1Count}`);
   if (/<img(?![^>]*\balt=)[^>]*>/.test(html)) issues.push(`${rel}: 存在没有 alt 的 img`);
+
+  // Astro 允许把 <script> 写在 </BaseLayout> 之外，编译后会被吐到 </html> 之后。
+  // 浏览器能容错执行，但产物已是无效 HTML；这里当成错误拦下来。
+  const htmlEnd = html.lastIndexOf(`</html>`);
+  if (htmlEnd >= 0 && html.slice(htmlEnd + 7).trim()) {
+    issues.push(`${rel}: </html> 之后仍有内容（通常是 <script> 写在了 </BaseLayout> 外面）`);
+  }
 }
 console.log(`基础规范问题 ${issues.length} 处`);
 for (const i of issues) console.log('  ' + i);

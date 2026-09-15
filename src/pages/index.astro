@@ -226,6 +226,64 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
       </section>
     )
   }
+
+<script>
+  const slides = Array.from(document.querySelectorAll<HTMLElement>('.banner-slide'));
+  const carousel = document.getElementById('home-carousel');
+  const controls = document.querySelector<HTMLElement>('.banner-controls');
+  const dots = Array.from(document.querySelectorAll<HTMLButtonElement>('.banner-dot'));
+  const counter = document.getElementById('slide-current');
+  const AUTOPLAY_MS = 7000;
+  let current = 0;
+  let timer: number | undefined;
+
+  function show(index: number) {
+    current = (index + slides.length) % slides.length;
+    slides.forEach((slide, i) => { slide.hidden = i !== current; });
+    dots.forEach((dot, i) => { dot.setAttribute('aria-current', String(i === current)); });
+    if (counter) counter.textContent = String(current + 1).padStart(2, '0');
+  }
+
+  function step(offset: number) {
+    show(current + offset);
+  }
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  function stopAutoplay() {
+    if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
+  }
+  function startAutoplay() {
+    stopAutoplay();
+    if (slides.length > 1 && !reduced.matches && !document.hidden) {
+      timer = window.setInterval(() => step(1), AUTOPLAY_MS);
+    }
+  }
+
+  if (slides.length > 1 && carousel) {
+    if (controls) controls.hidden = false;
+    document.getElementById('slide-prev')?.addEventListener('click', () => { step(-1); startAutoplay(); });
+    document.getElementById('slide-next')?.addEventListener('click', () => { step(1); startAutoplay(); });
+    dots.forEach((dot) => dot.addEventListener('click', () => {
+      show(Number(dot.dataset.index || 0));
+      startAutoplay();
+    }));
+
+    carousel.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { step(-1); startAutoplay(); event.preventDefault(); }
+      else if (event.key === 'ArrowRight') { step(1); startAutoplay(); event.preventDefault(); }
+    });
+
+    // 鼠标悬停或键盘聚焦时暂停自动播放，离开后恢复
+    carousel.addEventListener('mouseenter', stopAutoplay);
+    carousel.addEventListener('mouseleave', startAutoplay);
+    carousel.addEventListener('focusin', stopAutoplay);
+    carousel.addEventListener('focusout', startAutoplay);
+    document.addEventListener('visibilitychange', () => (document.hidden ? stopAutoplay() : startAutoplay()));
+
+    // 标签页不可见或用户开启减少动效时，不要空转定时器
+    startAutoplay();
+  }
+</script>
 </BaseLayout>
 
 <style>
@@ -384,60 +442,3 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
 }
 </style>
 
-<script>
-  const slides = Array.from(document.querySelectorAll<HTMLElement>('.banner-slide'));
-  const carousel = document.getElementById('home-carousel');
-  const controls = document.querySelector<HTMLElement>('.banner-controls');
-  const dots = Array.from(document.querySelectorAll<HTMLButtonElement>('.banner-dot'));
-  const counter = document.getElementById('slide-current');
-  const AUTOPLAY_MS = 7000;
-  let current = 0;
-  let timer: number | undefined;
-
-  function show(index: number) {
-    current = (index + slides.length) % slides.length;
-    slides.forEach((slide, i) => { slide.hidden = i !== current; });
-    dots.forEach((dot, i) => { dot.setAttribute('aria-current', String(i === current)); });
-    if (counter) counter.textContent = String(current + 1).padStart(2, '0');
-  }
-
-  function step(offset: number) {
-    show(current + offset);
-  }
-
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  function stopAutoplay() {
-    if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
-  }
-  function startAutoplay() {
-    stopAutoplay();
-    if (slides.length > 1 && !reduced.matches && !document.hidden) {
-      timer = window.setInterval(() => step(1), AUTOPLAY_MS);
-    }
-  }
-
-  if (slides.length > 1 && carousel) {
-    if (controls) controls.hidden = false;
-    document.getElementById('slide-prev')?.addEventListener('click', () => { step(-1); startAutoplay(); });
-    document.getElementById('slide-next')?.addEventListener('click', () => { step(1); startAutoplay(); });
-    dots.forEach((dot) => dot.addEventListener('click', () => {
-      show(Number(dot.dataset.index || 0));
-      startAutoplay();
-    }));
-
-    carousel.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') { step(-1); startAutoplay(); event.preventDefault(); }
-      else if (event.key === 'ArrowRight') { step(1); startAutoplay(); event.preventDefault(); }
-    });
-
-    // 鼠标悬停或键盘聚焦时暂停自动播放，离开后恢复
-    carousel.addEventListener('mouseenter', stopAutoplay);
-    carousel.addEventListener('mouseleave', startAutoplay);
-    carousel.addEventListener('focusin', stopAutoplay);
-    carousel.addEventListener('focusout', startAutoplay);
-    document.addEventListener('visibilitychange', () => (document.hidden ? stopAutoplay() : startAutoplay()));
-
-    // 标签页不可见或用户开启减少动效时，不要空转定时器
-    startAutoplay();
-  }
-</script>

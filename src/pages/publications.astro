@@ -126,40 +126,6 @@ const clientCopy = {
   </section>
 
   <script type="application/json" id="pub-client-copy" set:html={JSON.stringify(clientCopy)} />
-</BaseLayout>
-
-<style>
-  .filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 26px 0 14px; }
-  .filters label { display: flex; flex-direction: column; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--muted); }
-  .search-field { flex: 1 1 260px; }
-  .filters input, .filters select, .reset-filter {
-    min-height: 42px; padding: 9px 12px;
-    border: 1px solid var(--border); border-radius: 8px;
-    background: var(--bg); color: var(--text); font: inherit; font-weight: 400;
-    transition: border-color .16s ease, box-shadow .16s ease;
-  }
-  .filters input:hover, .filters select:hover { border-color: var(--border-strong); }
-  .filters input:focus-visible, .filters select:focus-visible {
-    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
-  }
-  .filters select { max-width: 100%; }
-  .reset-filter { cursor: pointer; color: var(--accent); font-weight: 600; }
-  .reset-filter:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .export-filter { cursor: pointer; color: var(--text-soft); font-weight: 600; }
-  .export-filter:hover { border-color: var(--accent); color: var(--accent); }
-  .export-filter.is-done { color: var(--gold); border-color: var(--gold); }
-  @media (max-width: 600px) { .filters label { flex: 1 1 100%; min-width: 0; } }
-
-  .year-block { margin-bottom: 40px; }
-  .year-head {
-    display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
-    position: sticky; top: var(--header-h); background: var(--bg);
-    padding: 14px 0 8px; z-index: 5;
-    border-bottom: 1px solid var(--border);
-  }
-  .year-head h2 { margin: 0; font-size: 1.4rem; }
-  .pub-cell { display: contents; }
-</style>
 
 <script>
   import { downloadText } from '../utils/clipboard.mjs';
@@ -253,3 +219,38 @@ const clientCopy = {
     flash(fillCopy(clientCopy.exportDone || '{count}', { count: chunks.length }));
   });
 </script>
+</BaseLayout>
+
+<style>
+  .filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 26px 0 14px; }
+  .filters label { display: flex; flex-direction: column; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--muted); }
+  .search-field { flex: 1 1 260px; }
+  .filters input, .filters select, .reset-filter {
+    min-height: 42px; padding: 9px 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font: inherit; font-weight: 400;
+    transition: border-color .16s ease, box-shadow .16s ease;
+  }
+  .filters input:hover, .filters select:hover { border-color: var(--border-strong); }
+  .filters input:focus-visible, .filters select:focus-visible {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .filters select { max-width: 100%; }
+  .reset-filter { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .reset-filter:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .export-filter { cursor: pointer; color: var(--text-soft); font-weight: 600; }
+  .export-filter:hover { border-color: var(--accent); color: var(--accent); }
+  .export-filter.is-done { color: var(--gold); border-color: var(--gold); }
+  @media (max-width: 600px) { .filters label { flex: 1 1 100%; min-width: 0; } }
+
+  .year-block { margin-bottom: 40px; }
+  .year-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
+    position: sticky; top: var(--header-h); background: var(--bg);
+    padding: 14px 0 8px; z-index: 5;
+    border-bottom: 1px solid var(--border);
+  }
+  .year-head h2 { margin: 0; font-size: 1.4rem; }
+  .pub-cell { display: contents; }
+</style>
+

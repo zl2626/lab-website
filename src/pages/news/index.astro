@@ -56,21 +56,6 @@ const clientCopy = { countUnit: copy.news_count_unit, emptyTag: copy.news_empty_
   </section>
 
   <script type="application/json" id="news-client-copy" set:html={JSON.stringify(clientCopy)} />
-</BaseLayout>
-
-<style>
-  .filters { gap: 8px; margin-top: 22px; }
-  .chip {
-    padding: 6px 14px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; cursor: pointer;
-    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft); transition: 0.16s ease;
-  }
-  .chip:hover { border-color: var(--border-strong); }
-  .chip.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-  .year-block { margin-bottom: 46px; }
-  .year-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
-  .year-head h2 { margin: 0; font-size: 1.5rem; }
-  .news-cell { display: contents; }
-</style>
 
 <script>
   import { matchesNewsTag } from '../../utils/news-filter.mjs';
@@ -109,3 +94,19 @@ const clientCopy = { countUnit: copy.news_count_unit, emptyTag: copy.news_empty_
     if (empty) empty.hidden = visible > 0;
   });
 </script>
+</BaseLayout>
+
+<style>
+  .filters { gap: 8px; margin-top: 22px; }
+  .chip {
+    padding: 6px 14px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft); transition: 0.16s ease;
+  }
+  .chip:hover { border-color: var(--border-strong); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .year-block { margin-bottom: 46px; }
+  .year-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+  .year-head h2 { margin: 0; font-size: 1.5rem; }
+  .news-cell { display: contents; }
+</style>
+
