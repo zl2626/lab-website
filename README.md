@@ -450,11 +450,25 @@ python api/manage.py createsuperuser --noinput
 
 ### 步骤 8（可选）：同时发布一份到 GitHub Pages
 
-仓库里带了 `.github/workflows/pages.yml`，push 到 `main` 会自动把 **Astro 前端**
-发布到 GitHub Pages：`https://<用户名>.github.io/<仓库名>/`。
+GitHub Pages 只能托管静态文件，所以它托管的是 **Astro 前端**的一份纯静态副本：
+`https://<用户名>.github.io/<仓库名>/`。
 
-首次启用需要手动开一次开关：仓库 → **Settings** → **Pages** → **Build and deployment**
-→ Source 选 **GitHub Actions**（选完即生效，无需再建分支）。
+本仓库用**本地构建 + 推送 `gh-pages` 分支**的方式发布：
+
+```bash
+npm run publish:pages
+```
+
+脚本会自动做三件事：带 `BASE_PATH` 构建 → 跑一遍断链自检 → 把 `dist/` 推到 `gh-pages` 分支。
+
+首次启用需要在仓库里开一次开关：**Settings** → **Pages** → **Build and deployment**
+→ Source 选 **Deploy from a branch** → 分支选 `gh-pages`、目录选 `/(root)`。
+
+> 仓库里另带了 `.github/workflows/pages.yml`（GitHub Actions 方式），但**默认不走这条路**：
+> 推送 `.github/workflows/` 下的文件要求 token 具备 `workflow` 权限，
+> 而用于推送的主机 token 只有 `repo` 权限，GitHub 会直接拒收该文件。
+> 所以 Pages 改用上面的脚本发布；等你换成带 `workflow` 权限的 token 后，
+> 可以删掉 `scripts/publish-pages.mjs` 改用 Actions，Source 相应改回 **GitHub Actions**。
 
 需要知道两者的分工：
 
@@ -497,12 +511,12 @@ WHITENOISE_USE_FINDERS = True   # 直接从已安装的 app 里取文件，无�
 ### 3. GitHub Pages 是子路径部署，必须显式传 `BASE_PATH`
 
 仓库站挂在 `https://<用户名>.github.io/<仓库名>/` 下，也就是**子路径**而不是域名根。
-workflow 里已经写好了：
+`scripts/publish-pages.mjs` 已按仓库名自动算好，无需手工传参：
 
-```yaml
-env:
-  BASE_PATH: /lab-website        # 换成你的仓库名
-  SITE_URL: https://<用户名>.github.io
+```js
+const REPO_SLUG = 'zl2626/lab-website';   // 换仓库名 / 用户名时只改这一行
+const BASE_PATH = '/' + NAME;             // → /lab-website
+const SITE_URL  = 'https://' + OWNER + '.github.io';
 ```
 
 漏了 `BASE_PATH` 的话，产物里所有站内链接、favicon、sitemap、RSS 都会指向域名根而 404。
@@ -512,8 +526,6 @@ env:
 BASE_PATH=/lab-website SITE_URL=https://<用户名>.github.io npm run build
 BASE_PATH=/lab-website npm run verify:dist   # 断链自检会把 base 前缀剥掉再比对
 ```
-
-> 换仓库名时，`pages.yml` 里的 `BASE_PATH` / `SITE_URL` 两处都要一起改。
 
 ---
 

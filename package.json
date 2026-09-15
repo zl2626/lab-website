@@ -10,7 +10,8 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "publish:pages": "node scripts/publish-pages.mjs"
   },
   "dependencies": {
     "astro": "^7.3.2",
