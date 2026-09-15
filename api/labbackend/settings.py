@@ -192,7 +192,16 @@ DEEPSEEK_BASE_URL = env("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = env("DEEPSEEK_MODEL", "deepseek-chat")
 
 # 后台保存内容后，用它自动触发 Vercel 重新构建前端
+# 方式一：Deploy Hook（要求项目已连接 Git 仓库）
 VERCEL_DEPLOY_HOOK_URL = env("VERCEL_DEPLOY_HOOK_URL")
+
+# 方式二：Vercel REST API 重新部署（项目未连接 Git 仓库时用这个）
+#   VERCEL_API_TOKEN   Vercel 账号令牌，建议用 `vercel tokens add` 建一个专用令牌
+#   VERCEL_PROJECT_ID  项目 ID（prj_ 开头），在项目 Settings 里可以看到
+#   VERCEL_TEAM_ID     团队 ID（team_ 开头），个人账号可留空
+VERCEL_API_TOKEN = env("VERCEL_API_TOKEN")
+VERCEL_PROJECT_ID = env("VERCEL_PROJECT_ID")
+VERCEL_TEAM_ID = env("VERCEL_TEAM_ID")
 
 # 默认在保存内容后自动触发一次前端重建，这样编辑者不需要记得点「重建」按钮。
 # 如果想改成手动，设 AUTO_REBUILD_ON_SAVE=0。

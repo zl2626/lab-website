@@ -84,6 +84,77 @@ class AdminWorkflowTests(TestCase):
         self.assertEqual(recent[0]["title"], "更新 8")
 
 
+class DeployTriggerTests(TestCase):
+    """后台「重建并发布官网」的两种发布方式。"""
+
+    @override_settings(VERCEL_DEPLOY_HOOK_URL="", VERCEL_API_TOKEN="", VERCEL_PROJECT_ID="")
+    def test_without_configuration_reports_clearly(self):
+        from .utils import deploy_configured, trigger_deploy
+        self.assertFalse(deploy_configured())
+        ok, message = trigger_deploy()
+        self.assertFalse(ok)
+        self.assertIn("未配置发布服务", message)
+
+    @override_settings(VERCEL_DEPLOY_HOOK_URL="https://example.com/hook")
+    def test_deploy_hook_is_used_when_configured(self):
+        from .utils import deploy_configured, trigger_deploy
+        self.assertTrue(deploy_configured())
+        with patch("core.utils._post_deploy_hook", return_value=(True, "已触发站点重建")) as hook:
+            ok, message = trigger_deploy()
+        self.assertTrue(ok)
+        hook.assert_called_once_with("https://example.com/hook")
+        self.assertIn("重建", message)
+
+    @override_settings(
+        VERCEL_DEPLOY_HOOK_URL="",
+        VERCEL_API_TOKEN="test-token",
+        VERCEL_PROJECT_ID="prj_test",
+        VERCEL_TEAM_ID="team_test",
+    )
+    def test_api_fallback_redeploys_latest_production_deployment(self):
+        from .utils import deploy_configured, trigger_deploy
+
+        def fake_request(url, *, token, method="GET", payload=None):
+            self.assertEqual(token, "test-token")
+            if method == "GET":
+                self.assertIn("projectId=prj_test", url)
+                self.assertIn("target=production", url)
+                self.assertIn("teamId=team_test", url)
+                return {"deployments": [{"uid": "dpl_source", "name": "lab-website"}]}
+            self.assertIn("forceNew=1", url)
+            self.assertEqual(payload["deploymentId"], "dpl_source")
+            self.assertEqual(payload["target"], "production")
+            return {"url": "lab-website-abc.vercel.app"}
+
+        self.assertTrue(deploy_configured())
+        with patch("core.utils._vercel_api_request", side_effect=fake_request) as api:
+            ok, message = trigger_deploy()
+        self.assertTrue(ok)
+        self.assertIn("重建", message)
+        self.assertEqual(api.call_count, 2)
+
+    @override_settings(
+        VERCEL_DEPLOY_HOOK_URL="",
+        VERCEL_API_TOKEN="test-token",
+        VERCEL_PROJECT_ID="prj_test",
+    )
+    def test_api_fallback_without_history_reports_clearly(self):
+        from .utils import trigger_deploy
+        with patch("core.utils._vercel_api_request", return_value={"deployments": []}):
+            ok, message = trigger_deploy()
+        self.assertFalse(ok)
+        self.assertIn("历史部署", message)
+
+    @override_settings(VERCEL_DEPLOY_HOOK_URL="https://example.com/hook", VERCEL_API_TOKEN="", VERCEL_PROJECT_ID="")
+    @patch("core.admin_site.trigger_deploy")
+    def test_publish_button_is_enabled_when_hook_configured(self, deploy):
+        owner = get_user_model().objects.create_superuser("publisher", "", "test-password")
+        self.client.force_login(owner)
+        response = self.client.get(reverse("admin:index"))
+        self.assertTrue(response.context["deploy_configured"])
+        self.assertNotContains(response, 'disabled')
+
+
 class EditorFieldTests(TestCase):
     def test_links_reject_whitespace_and_protocol_relative_urls(self):
         from django import forms

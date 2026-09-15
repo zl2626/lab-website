@@ -39,7 +39,7 @@
     {% elif deploy_configured %}
       {% if auto_rebuild %}<p>自动发布已开启：保存或删除内容后会请求重建。</p>
       {% else %}<p>当前为手动发布：完成编辑后，请管理员点击下方按钮。</p>{% endif %}
-    {% else %}<p role="status">尚未配置发布服务。内容可以保存，但不会自动同步到官网。请配置 VERCEL_DEPLOY_HOOK_URL。</p>{% endif %}
+    {% else %}<p role="status">尚未配置发布服务。内容可以保存，但不会自动同步到官网。请配置 VERCEL_DEPLOY_HOOK_URL，或 VERCEL_API_TOKEN + VERCEL_PROJECT_ID。</p>{% endif %}
     <div class="lab-actions">
       {% if request.user.is_superuser %}
       <form method="post" action="{% url 'admin:publish' %}">{% csrf_token %}

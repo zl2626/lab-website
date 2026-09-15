@@ -9,7 +9,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import redirect
 from django.urls import path, reverse
 
-from .utils import trigger_deploy
+from .utils import deploy_configured, trigger_deploy
 
 
 class LabAdminConfig(AdminConfig):
@@ -23,7 +23,7 @@ class LabAdminSite(admin.AdminSite):
     def each_context(self, request):
         context = super().each_context(request)
         context["site_url"] = settings.SITE_BASE_URL or ("http://127.0.0.1:4321/" if settings.DEBUG else "/")
-        context["local_preview"] = settings.DEBUG and not settings.VERCEL_DEPLOY_HOOK_URL
+        context["local_preview"] = settings.DEBUG and not deploy_configured()
         return context
 
     def get_urls(self):
@@ -85,6 +85,6 @@ class LabAdminSite(admin.AdminSite):
             **(extra_context or {}),
             "content_cards": cards,
             "recent_content": sorted(recent, key=lambda item: item["updated_at"], reverse=True)[:8],
-            "deploy_configured": bool(settings.VERCEL_DEPLOY_HOOK_URL),
+            "deploy_configured": deploy_configured(),
             "auto_rebuild": settings.AUTO_REBUILD_ON_SAVE,
         })
