@@ -173,9 +173,9 @@ class ContentPersistenceTests(TestCase):
         self.assertEqual(len(obj.page_copy), len(PAGE_COPY))
         bundle = self.client.get("/api/content/").json()["site"]
         self.assertEqual(bundle["pageCopy"], obj.page_copy)
+        # 管理员自定义过的导航（不是历史默认菜单）必须原样输出，自动化不再往里插栏目。
         nav_hrefs = [item["href"] for item in bundle["nav"]]
-        self.assertIn("/research", nav_hrefs)
-        self.assertIn("/platform", nav_hrefs)
+        self.assertEqual(nav_hrefs, ["/", "/research"])
         self.assertContains(self.client.get(url), "测试文案-contact_intro")
         # Invalid navigation must produce a form error, without overwriting saved data.
         data["nav"] = "危险链接 | javascript:alert(1)"
@@ -185,6 +185,53 @@ class ContentPersistenceTests(TestCase):
         obj.refresh_from_db()
         saved_hrefs = [item["href"] for item in obj.nav]
         self.assertIn("/research", saved_hrefs)
+
+    def test_legacy_default_nav_is_backfilled_with_new_sections(self):
+        """老站点升级前存的是 6/7 项默认菜单，读取时应自动补成当前 9 项。
+
+        这是一次性迁移：只有当导航仍然是某个历史默认菜单时才补，
+        避免管理员自己的配置被自动化覆盖。
+        """
+        from .models import SiteSetting
+        from .serializers import DEFAULT_NAV, LEGACY_DEFAULT_NAV_HREFS
+
+        current = [item["href"] for item in DEFAULT_NAV]
+        for legacy_hrefs in LEGACY_DEFAULT_NAV_HREFS:
+            with self.subTest(legacy="/".join(legacy_hrefs)):
+                obj = SiteSetting.load()
+                obj.nav = [{"label": f"栏目{i}", "href": href} for i, href in enumerate(legacy_hrefs)]
+                obj.save()
+                nav = self.client.get("/api/content/").json()["site"]["nav"]
+                self.assertEqual([item["href"] for item in nav], current)
+
+    def test_admin_removing_a_nav_item_is_respected(self):
+        """后台删掉一个导航项保存后，前端不能再把它自动插回来。
+
+        历史坑：旧实现「缺哪个栏目就补哪个」，管理员删掉「科研平台」保存后
+        前台又被自动插回，后台的删除动作等于失效。
+        """
+        from .models import SiteSetting
+        from .serializers import DEFAULT_NAV
+
+        obj = SiteSetting.load()
+        # 只保留「首页」，且这是管理员自己的配置（不属于任何历史默认菜单）
+        obj.nav = [{"label": "首页", "href": "/"}]
+        obj.save()
+        nav = self.client.get("/api/content/").json()["site"]["nav"]
+        self.assertEqual([item["href"] for item in nav], ["/"])
+
+        # 再用后台表单走一遍真实流程：在完整菜单基础上删掉「科研平台」。
+        data = {"name": obj.name, "abbr": obj.abbr,
+                "nav": "\n".join(f"{item['label']} | {item['href']}"
+                                 for item in DEFAULT_NAV
+                                 if item["href"] != "/platform")}
+        response = self.client.post(reverse("admin:core_sitesetting_change", args=[obj.pk]), data)
+        self.assertEqual(response.status_code, 302)
+        obj.refresh_from_db()
+        nav_hrefs = [item["href"] for item in obj.nav]
+        self.assertNotIn("/platform", nav_hrefs)
+        self.assertEqual([item["href"] for item in self.client.get("/api/content/").json()["site"]["nav"]],
+                         nav_hrefs)
 
     def test_member_photo_upload_persists_and_is_served(self):
         import io

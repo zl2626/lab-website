@@ -16,23 +16,37 @@ DEFAULT_NAV = [
 ]
 
 
-def _with_extra_nav(nav: list) -> list:
-    """把后来新增的栏目补进老站点已经保存的导航里（插在「联系我们」之前）。"""
-    result = list(nav)
-    for label, href in (("科研平台", "/platform"), ("科研项目", "/projects"), ("加入我们", "/join")):
-        if not any(isinstance(item, dict) and item.get("href") == href for item in result):
-            index = next(
-                (i for i, item in enumerate(result) if isinstance(item, dict) and item.get("href") == "/contact"),
-                len(result),
-            )
-            result.insert(index, {"label": label, "href": href})
-    return result
+# ---------------------------------------------------------------------------
+# 历史版本发布过的默认菜单（只记 href 顺序）
+# ---------------------------------------------------------------------------
+# 老站点在升级前把当时的默认菜单存进了数据库，后来新增的栏目不会自己出现。
+# 这里做一次性「补栏目」，但**只在导航仍然是某个历史默认菜单时**才动手：
+# 管理员一旦增删过导航，就以他自己的配置为准，自动化不再插手。
+# 教训：曾经的做法是「缺哪个就补哪个」，结果管理员删掉「科研平台」保存后
+# 前台又被自动插回来 —— 后台的删除动作等于失效。
+LEGACY_DEFAULT_NAV_HREFS = [
+    # 第一版：6 项（没有科研平台 / 科研项目 / 加入我们）
+    ["/", "/research", "/team", "/news", "/publications", "/contact"],
+    # 第二版：7 项（补了科研平台）
+    ["/", "/research", "/team", "/news", "/publications", "/platform", "/contact"],
+]
+
+
+def _nav_hrefs(nav: list) -> list:
+    return [str(item.get("href", "")) for item in nav if isinstance(item, dict)]
+
+
+def _rescue_legacy_nav(nav: list) -> list:
+    """导航仍是历史默认菜单时补上新增栏目；管理员动过就原样返回。"""
+    if _nav_hrefs(nav) in LEGACY_DEFAULT_NAV_HREFS:
+        return [dict(item) for item in DEFAULT_NAV]
+    return nav
 
 
 def serialize_site(obj: SiteSetting) -> dict:
-    nav = _with_extra_nav(as_list(obj.nav) or DEFAULT_NAV)
-    if not nav:
-        nav = DEFAULT_NAV
+    nav = [item for item in as_list(obj.nav) if isinstance(item, dict) and item.get("label")]
+    # 留空 = 用默认菜单；历史默认菜单自动补新栏目；其余按管理员自己的配置原样输出
+    nav = _rescue_legacy_nav(nav) if nav else [dict(item) for item in DEFAULT_NAV]
     return {
         "name": obj.name,
         "nameEn": obj.name_en,
@@ -57,7 +71,6 @@ def serialize_site(obj: SiteSetting) -> dict:
         "nav": [
             {"label": str(item.get("label", "")), "href": str(item.get("href", "/"))}
             for item in nav
-            if isinstance(item, dict) and item.get("label")
         ],
         "social": [
             {"label": str(item.get("label", "")), "href": str(item.get("href", ""))}
