@@ -3,16 +3,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { loadContent } from '../lib/content';
 import { asset, u } from '../utils/url';
 import { formatDate } from '../utils/format';
+import { clampHomeCount, selectHomeHero } from '../utils/home.mjs';
 const { site, homeSlides, research, members, news, publications: pubs } = await loadContent();
 const copy = site.pageCopy;
 
-// 后台配置了「首页轮播」就用配置的内容；没配置时回退到「团队合照 + 前两个研究方向」的自动拼接，
-// 这样老站点不配也能正常显示。
-const fallbackSlides = [
-  { title: site.name, titleEn: site.nameEn, summary: site.tagline, image: site.groupPhoto, link: '/team', linkLabel: copy.home_team_action },
-  ...research.slice(0, 2).map((item) => ({ title: item.title, titleEn: item.titleEn, summary: item.summary, image: item.cover, link: `/research/${item.slug}`, linkLabel: copy.home_research_action })),
-];
-const slides = homeSlides.length ? homeSlides : fallbackSlides;
+const fallbackHero = {
+  title: site.name,
+  titleEn: site.nameEn,
+  summary: site.tagline,
+  image: site.groupPhoto,
+  link: '/team',
+  linkLabel: copy.home_team_action,
+};
+const hero = selectHomeHero(homeSlides, fallbackHero);
 
 const stats = [
   { value: research.length, label: copy.home_stat_research },
@@ -20,79 +23,31 @@ const stats = [
   { value: pubs.length, label: copy.home_stat_publications },
 ];
 
-/** 把后台填的条数收进合理范围：填错也不至于把首页撑爆或什么都不显示 */
-function clampCount(value: string, fallback: number): number {
-  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(Math.max(parsed, 1), 12);
-}
-
 // 首页「代表性成果」：条数可在后台调；优先精选，不足时按年份从新到旧补齐
-const pubLimit = clampCount(copy.home_publications_count, 4);
-const newsLimit = clampCount(copy.home_news_count, 4);
+const pubLimit = clampHomeCount(copy.home_publications_count, 4);
+const newsLimit = clampHomeCount(copy.home_news_count, 4);
 
 const highlights = pubs.filter((p) => p.highlight);
 const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, pubLimit);
 ---
 
 <BaseLayout image={site.groupPhoto}>
-  <section
-    class="home-banner"
-    id="home-carousel"
-    role="region"
-    aria-label="实验室研究展示"
-    aria-roledescription="轮播"
-    tabindex="0"
-  >
-    {slides.map((slide, index) => (
-      <article
-        class="banner-slide"
-        hidden={index !== 0}
-        role="group"
-        aria-roledescription="幻灯片"
-        aria-label={`第 ${index + 1} 张，共 ${slides.length} 张`}
-      >
-        {slide.image && <img class="banner-image" src={asset(slide.image)} alt="" loading={index === 0 ? 'eager' : 'lazy'} fetchpriority={index === 0 ? 'high' : 'auto'} />}
-        <div class="banner-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="container banner-copy">
-          <p class="banner-affil">{site.affiliation}</p>
-          {index === 0 ? <h1>{slide.title}</h1> : <h2 class="banner-title">{slide.title}</h2>}
-          {slide.titleEn && <p class="banner-english">{slide.titleEn}</p>}
-          {slide.summary && <p class="banner-summary">{slide.summary}</p>}
-          {slide.link && (
-            <a class="banner-link" href={u(slide.link)}>
-              {slide.linkLabel || copy.home_slide_more} <span aria-hidden="true">→</span>
-            </a>
-          )}
-        </div>
-      </article>
-    ))}
-
-    <div class="container banner-controls" hidden>
-      <button type="button" class="banner-arrow" id="slide-prev" aria-label="上一张">
-        <span aria-hidden="true">←</span>
-      </button>
-
-      <div class="banner-dots" role="group" aria-label="选择幻灯片">
-        {slides.map((slide, index) => (
-          <button
-            type="button"
-            class="banner-dot"
-            data-index={index}
-            aria-current={index === 0 ? 'true' : 'false'}
-            aria-label={`第 ${index + 1} 张：${slide.title}`}
-          />
-        ))}
+  <section class="home-banner">
+    <article class="banner-slide">
+      {hero.image && <img class="banner-image" src={asset(hero.image)} alt="" loading="eager" fetchpriority="high" />}
+      <div class="banner-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="container banner-copy">
+        <p class="banner-affil">{site.affiliation}</p>
+        <h1>{hero.title}</h1>
+        {hero.titleEn && <p class="banner-english">{hero.titleEn}</p>}
+        {hero.summary && <p class="banner-summary">{hero.summary}</p>}
+        {hero.link && (
+          <a class="banner-link" href={u(hero.link)}>
+            {hero.linkLabel || copy.home_slide_more} <span aria-hidden="true">→</span>
+          </a>
+        )}
       </div>
-
-      <p class="banner-count" aria-live="polite">
-        <span id="slide-current">01</span><i aria-hidden="true">/</i>{String(slides.length).padStart(2, '0')}
-      </p>
-
-      <button type="button" class="banner-arrow" id="slide-next" aria-label="下一张">
-        <span aria-hidden="true">→</span>
-      </button>
-    </div>
+    </article>
   </section>
 
   <section class="home-section home-research">
@@ -227,72 +182,12 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
     )
   }
 
-<script>
-  const slides = Array.from(document.querySelectorAll<HTMLElement>('.banner-slide'));
-  const carousel = document.getElementById('home-carousel');
-  const controls = document.querySelector<HTMLElement>('.banner-controls');
-  const dots = Array.from(document.querySelectorAll<HTMLButtonElement>('.banner-dot'));
-  const counter = document.getElementById('slide-current');
-  const AUTOPLAY_MS = 7000;
-  let current = 0;
-  let timer: number | undefined;
-
-  function show(index: number) {
-    current = (index + slides.length) % slides.length;
-    slides.forEach((slide, i) => { slide.hidden = i !== current; });
-    dots.forEach((dot, i) => { dot.setAttribute('aria-current', String(i === current)); });
-    if (counter) counter.textContent = String(current + 1).padStart(2, '0');
-  }
-
-  function step(offset: number) {
-    show(current + offset);
-  }
-
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  function stopAutoplay() {
-    if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
-  }
-  function startAutoplay() {
-    stopAutoplay();
-    if (slides.length > 1 && !reduced.matches && !document.hidden) {
-      timer = window.setInterval(() => step(1), AUTOPLAY_MS);
-    }
-  }
-
-  if (slides.length > 1 && carousel) {
-    if (controls) controls.hidden = false;
-    document.getElementById('slide-prev')?.addEventListener('click', () => { step(-1); startAutoplay(); });
-    document.getElementById('slide-next')?.addEventListener('click', () => { step(1); startAutoplay(); });
-    dots.forEach((dot) => dot.addEventListener('click', () => {
-      show(Number(dot.dataset.index || 0));
-      startAutoplay();
-    }));
-
-    carousel.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') { step(-1); startAutoplay(); event.preventDefault(); }
-      else if (event.key === 'ArrowRight') { step(1); startAutoplay(); event.preventDefault(); }
-    });
-
-    // 鼠标悬停或键盘聚焦时暂停自动播放，离开后恢复
-    carousel.addEventListener('mouseenter', stopAutoplay);
-    carousel.addEventListener('mouseleave', startAutoplay);
-    carousel.addEventListener('focusin', stopAutoplay);
-    carousel.addEventListener('focusout', startAutoplay);
-    document.addEventListener('visibilitychange', () => (document.hidden ? stopAutoplay() : startAutoplay()));
-
-    // 标签页不可见或用户开启减少动效时，不要空转定时器
-    startAutoplay();
-  }
-</script>
 </BaseLayout>
 
 <style>
-/* ---------- 首屏轮播 ---------- */
+/* ---------- 首屏 ---------- */
 .home-banner{position:relative;background:#163751;color:#fff;overflow:hidden}
-.home-banner:focus-visible{outline-offset:-4px}
 .banner-slide{position:relative;min-height:600px;display:flex;align-items:center;isolation:isolate;background:linear-gradient(120deg,#153047,#2d6072)}
-.banner-slide:nth-child(2){background:linear-gradient(120deg,#253b50,#586b7a)}
-.banner-slide:nth-child(3){background:linear-gradient(120deg,#283d51,#456c69)}
 .banner-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
 .banner-slide:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,24,38,.72),rgba(7,24,38,.12));z-index:-1}
 .banner-decoration{position:absolute;right:8%;top:22%;width:320px;aspect-ratio:1;opacity:.14;pointer-events:none;z-index:-1}
@@ -301,33 +196,14 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
 .banner-decoration span:nth-child(3){inset:30%}
 .banner-copy{padding-top:150px;padding-bottom:130px}
 .banner-affil{font-size:.9rem;letter-spacing:.08em;color:#d5e2eb}
-/* 首屏标题：第一张用 h1（页面主标题），其余用 h2，保证每页只有一个 h1 */
-.banner-copy h1,.banner-copy .banner-title{color:#fff;font-weight:600;font-size:clamp(2rem,4vw,3.5rem);max-width:18em;text-wrap:balance;line-height:1.32;margin:0 0 .5em}
-.banner-copy .banner-title{margin-bottom:.5em}
+/* 首屏标题使用页面唯一的 h1。 */
+.banner-copy h1{color:#fff;font-weight:600;font-size:clamp(2rem,4vw,3.5rem);max-width:18em;text-wrap:balance;line-height:1.32;margin:0 0 .5em}
 .banner-english{color:#dfebf0;font-size:1.05rem;margin-bottom:.6em}
 .banner-summary{color:#e2ebef;max-width:40em;font-size:1.05rem}
 .banner-link{display:inline-flex;gap:30px;align-items:center;color:#fff;border-bottom:1px solid #a3bbc8;padding:10px 0;margin-top:10px;font-size:.95rem}
 .banner-link:hover{color:#fff;border-bottom-color:#fff;text-decoration:none}
 .banner-link:focus-visible{outline-color:#fff}
 
-.banner-controls{position:absolute;bottom:30px;left:0;right:0;display:flex;align-items:center;gap:18px}
-.banner-arrow{
-  width:44px;height:44px;flex:0 0 44px;border:1px solid rgba(255,255,255,.42);border-radius:50%;
-  background:transparent;color:#fff;font-size:1.05rem;cursor:pointer;transition:.18s ease;
-  display:grid;place-items:center;
-}
-.banner-arrow:hover{background:rgba(255,255,255,.16);border-color:#fff}
-.banner-arrow:focus-visible{outline-color:#fff}
-.banner-dots{display:flex;align-items:center;gap:9px;margin-left:auto}
-.banner-dot{
-  width:26px;height:3px;padding:0;border:0;border-radius:3px;cursor:pointer;
-  background:rgba(255,255,255,.35);transition:.2s ease;
-}
-.banner-dot:hover{background:rgba(255,255,255,.65)}
-.banner-dot[aria-current='true']{background:#fff;width:40px}
-.banner-dot:focus-visible{outline-color:#fff;outline-offset:4px}
-.banner-count{display:flex;align-items:center;gap:4px;font-size:.88rem;font-variant-numeric:tabular-nums;color:#dfeaf1;margin:0}
-.banner-count i{font-style:normal;opacity:.55}
 
 /* ---------- 栏目标题 ---------- */
 .home-section{padding:72px 0}
@@ -413,7 +289,6 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
   .home-section{padding:52px 0}
   .about-grid{grid-template-columns:1fr}
   .about-visual img,.about-placeholder{height:300px;min-height:300px}
-  .banner-controls{bottom:22px;gap:12px}
 }
 @media(max-width:600px){
   .banner-copy{padding-top:160px;padding-bottom:118px}
@@ -434,11 +309,8 @@ const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, p
   .pub-highlight{padding:18px}
   .about-placeholder{padding:30px}
   .about-stats strong{font-size:2rem}
-  .banner-dot{width:20px}
-  .banner-dot[aria-current='true']{width:30px}
 }
 @media(max-width:400px){
   .news-grid,.research-grid{grid-template-columns:1fr}
 }
 </style>
-
