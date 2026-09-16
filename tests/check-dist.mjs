@@ -110,6 +110,14 @@ if (heroImages.some((img) => !/fetchpriority="high"/.test(img) || !/loading="eag
 if ((home.match(/loading="eager"/g) || []).length !== heroImages.length) issues.push('index.html: 非首屏图片不应 eager 加载');
 const contentImages = home.match(/<img[^>]*>/g) || [];
 if (contentImages.some((img) => !img.includes('class="hero-image"') && !/loading="lazy"/.test(img))) issues.push('index.html: 下方内容图片未延迟加载');
+const navLabels = ['首页', '团队成员', '科研平台', '科研成果', '加入我们'];
+const navPos = navLabels.map((label) => home.indexOf(label));
+if (navPos.some((pos) => pos < 0) || navPos.some((pos, i) => i > 0 && pos <= navPos[i - 1])) {
+  issues.push('index.html: 主导航标签缺失或顺序不正确');
+}
+if (!/<button[^>]*class="mobile-nav-toggle"[^>]*aria-expanded="false"[^>]*aria-controls="mobile-nav"/.test(home)) {
+  issues.push('index.html: 移动导航按钮初始 aria-expanded 不为 false');
+}
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, 'utf8');
   const rel = path.relative(DIST, file);
