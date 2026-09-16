@@ -1,6 +1,6 @@
 # Homepage, Admin, and Dual Deployment Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build a HIROL-inspired, backend-managed homepage with a dependable mobile experience, verifiable content publishing, and working GitHub Pages and Vercel deployments.
 
@@ -50,7 +50,7 @@
 - Produces: `serialize_site(SiteSetting) -> dict` that still preserves a genuinely customized navigation list.
 - Consumes: existing `SiteSetting.nav` JSON list and legacy-default rescue behavior.
 
-- [ ] **Step 1: Write failing backend navigation tests**
+- [x] **Step 1: Write failing backend navigation tests**
 
 Add assertions that an empty navigation serializes to:
 
@@ -66,7 +66,7 @@ Add assertions that an empty navigation serializes to:
 
 Keep the existing custom-navigation test and assert its exact list is not expanded or reordered.
 
-- [ ] **Step 2: Run the targeted backend tests and confirm the old nine-item default fails**
+- [x] **Step 2: Run the targeted backend tests and confirm the old nine-item default fails**
 
 Run:
 
@@ -76,17 +76,17 @@ Run:
 
 Expected: the new default-navigation assertion fails because the current default has nine items.
 
-- [ ] **Step 3: Implement the canonical five-item default**
+- [x] **Step 3: Implement the canonical five-item default**
 
 Replace the backend and frontend `DEFAULT_NAV` constants with the five-item list above. Extend `LEGACY_DEFAULT_NAV_HREFS` to recognize the current nine-item default so an untouched existing database upgrades once, while custom lists remain unchanged. Update `src/data/site.json` only if it contains the old explicit default.
 
-- [ ] **Step 4: Run the targeted backend tests**
+- [x] **Step 4: Run the targeted backend tests**
 
 Run the command from Step 2.
 
 Expected: all `ContentApiTests` pass.
 
-- [ ] **Step 5: Commit the navigation contract**
+- [x] **Step 5: Commit the navigation contract**
 
 ```powershell
 git add api/core/tests.py api/core/serializers.py src/lib/content.ts src/data/site.json
@@ -107,7 +107,7 @@ git commit -m "feat: simplify the primary site navigation"
 - Produces: `clampHomeCount(value, fallback): number`, constrained to 1–12.
 - Consumes: `HomeSlideItem[]`, `site.groupPhoto`, `site.name`, `site.nameEn`, `site.tagline`, and `NewsItem[]` already ordered by the content loader.
 
-- [ ] **Step 1: Write failing unit tests**
+- [x] **Step 1: Write failing unit tests**
 
 Create `tests/home.test.mjs` with coverage equivalent to:
 
@@ -134,27 +134,27 @@ test('clampHomeCount accepts valid values and clamps extremes', () => {
 });
 ```
 
-- [ ] **Step 2: Run the unit test and confirm the missing module fails**
+- [x] **Step 2: Run the unit test and confirm the missing module fails**
 
 Run: `node --test tests/home.test.mjs`
 
 Expected: failure because `src/utils/home.mjs` does not exist.
 
-- [ ] **Step 3: Implement the helper module**
+- [x] **Step 3: Implement the helper module**
 
 Implement only the two exported pure functions. Keep content sorting in the existing loader/serializer and do not duplicate it in the homepage.
 
-- [ ] **Step 4: Replace homepage carousel selection**
+- [x] **Step 4: Replace homepage carousel selection**
 
 In `src/pages/index.astro`, create one fallback hero from site settings, call `selectHomeHero(homeSlides, fallbackHero)`, and delete the carousel state, controls, interval, and multi-slide markup. Keep the first hero image eager/high-priority and use the news count helper for the latest-news list.
 
-- [ ] **Step 5: Run all Node unit tests**
+- [x] **Step 5: Run all Node unit tests**
 
 Run: `npm test`
 
 Expected: all Node tests pass, including the new homepage tests.
 
-- [ ] **Step 6: Commit the homepage data selection**
+- [x] **Step 6: Commit the homepage data selection**
 
 ```powershell
 git add src/utils/home.mjs tests/home.test.mjs src/pages/index.astro
@@ -175,7 +175,7 @@ git commit -m "refactor: use one deterministic homepage hero"
 - Consumes: the hero selected in Task 2, `site.description`, `site.groupPhoto`, `news`, and `site.openings`.
 - Produces: one `h1`, one eager hero image, lazy below-fold images, `.mobile-nav-toggle`, and a menu panel whose expanded state is represented by `aria-expanded`.
 
-- [ ] **Step 1: Add failing rendered-output checks**
+- [x] **Step 1: Add failing rendered-output checks**
 
 Extend `tests/check-dist.mjs` for `dist/index.html` to assert:
 
@@ -191,7 +191,7 @@ Build and run `npm run verify:dist`.
 
 Expected: verifier fails because the new structural classes are absent and the old carousel is present.
 
-- [ ] **Step 2: Implement the new homepage structure**
+- [x] **Step 2: Implement the new homepage structure**
 
 Replace the page body with:
 
@@ -202,15 +202,15 @@ Replace the page body with:
 
 Use semantic headings, meaningful image alt text for content images, empty alt only for purely decorative images, and links through `u()`/`asset()` for Pages compatibility.
 
-- [ ] **Step 3: Implement the desktop and mobile header**
+- [x] **Step 3: Implement the desktop and mobile header**
 
 Keep the five desktop links in one row at wide breakpoints. Add a real button for mobile, a panel containing the same links, Escape-to-close behavior, outside-click closing, current-page indication, focus-visible styles, and body-scroll safety. Ensure search and theme controls remain reachable.
 
-- [ ] **Step 4: Apply the revised token system and page styling**
+- [x] **Step 4: Apply the revised token system and page styling**
 
 Update shared colors to the approved blue/white palette while preserving dark-mode variables. In homepage CSS, use one visual emphasis—the hero photograph—then quiet section dividers, restrained shadows, consistent image ratios, and no decorative numbering. Add breakpoints for 1024px, 768px, 390px, and 320px.
 
-- [ ] **Step 5: Build and run the rendered verifier**
+- [x] **Step 5: Build and run the rendered verifier**
 
 Run:
 
@@ -221,7 +221,7 @@ npm run verify:dist
 
 Expected: build exits 0; verifier reports zero broken links and zero basic-standard issues.
 
-- [ ] **Step 6: Commit the visual implementation**
+- [x] **Step 6: Commit the visual implementation**
 
 ```powershell
 git add src/pages/index.astro src/components/Header.astro src/styles/global.css tests/check-dist.mjs
@@ -241,7 +241,7 @@ git commit -m "feat: redesign the lab homepage and mobile navigation"
 - Consumes: existing `ImageOrUrlField`, `schedule_rebuild(request, modeladmin)`, `transaction.on_commit`, and `trigger_deploy()`.
 - Produces: admin guidance stating that the first published HomeSlide is the homepage hero and that saved published content appears after a successful rebuild.
 
-- [ ] **Step 1: Add failing admin tests**
+- [x] **Step 1: Add failing admin tests**
 
 Add tests that verify:
 
@@ -251,7 +251,7 @@ self.assertIn("首页只展示排序最前", HomeSlideAdmin.fieldsets[0][1]["des
 
 Also preserve and run existing tests that prove uploaded images are stored and served, one request schedules only one rebuild, disabled auto-rebuild performs no deploy request, and the callback runs after transaction commit.
 
-- [ ] **Step 2: Run the targeted admin tests and confirm the guidance assertion fails**
+- [x] **Step 2: Run the targeted admin tests and confirm the guidance assertion fails**
 
 Run:
 
@@ -261,11 +261,11 @@ Run:
 
 Expected: the new hero-guidance assertion fails against the current text.
 
-- [ ] **Step 3: Improve admin guidance without changing the storage model**
+- [x] **Step 3: Improve admin guidance without changing the storage model**
 
 Update the HomeSlide list/field descriptions to explain that only the first published item is used on the redesigned homepage, recommend a 16:9 image around 1920×1080, and explain safe center cropping. Keep direct upload and URL paste behavior unchanged. Update the dashboard/editor documentation to distinguish “saved in database”, “rebuild accepted”, and “deployment ready”.
 
-- [ ] **Step 4: Run the complete Django test suite**
+- [x] **Step 4: Run the complete Django test suite**
 
 Run:
 
@@ -275,7 +275,7 @@ Run:
 
 Expected: all backend tests pass with no external deploy or database calls.
 
-- [ ] **Step 5: Commit the admin reliability work**
+- [x] **Step 5: Commit the admin reliability work**
 
 ```powershell
 git add api/core/admin.py api/core/tests.py README.md
@@ -297,11 +297,11 @@ git commit -m "docs: clarify homepage publishing in the admin"
 - Consumes: production build output in `dist/`, the `publish:pages` script, the `origin/main` repository, and the linked Vercel project.
 - Produces: a pushed `main`, a published `gh-pages` branch, and a verified Vercel production deployment URL/status.
 
-- [ ] **Step 1: Strengthen performance and SEO assertions**
+- [x] **Step 1: Strengthen performance and SEO assertions**
 
 Add distribution checks that the homepage has one `h1`, non-empty description/canonical/Open Graph image metadata, no legacy autoplay interval, one high-priority hero image at most, and lazy loading on below-fold news/team imagery. Keep the existing all-page link, alt-text, and trailing-content checks.
 
-- [ ] **Step 2: Run the full local verification matrix**
+- [x] **Step 2: Run the full local verification matrix**
 
 Run:
 
@@ -317,11 +317,11 @@ git status --short
 
 Expected: every command exits 0; the verifier reports zero broken links and zero basic-standard issues in both root and subpath builds.
 
-- [ ] **Step 3: Perform visual checks at desktop and mobile widths**
+- [x] **Step 3: Perform visual checks at desktop and mobile widths**
 
 Serve `dist/` locally and capture/inspect the homepage at 1440px and 390px. Verify the hero crop, single-row desktop navigation, mobile menu, no horizontal overflow, readable overlays, keyboard focus, and reduced-motion behavior. Correct any observed regression and rerun Step 2.
 
-- [ ] **Step 4: Push the verified main branch**
+- [x] **Step 4: Push the verified main branch**
 
 ```powershell
 git push origin main
@@ -329,21 +329,21 @@ git push origin main
 
 Expected: GitHub accepts the new commits and `origin/main` matches `main`.
 
-- [ ] **Step 5: Publish GitHub Pages**
+- [x] **Step 5: Publish GitHub Pages**
 
 Run: `npm run publish:pages`
 
 Expected: the script builds with `/lab-website`, passes its verifier, pushes `gh-pages`, and prints `https://zl2626.github.io/lab-website/`.
 
-- [ ] **Step 6: Deploy and watch Vercel**
+- [x] **Step 6: Deploy and watch Vercel**
 
 Use the connected Vercel deployment tools to locate the project linked to `zl2626/lab-website`. The push to the default branch should trigger the production build; watch it until it reaches `ready`, `failed`, or `canceled`. If no linked project exists, create/link it only after confirming the Vercel team scope. Never expose environment values or tokens.
 
-- [ ] **Step 7: Verify live endpoints**
+- [x] **Step 7: Verify live endpoints**
 
 Check the final production homepage, `/api/health/`, `/api/content/`, and `/api/admin/` on Vercel, plus the GitHub Pages homepage. Record the exact URLs and terminal deployment status in the handoff; if a protected Vercel URL returns 401/403, report protection rather than a broken deployment.
 
-- [ ] **Step 8: Commit final verification/documentation adjustments if any**
+- [x] **Step 8: Commit final verification/documentation adjustments if any**
 
 ```powershell
 git add tests/check-dist.mjs README.md
