@@ -466,17 +466,19 @@ python api/manage.py createsuperuser --noinput
 线上是静态站点，后台保存只改数据库，**必须重建一次**才会反映到前台。
 后台提供两种重建方式，配好任意一种，点「🚀 重建并发布官网」即可生效。
 
-**方式一：Deploy Hook（要求项目已连接 Git 仓库）**
+**方式一：Deploy Hook（推荐，要求项目已连接 Git 仓库）**
 
 1. Vercel 项目 → **Settings** → **Git** → **Deploy Hooks** → 新建一个
    （名字随意，Branch 选 `main`），复制生成的 URL。
+   > 连接 Git 后也可以用 API 建：`POST /v1/projects/<projectId>/deploy-hooks`。
 2. 把它填到环境变量 `VERCEL_DEPLOY_HOOK_URL`。
 3. **Redeploy 一次**让变量生效。
 
-**方式二：Vercel REST API（项目没连 Git 仓库时用这个）**
+**方式二：Vercel REST API（备选，未连接 Git 时唯一可行）**
 
 没连 Git 仓库的项目在 Vercel 上**创建不了 Deploy Hook**，此时改用 API 触发：
 取最近一次生产部署作为源，重新构建一份，生产域名会自动指过去。
+已连接 Git 时它同样可用，只是不如 Deploy Hook 直接。
 
 | 变量 | 从哪里拿 |
 | --- | --- |
@@ -488,6 +490,8 @@ python api/manage.py createsuperuser --noinput
 
 > 没配任何一种时，后台会明确提示「未配置发布服务，内容已保存但不会同步到官网」——
 > 不是静默失败，但内容确实不会上线，请务必配好。
+>
+> 两种都配了也没关系：`trigger_deploy()` **优先走 Deploy Hook**，没有时才回退到 API。
 >
 > 想让保存后自动重建，保持 `AUTO_REBUILD_ON_SAVE` 为默认的开启状态即可；
 > 想改成手动点按钮，把它设为 `0`。
