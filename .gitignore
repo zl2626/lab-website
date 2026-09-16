@@ -50,6 +50,7 @@ Thumbs.db
 # 注意用 _shots* 而不是 _shots/：脚本偶尔会把截图写到根目录（如 _shots$xx.png），
 # 只有目录形式的规则拦不住这种文件
 .workbuddy/
+.worktrees/
 _shots*
 
 .vercel
