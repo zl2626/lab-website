@@ -96,6 +96,28 @@ for (const file of htmlFiles) {
     issues.push(`${rel}: </html> 之后仍有内容（通常是 <script> 写在了 </BaseLayout> 外面）`);
   }
 }
+// 首页交付契约：单图首屏、介绍、动态与联系入口。
+const home = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
+if (!home.includes('class="home-hero"')) issues.push('index.html: 缺少单图首页首屏');
+if (!home.includes('class="home-latest"')) issues.push('index.html: 缺少实验室最新动态');
+if (!home.includes('class="home-intro"')) issues.push('index.html: 缺少实验室介绍');
+if (!home.includes('class="home-contact"')) issues.push('index.html: 缺少招聘与联系入口');
+if (home.includes('home-carousel') || home.includes('banner-dots')) issues.push('index.html: 仍包含旧轮播');
+// 未上传图片时，设计要求使用品牌底色；有图片时必须只加载一个高优先级首屏图。
+const heroImages = home.match(/<img[^>]*class="hero-image"[^>]*>/g) || [];
+if (heroImages.length > 1) issues.push('index.html: 首屏图片多于一张');
+if (heroImages.some((img) => !/fetchpriority="high"/.test(img) || !/loading="eager"/.test(img))) issues.push('index.html: 首屏图片未设置 eager / 高优先级');
+if ((home.match(/loading="eager"/g) || []).length !== heroImages.length) issues.push('index.html: 非首屏图片不应 eager 加载');
+const contentImages = home.match(/<img[^>]*>/g) || [];
+if (contentImages.some((img) => !img.includes('class="hero-image"') && !/loading="lazy"/.test(img))) issues.push('index.html: 下方内容图片未延迟加载');
+for (const file of htmlFiles) {
+  const html = fs.readFileSync(file, 'utf8');
+  const rel = path.relative(DIST, file);
+  if (!/<button[^>]*class="mobile-nav-toggle"[^>]*aria-expanded="false"[^>]*aria-controls="mobile-nav"/.test(html)) {
+    issues.push(`${rel}: 缺少可访问的移动导航按钮`);
+  }
+  if (!/<nav[^>]*id="mobile-nav"[^>]*hidden/.test(html)) issues.push(`${rel}: 移动导航初始状态未隐藏`);
+}
 console.log(`基础规范问题 ${issues.length} 处`);
 for (const i of issues) console.log('  ' + i);
 

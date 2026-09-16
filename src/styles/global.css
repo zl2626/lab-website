@@ -4,26 +4,28 @@
 
 :root {
   --bg: #ffffff;
-  --bg-soft: #f7f9fc;
-  --bg-inset: #eef2f7;
+  --bg-soft: #f5f8fc;
+  --bg-inset: #eaf0f8;
+  --brand-blue: #124b91;
+  --header-bg: #124b91;
   --text: #1a2230;
   --text-soft: #46536a;
   --muted: #596b82;
   --on-accent: #ffffff;
   --border: #e2e8f0;
   --border-strong: #cbd5e1;
-  --accent: #1a56db;
-  --accent-strong: #1442a8;
-  --accent-soft: #eaf0fe;
+  --accent: #1456a0;
+  --accent-strong: #103f78;
+  --accent-soft: #eaf2fc;
   --gold: #b7791f;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -12px rgba(16, 24, 40, 0.16);
   --shadow-lg: 0 2px 4px rgba(16, 24, 40, 0.04), 0 24px 48px -20px rgba(16, 24, 40, 0.28);
   --radius: 10px;
   --radius-sm: 9px;
-  --maxw: 1120px;
-  /* 顶部「品牌区 + 导航条」的合计高度，用于锚点滚动偏移与吸顶元素定位。
+  --maxw: 1240px;
+  /* 固定顶部的高度，用于正文留白、锚点滚动偏移与吸顶元素定位。
      这里只是首屏渲染前的兜底值，脚本加载后会按实测高度覆盖。 */
-  --header-h: 123px;
+  --header-h: 89px;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC",
     Roboto, Helvetica, Arial, sans-serif;
@@ -33,6 +35,8 @@
 }
 
 html[data-theme='dark'] {
+  --brand-blue: #102f56;
+  --header-bg: #102f56;
   --on-accent: #101c30;
   --bg: #0e1117;
   --bg-soft: #151a23;
@@ -87,6 +91,7 @@ main { overflow-wrap: anywhere; }
 
 body {
   margin: 0;
+  padding-top: var(--header-h);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -110,6 +115,10 @@ p { margin: 0 0 1em; color: var(--text-soft); }
 /* ---------- 布局容器 ---------- */
 .container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
 .container-narrow { width: 100%; max-width: 800px; margin: 0 auto; padding: 0 22px; }
+@media (max-width: 1024px) { :root { --header-h: 81px; } }
+@media (max-width: 768px) { :root { --header-h: 77px; } }
+@media (max-width: 390px) { .container, .container-narrow { padding-inline: 18px; } }
+@media (max-width: 320px) { .container, .container-narrow { padding-inline: 14px; } }
 
 .section { padding-block: 68px; }
 .section-tight { padding-block: 44px; }
@@ -321,7 +330,7 @@ html[data-theme='dark'] .tag-gold { background: rgba(226, 181, 82, .16); }
     --text: #000; --text-soft: #222; --muted: #444;
     --border: #bbb; --border-strong: #999; --accent: #1442a8; --gold: #7a5210;
   }
-  body { font-size: 11.5pt; line-height: 1.6; }
+  body { font-size: 11.5pt; line-height: 1.6; padding-top: 0; }
   main { padding: 0; }
   .page-head, .section, .section-tight, .section-detail, .home-section { padding-block: 10px; }
   .page-head { background: none; border-bottom: 1px solid #999; }

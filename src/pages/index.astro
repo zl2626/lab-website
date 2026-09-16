@@ -4,313 +4,174 @@ import { loadContent } from '../lib/content';
 import { asset, u } from '../utils/url';
 import { formatDate } from '../utils/format';
 import { clampHomeCount, selectHomeHero } from '../utils/home.mjs';
+
 const { site, homeSlides, research, members, news, publications: pubs } = await loadContent();
 const copy = site.pageCopy;
-
-const fallbackHero = {
+const hero = selectHomeHero(homeSlides, {
   title: site.name,
   titleEn: site.nameEn,
   summary: site.tagline,
   image: site.groupPhoto,
   link: '/team',
   linkLabel: copy.home_team_action,
-};
-const hero = selectHomeHero(homeSlides, fallbackHero);
-
+});
 const stats = [
-  { value: research.length, label: copy.home_stat_research },
-  { value: members.length, label: copy.home_stat_members },
-  { value: pubs.length, label: copy.home_stat_publications },
+  { value: research.length, label: copy.home_stat_research, href: '/research' },
+  { value: members.length, label: copy.home_stat_members, href: '/team' },
+  { value: pubs.length, label: copy.home_stat_publications, href: '/publications' },
 ];
-
-// 首页「代表性成果」：条数可在后台调；优先精选，不足时按年份从新到旧补齐
-const pubLimit = clampHomeCount(copy.home_publications_count, 4);
-const newsLimit = clampHomeCount(copy.home_news_count, 4);
-
-const highlights = pubs.filter((p) => p.highlight);
-const homePubs = [...highlights, ...pubs.filter((p) => !p.highlight)].slice(0, pubLimit);
+const latestNews = news.slice(0, clampHomeCount(copy.home_news_count, 4));
+const contactEmail = (site.openings.enabled && site.openings.email) || site.contact.email;
 ---
 
-<BaseLayout image={site.groupPhoto}>
-  <section class="home-banner">
-    <article class="banner-slide">
-      {hero.image && <img class="banner-image" src={asset(hero.image)} alt="" loading="eager" fetchpriority="high" />}
-      <div class="banner-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
-      <div class="container banner-copy">
-        <p class="banner-affil">{site.affiliation}</p>
-        <h1>{hero.title}</h1>
-        {hero.titleEn && <p class="banner-english">{hero.titleEn}</p>}
-        {hero.summary && <p class="banner-summary">{hero.summary}</p>}
-        {hero.link && (
-          <a class="banner-link" href={u(hero.link)}>
-            {hero.linkLabel || copy.home_slide_more} <span aria-hidden="true">→</span>
-          </a>
-        )}
-      </div>
-    </article>
-  </section>
-
-  <section class="home-section home-research">
-    <div class="container">
-      <div class="home-heading">
-        <div>
-          <h2>{copy.home_research_title}</h2>
-          <span>{copy.home_research_label}</span>
-        </div>
-        <a class="more-link" href={u('/research')}>{copy.home_research_more} <span aria-hidden="true">→</span></a>
-      </div>
-      {copy.home_research_intro && <p class="home-lead">{copy.home_research_intro}</p>}
-      <div class="research-grid">
-        {research.map((item, index) => (
-          <a class="research-tile" href={u(`/research/${item.slug}`)}>
-            {item.cover && <img src={asset(item.cover)} alt="" loading="lazy" />}
-            <span class="research-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-            <div>
-              <span class="research-english">{item.titleEn}</span>
-              <h3>{item.title}</h3>
-              <p>{item.summary}</p>
-            </div>
-            <span class="research-arrow" aria-hidden="true">↗</span>
-          </a>
-        ))}
-      </div>
-      {research.length === 0 && <p>{copy.home_research_empty}</p>}
+<BaseLayout image={hero.image || site.groupPhoto}>
+  <section class="home-hero" aria-labelledby="home-title">
+    {hero.image && <img class="hero-image" src={asset(hero.image)} alt={hero.title} loading="eager" fetchpriority="high" />}
+    <div class="container hero-copy">
+      <p class="hero-affiliation">{site.affiliation}</p>
+      <h1 id="home-title">{hero.title}</h1>
+      {hero.titleEn && <p class="hero-english">{hero.titleEn}</p>}
+      {hero.summary && <p class="hero-summary">{hero.summary}</p>}
+      {hero.link && <a class="hero-link" href={u(hero.link)}>{hero.linkLabel || copy.home_slide_more}<span aria-hidden="true">→</span></a>}
     </div>
   </section>
 
-  {
-    homePubs.length > 0 && (
-      <section class="home-section home-publications">
-        <div class="container">
-          <div class="home-heading">
-            <div>
-              <h2>{copy.home_publications_title}</h2>
-              <span>{copy.home_publications_label}</span>
-            </div>
-            <a class="more-link" href={u('/publications')}>{copy.home_publications_more} <span aria-hidden="true">→</span></a>
-          </div>
-          {copy.home_publications_intro && <p class="home-lead">{copy.home_publications_intro}</p>}
-          <div class="pub-highlight-grid">
-            {homePubs.map((item) => (
-              <article class="pub-highlight">
-                <div class="ph-top">
-                  <span class="ph-year">{item.year}</span>
-                  <span class="tag">{item.type}</span>
-                  {item.venueShort && <span class="tag tag-muted">{item.venueShort}</span>}
-                  {item.highlight && <span class="tag tag-gold">{copy.pub_highlight_tag}</span>}
-                </div>
-                <h3>{item.title}</h3>
-                {item.authors.length > 0 && <p class="ph-authors">{item.authors.join('，')}</p>}
-                {item.venue && <p class="ph-venue">{item.venue}</p>}
-                <div class="ph-links">
-                  {item.link && <a href={item.link} target="_blank" rel="noopener">{copy.pub_link_original} ↗</a>}
-                  {item.pdf && <a href={item.pdf} target="_blank" rel="noopener">{copy.pub_link_pdf} ↗</a>}
-                  {item.code && <a href={item.code} target="_blank" rel="noopener">{copy.pub_link_code} ↗</a>}
-                </div>
-              </article>
-            ))}
-          </div>
+  <section class="home-intro" aria-labelledby="intro-title">
+    <div class="container intro-grid">
+      <div>
+        <div class="home-heading"><p>{copy.home_about_label}</p><h2 id="intro-title">{copy.home_about_title}</h2></div>
+        <p class="intro-description">{site.description || site.tagline}</p>
+        <a class="section-link" href={u('/team')}>{copy.home_team_action}<span aria-hidden="true">→</span></a>
+        <div class="intro-stats">
+          {stats.map((stat) => <a href={u(stat.href)}><strong>{stat.value}</strong><span>{stat.label}</span></a>)}
         </div>
-      </section>
-    )
-  }
-
-  <section class="home-section home-news">
-    <div class="container">
-      <div class="home-heading">
-        <div>
-          <h2>{copy.home_news_title}</h2>
-          <span>{copy.home_news_label}</span>
-        </div>
-        <a class="more-link" href={u('/news')}>{copy.home_news_action} <span aria-hidden="true">→</span></a>
       </div>
-      {copy.home_news_intro && <p class="home-lead">{copy.home_news_intro}</p>}
+      {site.groupPhoto && <figure class="intro-photo"><img src={asset(site.groupPhoto)} alt={site.name + '团队合影'} loading="lazy" /><figcaption>{site.name} · {copy.home_team_action}</figcaption></figure>}
+    </div>
+  </section>
+
+  <section class="home-latest" aria-labelledby="latest-title">
+    <div class="container">
+      <div class="section-top">
+        <div class="home-heading"><p>{copy.home_news_label}</p><h2 id="latest-title">{copy.home_news_title}</h2></div>
+        <a class="section-link" href={u('/news')}>{copy.home_news_action}<span aria-hidden="true">→</span></a>
+      </div>
+      {copy.home_news_intro && <p class="section-description">{copy.home_news_intro}</p>}
       <div class="news-grid">
-        {news.slice(0, newsLimit).map((item) => (
-          <a class="news-tile" href={u(`/news/${item.slug}`)}>
-            <div class="news-visual">
-              {item.cover ? (
-                <img src={asset(item.cover)} alt="" loading="lazy" />
-              ) : (
-                <div class="news-placeholder">
-                  <span>{item.tags[0] || copy.news_default_tag}</span>
-                  <strong>{formatDate(item.date).slice(0, 4)}</strong>
-                  <span>{site.abbr} · {copy.home_news_meta}</span>
-                </div>
-              )}
+        {latestNews.map((item) => (
+          <article class="news-card">
+            {item.cover && <a class="news-image" href={u('/news/' + item.slug)} tabindex="-1" aria-hidden="true"><img src={asset(item.cover)} alt={item.title} loading="lazy" /></a>}
+            <div class="news-copy">
+              <time datetime={item.date}>{formatDate(item.date)}</time>
+              <h3><a href={u('/news/' + item.slug)}>{item.title}</a></h3>
+              {item.summary && <p>{item.summary}</p>}
             </div>
-            <div class="news-text">
-              <h3>{item.title}</h3>
-              <div class="news-bottom">
-                <time datetime={item.date}>{formatDate(item.date)}</time>
-                <span aria-hidden="true">↗</span>
-              </div>
-            </div>
-          </a>
+          </article>
         ))}
       </div>
-      {news.length === 0 && <p>{copy.home_news_empty}</p>}
+      {latestNews.length === 0 && <p>{copy.home_news_empty}</p>}
     </div>
   </section>
 
-  <section class="home-section home-about">
-    <div class="container about-grid">
-      <div class="about-copy">
-        <div class="home-heading"><div><h2>{copy.home_about_title}</h2><span>{copy.home_about_label}</span></div></div>
-        <p class="about-description">{site.description || site.tagline}</p>
-        <a class="more-link" href={u('/team')}>{copy.home_team_action} <span aria-hidden="true">→</span></a>
-        <div class="about-stats">{stats.map((stat) => <div><strong>{stat.value}</strong><span>{stat.label}</span></div>)}</div>
+  <section class="home-contact" aria-labelledby="contact-title">
+    <div class="container contact-grid">
+      <div>
+        <div class="home-heading"><p>{copy.contact_join_eyebrow}</p><h2 id="contact-title">{site.openings.enabled ? site.openings.title : copy.contact_title}</h2></div>
+        <p>{site.openings.enabled ? site.openings.text : copy.contact_intro}</p>
+        <a class="section-link" href={u(site.openings.enabled ? '/join' : '/contact')}>{site.openings.enabled ? copy.home_join_action : copy.contact_title}<span aria-hidden="true">→</span></a>
       </div>
-      <a class="about-visual" href={u('/team')} aria-label={copy.home_team_action}>
-        {site.groupPhoto ? <img src={asset(site.groupPhoto)} alt={`${site.name}团队合影`} loading="lazy" /> : <div class="about-placeholder"><span>{site.abbr}</span><strong>{site.name}</strong><p>{site.nameEn}</p></div>}
-        <span class="about-caption">{copy.home_team_action} <span aria-hidden="true">↗</span></span>
-      </a>
+      <address class="contact-details">
+        {site.contact.address && <div><span>{copy.contact_address_label}</span><p>{site.contact.address}</p></div>}
+        {contactEmail && <div><span>{copy.contact_email_label}</span><a href={'mailto:' + contactEmail}>{contactEmail}</a></div>}
+        {site.contact.phone && <div><span>{copy.contact_phone_label}</span><p>{site.contact.phone}</p></div>}
+        <a class="section-link" href={u('/contact')}>{copy.contact_title}<span aria-hidden="true">→</span></a>
+      </address>
     </div>
   </section>
-
-  {
-    site.openings.enabled && (
-      <section class="home-join">
-        <div class="container join-inner">
-          <div>
-            <h2>{site.openings.title}</h2>
-            <p>{site.openings.text}</p>
-          </div>
-          <a class="more-link" href={u('/join')}>{copy.home_join_action} <span aria-hidden="true">→</span></a>
-        </div>
-      </section>
-    )
-  }
-
 </BaseLayout>
 
 <style>
-/* ---------- 首屏 ---------- */
-.home-banner{position:relative;background:#163751;color:#fff;overflow:hidden}
-.banner-slide{position:relative;min-height:600px;display:flex;align-items:center;isolation:isolate;background:linear-gradient(120deg,#153047,#2d6072)}
-.banner-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-.banner-slide:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,24,38,.72),rgba(7,24,38,.12));z-index:-1}
-.banner-decoration{position:absolute;right:8%;top:22%;width:320px;aspect-ratio:1;opacity:.14;pointer-events:none;z-index:-1}
-.banner-decoration span{position:absolute;inset:0;border:1px solid #fff;border-radius:50%}
-.banner-decoration span:nth-child(2){inset:15%;border-style:dashed}
-.banner-decoration span:nth-child(3){inset:30%}
-.banner-copy{padding-top:150px;padding-bottom:130px}
-.banner-affil{font-size:.9rem;letter-spacing:.08em;color:#d5e2eb}
-/* 首屏标题使用页面唯一的 h1。 */
-.banner-copy h1{color:#fff;font-weight:600;font-size:clamp(2rem,4vw,3.5rem);max-width:18em;text-wrap:balance;line-height:1.32;margin:0 0 .5em}
-.banner-english{color:#dfebf0;font-size:1.05rem;margin-bottom:.6em}
-.banner-summary{color:#e2ebef;max-width:40em;font-size:1.05rem}
-.banner-link{display:inline-flex;gap:30px;align-items:center;color:#fff;border-bottom:1px solid #a3bbc8;padding:10px 0;margin-top:10px;font-size:.95rem}
-.banner-link:hover{color:#fff;border-bottom-color:#fff;text-decoration:none}
-.banner-link:focus-visible{outline-color:#fff}
-
-
-/* ---------- 栏目标题 ---------- */
-.home-section{padding:72px 0}
-.home-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:20px}
-.home-heading h2{position:relative;font-size:clamp(1.7rem,3vw,2.25rem);font-weight:600;margin:0 0 4px;z-index:0}
-.home-heading h2:before{content:'';position:absolute;left:-12px;top:-6px;width:38px;height:38px;border-radius:50%;background:var(--accent-soft);z-index:-1}
-.home-heading>div>span{color:var(--muted);letter-spacing:.05em;font-size:.9rem}
-.home-lead{max-width:60ch;margin:0 0 34px;font-size:.98rem}
-
-/* ---------- 研究方向 ---------- */
-.research-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:16px}
-.research-tile{position:relative;isolation:isolate;background:#24475c;color:#fff;min-height:290px;padding:26px 22px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;transition:.2s ease}
-.research-tile:nth-child(even){background:#3a5966}
-.research-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-.research-tile:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(7,24,36,.9),rgba(7,24,36,.12));z-index:-1}
-.research-number{font-family:var(--font-serif);font-size:2rem;color:#b8ced9;line-height:1}
-.research-english{font-size:.74rem;color:#cbdde5;letter-spacing:.02em}
-.research-tile h3{color:#fff;font-size:1.1rem;margin-top:6px}
-.research-tile p{font-size:.82rem;color:#d3e1e7;margin:0;line-height:1.7}
-.research-arrow{align-self:flex-end;font-size:1.3rem;transition:transform .2s ease}
-.research-tile:hover{transform:translateY(-3px);text-decoration:none}
-.research-tile:hover .research-arrow{transform:translate(2px,-2px)}
-.research-tile:focus-visible{outline-offset:3px}
-
-/* ---------- 代表性成果 ---------- */
-.home-publications{background:var(--bg-soft)}
-.pub-highlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(410px,100%),1fr));gap:18px}
-.pub-highlight{
-  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);
-  padding:22px 22px 20px;display:flex;flex-direction:column;transition:.2s ease;
-}
-.pub-highlight:hover{border-color:var(--border-strong);box-shadow:var(--shadow);transform:translateY(-2px)}
-.ph-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:12px}
-.ph-year{font-family:var(--font-serif);font-size:1.32rem;color:var(--accent);line-height:1}
-.pub-highlight h3{font-size:1.02rem;line-height:1.5;margin:0 0 .5em;font-weight:650}
-.ph-authors{font-size:.85rem;color:var(--text-soft);margin:0 0 .3em}
-.ph-venue{font-size:.82rem;color:var(--muted);font-style:italic;margin:0 0 .9em}
-.ph-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:auto}
-.ph-links a{font-size:.83rem;font-weight:600}
-
-/* ---------- 新闻 ---------- */
-.news-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
-.news-tile{display:flex;flex-direction:column;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:.2s ease}
-.news-tile:hover{text-decoration:none;transform:translateY(-3px);border-color:var(--border-strong)}
-.news-visual{aspect-ratio:4/3;overflow:hidden;background:var(--bg-inset)}
-.news-visual img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
-.news-tile:hover img{transform:scale(1.04)}
-.news-placeholder{padding:22px;height:100%;display:flex;flex-direction:column;justify-content:space-between;color:var(--text-soft);border-bottom:3px solid var(--accent)}
-.news-placeholder strong{font-family:var(--font-serif);font-size:2.6rem;color:var(--accent);font-weight:400;line-height:1}
-.news-placeholder span:last-child{font-size:.65rem;letter-spacing:.08em}
-.news-text{padding:20px;display:flex;flex-direction:column;flex:1}
-.news-text h3{font-size:.98rem;line-height:1.65;font-weight:600;margin:0 0 20px;transition:color .16s ease}
-.news-tile:hover h3{color:var(--accent)}
-.news-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:auto;color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
-
-/* ---------- 关于我们 ---------- */
-.home-about{background:var(--bg-soft)}
-.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
-.about-description{line-height:2;margin-bottom:26px}
-.about-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;border-top:1px solid var(--border);margin-top:34px;padding-top:24px}
-.about-stats strong{display:block;font-size:2.4rem;color:var(--accent);font-weight:400;font-variant-numeric:tabular-nums}
-.about-stats span{font-size:.85rem;color:var(--muted)}
-.about-visual{position:relative;display:block;min-height:340px;background:#25485e;color:#fff;border-radius:var(--radius);overflow:hidden}
-.about-visual img{width:100%;height:360px;object-fit:cover}
-.about-placeholder{min-height:360px;padding:44px;display:flex;flex-direction:column;justify-content:center}
-.about-placeholder>span{font-family:var(--font-serif);font-size:4rem;letter-spacing:.1em;color:#a9cadb;line-height:1}
-.about-placeholder strong{font-size:1.28rem;margin-top:8px}
-.about-placeholder p{color:#d3e1e7;font-size:.85rem}
-.about-caption{display:flex;justify-content:space-between;position:absolute;bottom:0;left:0;right:0;padding:15px 22px;background:rgba(19,46,67,.9);color:#fff;font-size:.85rem}
-
-/* ---------- 招聘条 ---------- */
-.home-join{padding:44px 0;border-top:1px solid var(--border)}
-.join-inner{display:flex;align-items:center;justify-content:space-between;gap:30px}
-.join-inner h2{font-size:1.28rem;margin-bottom:.2em}
-.join-inner p{margin:0;max-width:50em;font-size:.9rem}
-
-@media(max-width:1000px){
-  .news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .about-grid{gap:32px}
-  .join-inner{flex-wrap:wrap;gap:18px}
-}
-@media(max-width:760px){
-  .home-section{padding:52px 0}
-  .about-grid{grid-template-columns:1fr}
-  .about-visual img,.about-placeholder{height:300px;min-height:300px}
-}
-@media(max-width:600px){
-  .banner-copy{padding-top:160px;padding-bottom:118px}
-  .banner-slide{min-height:560px}
-  .banner-summary,.banner-english{font-size:.98rem}
-  .banner-decoration{right:-140px;width:260px}
-  .home-heading{align-items:flex-start;gap:14px;flex-wrap:wrap}
-  .home-lead{margin-bottom:26px}
-  .news-grid{gap:14px}
-  .news-text{padding:16px}
-  .news-text h3{font-size:.94rem}
-  .news-placeholder{padding:14px}
-  .news-placeholder strong{font-size:2rem}
-  .news-placeholder span:last-child{font-size:.55rem}
-  .research-grid{grid-template-columns:1fr 1fr}
-  .research-tile{min-height:240px;padding:22px 16px}
-  .research-tile p{font-size:.78rem}
-  .pub-highlight{padding:18px}
-  .about-placeholder{padding:30px}
-  .about-stats strong{font-size:2rem}
-}
-@media(max-width:400px){
-  .news-grid,.research-grid{grid-template-columns:1fr}
-}
+  .home-hero { position: relative; isolation: isolate; display: flex; align-items: end; min-height: clamp(480px, 70vh, 760px); background: var(--brand-blue); color: #fff; overflow: hidden; }
+  .hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+  .home-hero:has(.hero-image)::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5, 24, 52, .78), rgba(5, 24, 52, .12)), linear-gradient(0deg, rgba(5, 24, 52, .4), transparent 70%); z-index: -1; }
+  .hero-copy { padding-block: 110px 88px; }
+  .hero-affiliation { color: #d9e8ff; font-size: .9rem; letter-spacing: .08em; margin-bottom: 24px; }
+  .hero-copy h1 { color: #fff; max-width: 18em; font-size: clamp(2rem, 4vw, 3.6rem); font-weight: 600; line-height: 1.32; text-wrap: balance; }
+  .hero-english { font-size: 1.1rem; color: #e2ecfa; margin-bottom: 24px; }
+  .hero-summary { max-width: 40em; color: #edf3fc; font-size: 1.06rem; }
+  .hero-link { display: inline-flex; align-items: center; gap: 40px; min-height: 44px; margin-top: 20px; padding-block: 10px; color: #fff; border-bottom: 1px solid #b9d0ed; }
+  .hero-link:focus-visible { outline-color: #fff; }
+  .home-intro, .home-latest, .home-contact { padding-block: 80px; }
+  .home-heading p { color: var(--accent); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
+  .home-heading h2 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); font-weight: 600; margin-bottom: 24px; }
+  .intro-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 64px; align-items: center; }
+  .intro-grid:has(.intro-photo) { grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); }
+  .intro-description { max-width: 62em; line-height: 2; }
+  .section-link { display: inline-flex; align-items: center; min-height: 44px; gap: 24px; font-size: .9rem; font-weight: 600; }
+  .intro-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding-top: 24px; margin-top: 32px; border-top: 1px solid var(--border); }
+  .intro-stats a { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; color: var(--text-soft); min-height: 44px; }
+  .intro-stats strong { font-size: 2.4rem; line-height: 1.2; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .intro-stats span { font-size: .85rem; }
+  .intro-photo { margin: 0; }
+  .intro-photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+  .intro-photo figcaption { color: var(--muted); font-size: .8rem; padding-top: 12px; }
+  .home-latest { background: var(--bg-soft); border-block: 1px solid var(--border); }
+  .section-top { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+  .section-description { max-width: 65ch; margin-bottom: 32px; }
+  .news-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }
+  .news-card { min-width: 0; border-top: 2px solid var(--border-strong); }
+  .news-image { display: block; aspect-ratio: 4 / 3; overflow: hidden; margin-top: -2px; }
+  .news-image img { height: 100%; width: 100%; object-fit: cover; }
+  .news-copy { padding-top: 22px; }
+  .news-copy time { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .news-copy h3 { font-size: 1.05rem; line-height: 1.65; margin: 12px 0; font-weight: 600; }
+  .news-copy h3 a { color: var(--text); display: block; min-height: 44px; }
+  .news-copy h3 a:hover { color: var(--accent); }
+  .news-copy p { font-size: .86rem; line-height: 1.8; margin-bottom: 0; }
+  .contact-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 96px; }
+  .contact-grid > div > p { max-width: 54ch; }
+  .contact-details { font-style: normal; border-left: 1px solid var(--border); padding-left: 40px; }
+  .contact-details > div { margin-bottom: 18px; }
+  .contact-details > div > span { display: block; color: var(--muted); font-size: .78rem; margin-bottom: 4px; }
+  .contact-details p { font-size: .9rem; margin: 0; }
+  .contact-details > div > a { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; max-width: 100%; }
+  @media (max-width: 1024px) {
+    .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+    .intro-grid { gap: 36px; }
+    .contact-grid { gap: 48px; }
+  }
+  @media (max-width: 768px) {
+    .home-hero { min-height: 560px; min-height: min(640px, 80svh); }
+    .hero-copy { padding-block: 80px 56px; }
+    .hero-copy h1 { font-size: clamp(2rem, 6vw, 2.8rem); }
+    .home-intro, .home-latest, .home-contact { padding-block: 52px; }
+    .intro-grid:has(.intro-photo), .contact-grid { grid-template-columns: 1fr; }
+    .contact-details { border-left: 0; border-top: 1px solid var(--border); padding: 28px 0 0; }
+    .section-top { align-items: flex-start; flex-wrap: wrap; gap: 0 20px; margin-bottom: 20px; }
+    .section-top h2 { margin-bottom: 8px; }
+    .hero-english, .hero-summary { font-size: .98rem; }
+    .intro-stats a { flex-direction: column; gap: 8px; }
+  }
+  @media (max-width: 390px) {
+    .hero-copy { padding-block: 64px 44px; }
+    .hero-copy h1 { font-size: 1.85rem; }
+    .hero-affiliation { font-size: .8rem; }
+    .news-grid { grid-template-columns: 1fr; }
+    .intro-stats { gap: 12px; }
+    .intro-stats strong { font-size: 2rem; }
+  }
+  @media (max-width: 320px) {
+    .hero-copy h1 { font-size: 1.7rem; }
+    .intro-stats span { font-size: .78rem; }
+    .home-heading h2 { font-size: 1.5rem; }
+  }
+  @media print {
+    .home-hero { min-height: auto; background: #fff; color: #000; }
+    .hero-image, .home-hero::after { display: none; }
+    .hero-copy { padding-block: 20px; }
+    .hero-copy :is(h1, p, a) { color: #000; }
+    .home-intro, .home-latest, .home-contact { padding-block: 20px; }
+    .news-grid { display: block; }
+    .news-card { break-inside: avoid; margin-bottom: 20px; }
+  }
 </style>
