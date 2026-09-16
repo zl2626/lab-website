@@ -245,8 +245,10 @@ class ContentPersistenceTests(TestCase):
         bundle = self.client.get("/api/content/").json()["site"]
         self.assertEqual(bundle["pageCopy"], obj.page_copy)
         # 管理员自定义过的导航（不是历史默认菜单）必须原样输出，自动化不再往里插栏目。
-        nav_hrefs = [item["href"] for item in bundle["nav"]]
-        self.assertEqual(nav_hrefs, ["/", "/research"])
+        self.assertEqual(bundle["nav"], [
+            {"label": "首页", "href": "/"},
+            {"label": "研究", "href": "/research"},
+        ])
         self.assertContains(self.client.get(url), "测试文案-contact_intro")
         # Invalid navigation must produce a form error, without overwriting saved data.
         data["nav"] = "危险链接 | javascript:alert(1)"
@@ -257,8 +259,24 @@ class ContentPersistenceTests(TestCase):
         saved_hrefs = [item["href"] for item in obj.nav]
         self.assertIn("/research", saved_hrefs)
 
+    def test_empty_site_navigation_uses_the_canonical_five_links(self):
+        """未配置导航时，内容 API 输出首页所需的精简默认菜单。"""
+        from .models import SiteSetting
+
+        obj = SiteSetting.load()
+        obj.nav = []
+        obj.save()
+
+        self.assertEqual(self.client.get("/api/content/").json()["site"]["nav"], [
+            {"label": "首页", "href": "/"},
+            {"label": "团队成员", "href": "/team"},
+            {"label": "科研平台", "href": "/platform"},
+            {"label": "科研成果", "href": "/publications"},
+            {"label": "加入我们", "href": "/join"},
+        ])
+
     def test_legacy_default_nav_is_backfilled_with_new_sections(self):
-        """老站点升级前存的是 6/7 项默认菜单，读取时应自动补成当前 9 项。
+        """老站点存的是 6/7/9 项默认菜单时，读取时应自动换成当前 5 项。
 
         这是一次性迁移：只有当导航仍然是某个历史默认菜单时才补，
         避免管理员自己的配置被自动化覆盖。

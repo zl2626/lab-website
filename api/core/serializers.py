@@ -5,14 +5,10 @@ from .utils import as_dict, as_list, render_markdown
 
 DEFAULT_NAV = [
     {"label": "首页", "href": "/"},
-    {"label": "研究方向", "href": "/research"},
     {"label": "团队成员", "href": "/team"},
-    {"label": "科研新闻", "href": "/news"},
-    {"label": "科研成果", "href": "/publications"},
-    {"label": "科研项目", "href": "/projects"},
     {"label": "科研平台", "href": "/platform"},
+    {"label": "科研成果", "href": "/publications"},
     {"label": "加入我们", "href": "/join"},
-    {"label": "联系我们", "href": "/contact"},
 ]
 
 
@@ -25,6 +21,8 @@ DEFAULT_NAV = [
 # 教训：曾经的做法是「缺哪个就补哪个」，结果管理员删掉「科研平台」保存后
 # 前台又被自动插回来 —— 后台的删除动作等于失效。
 LEGACY_DEFAULT_NAV_HREFS = [
+    # 第三版：9 项（本次精简前的默认菜单）
+    ["/", "/research", "/team", "/news", "/publications", "/projects", "/platform", "/join", "/contact"],
     # 第一版：6 项（没有科研平台 / 科研项目 / 加入我们）
     ["/", "/research", "/team", "/news", "/publications", "/contact"],
     # 第二版：7 项（补了科研平台）

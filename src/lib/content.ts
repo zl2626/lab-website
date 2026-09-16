@@ -155,14 +155,10 @@ export interface ContentBundle {
 
 const DEFAULT_NAV: NavLink[] = [
   { label: '首页', href: '/' },
-  { label: '研究方向', href: '/research' },
   { label: '团队成员', href: '/team' },
-  { label: '科研新闻', href: '/news' },
-  { label: '科研成果', href: '/publications' },
-  { label: '科研项目', href: '/projects' },
   { label: '科研平台', href: '/platform' },
+  { label: '科研成果', href: '/publications' },
   { label: '加入我们', href: '/join' },
-  { label: '联系我们', href: '/contact' },
 ];
 
 const FALLBACK_SITE: SiteInfo = {
