@@ -130,10 +130,17 @@ if (!/rel="canonical" href="https?:\/\/[^"]+"/.test(home)) issues.push('index.ht
 if (!/rel="icon"[^>]+href="[^"]*favicon\.svg"/.test(home)) issues.push('index.html: 缺少 favicon');
 // 旧首页轮播脚本用定时器自动翻页，重构后不应再出现。
 if (/\bsetInterval\s*\(|\bclearInterval\s*\(/.test(home)) issues.push('index.html: 仍包含旧轮播定时器');
+// 只在主导航容器内取链接，避免正文出现同名文字时误判顺序。
 const navLabels = ['首页', '团队成员', '科研平台', '科研成果', '加入我们'];
-const navPos = navLabels.map((label) => home.indexOf(label));
-if (navPos.some((pos) => pos < 0) || navPos.some((pos, i) => i > 0 && pos <= navPos[i - 1])) {
-  issues.push('index.html: 主导航标签缺失或顺序不正确');
+const desktopNav = home.match(/<nav[^>]*class="[^"]*\bdesktop-nav\b[^"]*"[^>]*>([\s\S]*?)<\/nav>/);
+if (!desktopNav) {
+  issues.push('index.html: 缺少桌面主导航');
+} else {
+  const navLinks = [...desktopNav[1].matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)]
+    .map((m) => m[1].replace(/<[^>]*>/g, '').trim());
+  if (navLinks.length !== navLabels.length || navLinks.some((label, i) => label !== navLabels[i])) {
+    issues.push('index.html: 主导航链接缺失或顺序不正确（实际：' + navLinks.join(' / ') + '）');
+  }
 }
 if (!/<button[^>]*class="mobile-nav-toggle"[^>]*aria-expanded="false"[^>]*aria-controls="mobile-nav"/.test(home)) {
   issues.push('index.html: 移动导航按钮初始 aria-expanded 不为 false');
