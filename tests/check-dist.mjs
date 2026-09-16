@@ -110,6 +110,26 @@ if (heroImages.some((img) => !/fetchpriority="high"/.test(img) || !/loading="eag
 if ((home.match(/loading="eager"/g) || []).length !== heroImages.length) issues.push('index.html: 非首屏图片不应 eager 加载');
 const contentImages = home.match(/<img[^>]*>/g) || [];
 if (contentImages.some((img) => !img.includes('class="hero-image"') && !/loading="lazy"/.test(img))) issues.push('index.html: 下方内容图片未延迟加载');
+// 首页 SEO / 性能：分享卡片元数据必须非空，且不能再有轮播定时器。
+const metaValue = (name) => {
+  const m = home.match(new RegExp(`(?:property|name)="${name}" content="([^"]*)"`));
+  return m ? m[1].trim() : '';
+};
+for (const key of [
+  'description',
+  'og:title',
+  'og:description',
+  'og:image',
+  'og:image:alt',
+  'twitter:card',
+  'twitter:image',
+]) {
+  if (!metaValue(key)) issues.push(`index.html: ${key} 元数据为空`);
+}
+if (!/rel="canonical" href="https?:\/\/[^"]+"/.test(home)) issues.push('index.html: canonical 不是绝对地址');
+if (!/rel="icon"[^>]+href="[^"]*favicon\.svg"/.test(home)) issues.push('index.html: 缺少 favicon');
+// 旧首页轮播脚本用定时器自动翻页，重构后不应再出现。
+if (/\bsetInterval\s*\(|\bclearInterval\s*\(/.test(home)) issues.push('index.html: 仍包含旧轮播定时器');
 const navLabels = ['首页', '团队成员', '科研平台', '科研成果', '加入我们'];
 const navPos = navLabels.map((label) => home.indexOf(label));
 if (navPos.some((pos) => pos < 0) || navPos.some((pos, i) => i > 0 && pos <= navPos[i - 1])) {
