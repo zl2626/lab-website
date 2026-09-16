@@ -498,6 +498,10 @@ python api/manage.py createsuperuser --noinput
 - 接口：`https://<你的项目>.vercel.app/api/content/`
 - 后台：`https://<你的项目>.vercel.app/api/admin/`
 
+> **检查 Vercel 是否已连接 Git**：若项目未连接仓库（`vercel git connect` 提示可连接），
+> 那么 `git push origin main` **不会**触发自动部署，必须手动执行 `npx vercel --prod --yes`。
+> 可用 `npx vercel project inspect <项目名>` 查看，连接后推送才会自动上线。
+
 ### 步骤 8（可选）：同时发布一份到 GitHub Pages
 
 GitHub Pages 只能托管静态文件，所以它托管的是 **Astro 前端**的一份纯静态副本：
@@ -587,6 +591,24 @@ const SITE_URL  = 'https://' + OWNER + '.github.io';
 BASE_PATH=/lab-website SITE_URL=https://<用户名>.github.io npm run build
 BASE_PATH=/lab-website npm run verify:dist   # 断链自检会把 base 前缀剥掉再比对
 ```
+
+### 4. 改了 `/api/content/` 的数据契约后，要连续部署两次
+
+Vercel 上的前端是**构建时**从 `API_BASE`（默认就是本项目线上域名）抓 `/api/content/` 的。
+
+于是有个鸡生蛋问题：改动内容契约的后端代码（例如默认导航从 9 项精简为 5 项）时，
+**第一次 `vercel --prod` 构建读到的仍然是旧部署的后端**，
+新首页 HTML 会把旧数据烘进去；等这次部署上线后，后端才更新。
+
+所以这种改动必须再部署一次，前端才能读到新后端的数据：
+
+```bash
+npx vercel --prod --yes   # 第一次：后端先上线
+npx vercel --prod --yes   # 第二次：前端读到新后端，页面才正确
+```
+
+部署后打开 `/api/content/` 确认返回符合预期，再看首页 HTML 是否已同步。
+本项目实际发生过：首页 HTML 里烘进了旧的 9 项导航，就是因为只部署了一次。
 
 ---
 
