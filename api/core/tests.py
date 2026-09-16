@@ -448,11 +448,13 @@ class AdminCoverageTests(TestCase):
     def test_home_slides_are_manageable_and_exposed_to_the_frontend(self):
         """首页轮播要在后台增删改，并通过接口提供给前端。"""
         from django.contrib import admin as dj_admin
+        from .admin import HomeSlideAdmin
         from .models import HomeSlide
 
         self.assertIn(HomeSlide, dj_admin.site._registry)
         admin_class = dj_admin.site._registry[HomeSlide]
         self.assertTrue(admin_class.has_add_permission(self._request()))
+        self.assertIn("首页只展示排序最前", HomeSlideAdmin.fieldsets[0][1]["description"])
 
         HomeSlide.objects.create(title="第一屏", summary="说明", link="/team", link_label="看看团队", order=1)
         HomeSlide.objects.create(title="未发布屏", order=2, published=False)

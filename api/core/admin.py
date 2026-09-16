@@ -351,18 +351,24 @@ class HomeSlideAdmin(AutoRebuildMixin, admin.ModelAdmin):
             "这一屏的内容",
             {
                 "fields": ("title", "title_en", "summary"),
-                "description": "标题建议不超过 20 字；英文副标题可以留空。",
+                "description": "首页只展示排序最前且已发布的一项，作为首页主视觉；标题建议不超过 20 字，英文副标题可以留空。",
             },
         ),
         (
             "背景图",
             {
                 "fields": ("image",),
-                "description": "建议用横向大图（1600×900 左右）。留空则使用内置的深色渐变背景。",
+                "description": "建议使用 16:9、约 1920×1080 的横向大图；不同屏幕会从图片中央安全裁切，请把人物、文字等重要内容放在中心区域。留空则使用内置的深色渐变背景。",
             },
         ),
         ("按钮", {"fields": ("link", "link_label"), "description": "链接留空则不显示按钮。"}),
-        ("排序与发布", {"fields": ("order", "published")}),
+        (
+            "排序与发布",
+            {
+                "fields": ("order", "published"),
+                "description": "数字越小排序越靠前；首页只使用排序最前的已发布项，其余项目不会展示。",
+            },
+        ),
     )
 
 
