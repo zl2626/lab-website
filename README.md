@@ -498,9 +498,11 @@ python api/manage.py createsuperuser --noinput
 - 接口：`https://<你的项目>.vercel.app/api/content/`
 - 后台：`https://<你的项目>.vercel.app/api/admin/`
 
-> **检查 Vercel 是否已连接 Git**：若项目未连接仓库（`vercel git connect` 提示可连接），
-> 那么 `git push origin main` **不会**触发自动部署，必须手动执行 `npx vercel --prod --yes`。
-> 可用 `npx vercel project inspect <项目名>` 查看，连接后推送才会自动上线。
+> **Vercel 需连接 Git 才会自动部署**：连上仓库后（`main` 为生产分支），
+> `git push origin main` 会自动触发生产部署，无需再手动执行 `vercel --prod`。
+> 若项目尚未连接，`vercel git connect <仓库地址>` 会提示先安装 GitHub App：
+> 到 <https://github.com/apps/vercel/installations/new> 授权（建议只勾选该仓库）后重试即可。
+> 可用 `npx vercel project inspect <项目名>` 或查看 API 返回的 `link` 字段确认连接状态。
 
 ### 步骤 8（可选）：同时发布一份到 GitHub Pages
 
@@ -600,15 +602,18 @@ Vercel 上的前端是**构建时**从 `API_BASE`（默认就是本项目线上�
 **第一次 `vercel --prod` 构建读到的仍然是旧部署的后端**，
 新首页 HTML 会把旧数据烘进去；等这次部署上线后，后端才更新。
 
-所以这种改动必须再部署一次，前端才能读到新后端的数据：
+所以这种改动必须再构建一次，前端才能读到新后端的数据。已连接 Git 时，
+推送后会先自动部署一次（后端上线），再等一次部署/重新部署即可：
 
 ```bash
-npx vercel --prod --yes   # 第一次：后端先上线
-npx vercel --prod --yes   # 第二次：前端读到新后端，页面才正确
+git push origin main          # 第一次：后端先上线
+npx vercel redeploy --yes     # 第二次：前端读到新后端，页面才正确
 ```
 
+未连接 Git 的项目则应手动执行两次 `npx vercel --prod --yes`。
+
 部署后打开 `/api/content/` 确认返回符合预期，再看首页 HTML 是否已同步。
-本项目实际发生过：首页 HTML 里烘进了旧的 9 项导航，就是因为只部署了一次。
+本项目实际发生过：首页 HTML 里烘进了旧的 9 项导航，就是因为只构建了一次。
 
 ---
 
