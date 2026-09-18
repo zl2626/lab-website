@@ -628,7 +628,7 @@ function renderDashboard(el) {
         <button class="btn ghost sm" type="button" id="btnClearToken">清除</button>
       </div>
       <p class="hint" id="cloudStatus" style="margin:8px 0 0"></p>
-      <p class="hint" style="margin:6px 0 0">令牌获取：GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token，仅选择仓库 zl2626/lab-website，权限勾选 Contents: Read and write。令牌只保存在本浏览器，绝不进入网站代码；换电脑或换浏览器需重新粘贴一次。保存后先点「验证令牌」确认可用；若某次发布后线上没变化，点「手动同步线上」把当前内容补推上去。</p>
+      <p class="hint" style="margin:6px 0 0">令牌获取：GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token。仓库访问选「Only select repositories」并勾选 zl2626/lab-website；权限区切到 <b>Repository 页签</b>（不是 Account），点「+ Add permissions」搜索 Contents 添加，把访问级别改成 <b>Read and write</b>。令牌只保存在本浏览器，绝不进入网站代码；换电脑或换浏览器需重新粘贴一次。保存后先点「验证令牌」确认可用；若某次发布后线上没变化，点「手动同步线上」把当前内容补推上去。</p>
     </div>`;
   $("#btnResetDemo", el).addEventListener("click", () => {
     if (confirm("重置演示数据？将清除本浏览器中保存的草稿与已发布内容，恢复到初始示例。")) { SiteStore.reset(); location.reload(); }
