@@ -5,8 +5,8 @@
 (function () {
   "use strict";
 
-  var KEY_DRAFT = "labSiteDraft.v1";
-  var KEY_PUBLISHED = "labSitePublished.v1";
+  var KEY_DRAFT = "labSiteDraft.v2";
+  var KEY_PUBLISHED = "labSitePublished.v2";
 
   function read(key) {
     try {
@@ -41,11 +41,12 @@
     reset: function () {
       try { localStorage.removeItem(KEY_DRAFT); localStorage.removeItem(KEY_PUBLISHED); } catch (e) {}
     },
-    /* 前台页面读取：已发布副本覆盖种子 */
+    /* 前台页面读取：云端发布副本 > 本机已发布副本 > 种子 */
     frontend: function () {
       var base = this.seed();
       var pub = this.published() || {};
       Object.keys(pub).forEach(function (k) { base[k] = pub[k]; });
+      if (remoteData) Object.keys(remoteData).forEach(function (k) { base[k] = remoteData[k]; });
       return base;
     }
   };
@@ -266,6 +267,17 @@
       else renderNewsList(d);
     }
     else if (page === "contact") renderContact(d);
+  }
+
+  /* 云端发布副本：后台「发布更新」会把整站数据写入仓库 site-data-published.json；
+     前台每次加载拉取一次，拿到即重渲染——全网访客几秒内看到最新内容，无需等待站点重建。 */
+  var REMOTE_URL = "https://raw.githubusercontent.com/zl2626/lab-website/gh-pages/site-data-published.json";
+  var remoteData = null;
+  if (location.protocol.indexOf("http") === 0) {
+    fetch(REMOTE_URL + "?t=" + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.settings && j.home) { remoteData = j; renderAll(); } })
+      .catch(function () {});
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", renderAll);

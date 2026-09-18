@@ -143,9 +143,24 @@
     background-size: cover; background-position: center top;
   }
   .up-preview.wide { width: 100%; max-width: 420px; aspect-ratio: 16 / 6; }
+  .up-preview.wide-logo {
+    width: 100%; max-width: 300px; aspect-ratio: 10 / 3; flex: 0 0 auto;
+    background-color: #fff; border: 1px solid var(--line);
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+  }
   .up.has-img .up-preview span { display: none; }
-  .up-side .hint { margin: 0 0 10px; }
+  .up { flex-wrap: wrap; }
+  .up-side { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .up-side .hint { margin: 0; }
+  .up-side .up-input { max-width: 100%; font-size: 12.5px; }
   .up-preview.sq { width: 88px; aspect-ratio: 1 / 1; }
+  .up-preview.r43 { aspect-ratio: 4 / 3; }
+  .up-preview.r169 { width: 100%; max-width: 460px; aspect-ratio: 16 / 9; }
+  .up-preview.wide, .up-preview.r169 { flex: 1 1 100%; }
+  .platform-ups { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .platform-ups .up { flex-direction: column; gap: 10px; }
+  .platform-ups .up-preview { width: 100%; }
+  .platform-ups .up-side .hint { font-weight: 600; color: var(--navy); }
   .fld input[type=color] { width: 64px; height: 38px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
   /* 裁剪弹窗 */
   #cropDialog { border: none; border-radius: 12px; padding: 18px 20px 16px; width: min(760px, 94vw); box-shadow: 0 18px 60px rgba(10, 18, 24, 0.35); }
@@ -223,7 +238,7 @@
 <body data-page-node-id="E8Z14nCF6khyh7Z30ntOxC">
 
 <header class="topbar" data-page-node-id="RpmYzHGZrYcA8kBpouPTxb">
-  <div class="brand" data-page-node-id="Mv6PHmrxKLXJaw4pvbJwoV"><b data-page-node-id="JnCjt0eSBXXApw0XofcOfj">课题组网站管理</b><small data-page-node-id="BSsDuDSznudRYN1MTuXKTw">后台原型 · 数据为示例</small></div>
+  <div class="brand" data-page-node-id="Mv6PHmrxKLXJaw4pvbJwoV"><b data-page-node-id="JnCjt0eSBXXApw0XofcOfj">课题组网站管理</b><small data-page-node-id="BSsDuDSznudRYN1MTuXKTw">后台原型 · 数据保存在本浏览器</small></div>
   <div class="actions" data-page-node-id="lxfbJ8owbb0J7WrayqBHCA">
     <button class="menu-toggle" type="button" id="menuToggle" aria-expanded="false" aria-controls="sidenav" data-page-node-id="A1gZ5Meg4KlGNJAymNZMlL">菜单</button>
     <a class="link-preview" href="index.html" target="_blank" rel="noopener" data-page-node-id="E9SMW7u5rtaktnrq7OVvPn">预览网站</a>
@@ -309,7 +324,7 @@ function switchHtml(id, checked, label) {
 const PV_LABEL = { tall: "4:5 照片", sq: "1:1 Logo", wide: "团队照片 16:6", "43": "平台图片 4:3", "169": "背景图 16:9" };
 function uploadHtml(pvId, ratio, hint, btnText, initial) {
   return `<div class="up" id="up-${pvId}">
-    <div class="up-preview ${ratio === "wide" || ratio === "169" ? "wide" : ratio === "sq" ? "sq" : ""}${initial ? " has-img" : ""}" id="${pvId}"${initial ? ` style="background-image:url('${initial}')"` : ""}><span>${PV_LABEL[ratio] || "4:5 照片"}</span></div>
+    <div class="up-preview ${ratio === "wide" ? "wide" : ratio === "sq" ? "sq" : ratio === "43" ? "r43" : ratio === "169" ? "r169" : ""}${initial ? " has-img" : ""}" id="${pvId}"${initial ? ` style="background-image:url('${initial}')"` : ""}><span>${PV_LABEL[ratio] || "4:5 照片"}</span></div>
     <div class="up-side">
       <p class="hint">${esc(hint)}</p>
       <input type="file" accept="image/jpeg,image/png,image/webp" class="up-input" data-pv="${pvId}" data-ratio="${ratio}" aria-label="${esc(btnText)}">
@@ -375,7 +390,7 @@ const AdminImg = (() => {
       return c;
     } finally { URL.revokeObjectURL(url); }
   }
-  let st = null, bound = false, lastInput = null;
+  let st = null, bound = false;
   /* 人脸启发式定位：肤色像素中位数质心；白底/失败时回退 null（调用方按证件照偏上处理） */
   function facePoint(canvas) {
     const w = 140, h = Math.max(1, Math.round(canvas.height * w / canvas.width));
@@ -504,12 +519,13 @@ const AdminImg = (() => {
         const g = out.getContext("2d");
         g.imageSmoothingQuality = "high";
         g.drawImage(canvas, 0, 0, out.width, out.height);
-        onDone(out.toDataURL("image/jpeg", 0.85));
-        return;
+        const isPng = /png/i.test(file.type || "");
+        onDone(isPng ? out.toDataURL("image/png") : out.toDataURL("image/jpeg", 0.85));
+        return canvas;
       }
-      lastInput = { canvas, ratioKey, onDone };
       onDone(autoCropOutput(canvas, ratioKey, ratioKey === "tall" ? facePoint(canvas) : null));
-    } catch (err) { toast("图片读取失败，请换一张试试"); }
+      return canvas;
+    } catch (err) { toast("图片读取失败，请换一张试试"); return null; }
   }
   function recrop(canvas, ratioKey, onDone) { if (!bound) bindOnce(); openCrop(canvas, ratioKey, onDone); }
   return { process, recrop };
@@ -534,6 +550,8 @@ function bindUploads(root) {
     btn.addEventListener("click", () => {
       setPv(btn.dataset.pv, "");
       photoDraft.set(btn.dataset.pv, "");
+      const rcBtn = root.querySelector('.up-recrop[data-pv="' + btn.dataset.pv + '"]');
+      if (rcBtn) rcBtn.hidden = true;
       const inp = root.querySelector(`.up-input[data-pv="${btn.dataset.pv}"]`);
       if (inp) inp.value = "";
     });
@@ -543,6 +561,7 @@ function bindUploads(root) {
       const pv = btn.dataset.pv;
       const inp = root.querySelector(`.up-input[data-pv="${pv}"]`);
       const ratio = (inp && inp.dataset.ratio) || "free";
+      if (!RATIOS[ratio]) { toast("此图片位无需裁剪"); return; }
       const done = (url) => onPvSet(pv, "", url);
       const raw = rawCanvases.get(pv);
       if (raw) { AdminImg.recrop(raw, ratio, done); return; }
@@ -576,7 +595,7 @@ function saveBar(backHash, saveId) {
 function renderDashboard(el) {
   el.innerHTML = `
     ${viewHead("工作台", "日常更新从这里进入，每个入口与前台栏目一一对应。")}
-    <div class="note blue">这是后台信息管理平台的交互原型。保存的内容先进入<strong>草稿</strong>，点右上角「发布更新」后，打开或刷新前台页面（首页/团队/新闻等）即可看到修改——原型用浏览器本地存储模拟发布链路，正式版本会换成数据库与自动构建。　<button class="btn ghost sm" type="button" id="btnResetDemo" style="vertical-align:middle">重置演示数据</button></div>
+    <div class="note blue"><div style="flex:1;min-width:0">这是后台信息管理平台。保存的内容先进入<strong>草稿</strong>，点右上角「发布更新」后，打开或刷新前台页面（首页/团队/新闻等）即可看到修改；配置下方「云端发布」令牌后，发布内容还会自动写入网站仓库，全网访客几秒内实时可见。</div><button class="btn ghost sm" type="button" id="btnResetDemo" style="flex:none;align-self:center;white-space:nowrap">重置演示数据</button></div>
     <div class="grid-entries">
       <div class="entry"><b>首页设置</b><p>欢迎标题、团队照片、课题组简介</p><a class="btn ghost sm" href="#/home">编辑首页</a></div>
       <div class="entry"><b>团队介绍</b><p>导师与硕士研究生资料、成员详情、照片上传</p><a class="btn ghost sm" href="#/team">管理成员</a></div>
@@ -590,9 +609,39 @@ function renderDashboard(el) {
       <h2>发布状态</h2>
       <p class="desc">上次发布：${esc(state.lastPublish)}　·　未发布的修改：${state.pending.length ? state.pending.length + " 处" : "无"}</p>
       ${state.pending.length ? `<ul style="margin:0;padding-left:20px;color:#3a434c">${state.pending.slice(0, 5).map((p) => `<li>${esc(p.label)} · ${esc(p.time)}</li>`).join("")}</ul>` : `<p class="desc" style="margin:0">所有已保存的内容都已发布到正式网站。</p>`}
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>云端发布（让所有人实时看到）</h2>
+      <p class="desc">网站托管在 GitHub Pages 与 Vercel：配置一次访问令牌，之后每次点右上角「发布更新」，内容会自动写入网站仓库并同步上线，访客几秒内即可看到，无需任何部署操作。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="password" id="f-cloud-token" placeholder="粘贴 GitHub 访问令牌（PAT）" style="flex:1;min-width:220px">
+        <button class="btn sm" type="button" id="btnSaveToken">保存令牌</button>
+        <button class="btn ghost sm" type="button" id="btnClearToken">清除</button>
+      </div>
+      <p class="hint" id="cloudStatus" style="margin:8px 0 0"></p>
+      <p class="hint" style="margin:6px 0 0">令牌获取：GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token，仅选择仓库 zl2626/lab-website，权限勾选 Contents: Read and write。令牌只保存在本浏览器，绝不进入网站代码；换电脑或换浏览器需重新粘贴一次。未配置令牌时，「发布更新」仅在本机预览生效。</p>
     </div>`;
   $("#btnResetDemo", el).addEventListener("click", () => {
     if (confirm("重置演示数据？将清除本浏览器中保存的草稿与已发布内容，恢复到初始示例。")) { SiteStore.reset(); location.reload(); }
+  });
+  const tkInput = $("#f-cloud-token", el);
+  const tkStatus = $("#cloudStatus", el);
+  const hasToken = () => !!(localStorage.getItem("labAdminToken.v1") || "").trim();
+  const refreshTk = () => {
+    tkInput.value = localStorage.getItem("labAdminToken.v1") || "";
+    tkStatus.textContent = hasToken() ? "✅ 已配置：点右上角「发布更新」即同步到线上（GitHub Pages + Vercel）。" : "⚠️ 未配置：目前发布仅在本浏览器预览生效。";
+  };
+  refreshTk();
+  $("#btnSaveToken", el).addEventListener("click", () => {
+    const v = tkInput.value.trim();
+    if (v) localStorage.setItem("labAdminToken.v1", v); else localStorage.removeItem("labAdminToken.v1");
+    refreshTk();
+    toast(v ? "云端发布令牌已保存" : "已清除令牌");
+  });
+  $("#btnClearToken", el).addEventListener("click", () => {
+    localStorage.removeItem("labAdminToken.v1");
+    refreshTk();
+    toast("已清除云端发布令牌");
   });
 }
 
@@ -605,16 +654,22 @@ function renderHome(el) {
   el.innerHTML = `
     ${viewHead("首页设置", "只管理首页上由文字和照片组成的内容，改完保存即可。")}
     <div class="card form">
+      <h2>首页开屏</h2>
+      <p class="desc">深色首屏：背景图与欢迎标题。</p>
       <div class="fld"><label>首页开屏背景图</label>
         ${uploadHtml("pv-hero-bg", "169", "深色横图效果最佳；上传后自动裁成 16:9，页面文字自动加暗色遮罩保证可读。", "选择背景图", state.home.heroBg)}</div>
       <div class="fld"><label for="f-welcome">欢迎标题</label>
         <input type="text" id="f-welcome" value="${esc(state.home.welcome)}">
         <p class="hint">显示在首页最上方，居中出现。</p></div>
+      <h2 style="margin-top:8px">团队照片与主要研究</h2>
+      <p class="desc">显示在简介区左侧的合照与一行研究领域。</p>
       <div class="fld"><label>团队照片</label>
         ${uploadHtml("pv-home-photo", "wide", "横版合照；上传后在弹窗中拖拽裁成 16:6，自动纠正手机照片方向并压缩。", "选择团队照片", state.home.photo)}</div>
       <div class="fld"><label for="f-research">主要研究（一行文字）</label>
         <input type="text" id="f-research" value="${esc(state.home.researchLine)}">
         <p class="hint">显示在团队照片下方，用顿号分隔研究领域。</p></div>
+      <h2 style="margin-top:8px">课题组简介</h2>
+      <p class="desc">简介正文、编号要点与首页导师卡。</p>
       <div class="fld"><label for="f-about">课题组简介（首页简介区正文）</label>
         <textarea id="f-about" style="min-height:110px">${esc(state.home.about || "")}</textarea>
         <p class="hint">显示在首页「课题组简介」区块，普通段落文字即可。</p></div>
@@ -630,11 +685,15 @@ function renderHome(el) {
           ${state.members.filter((mm) => mm.role === "mentor").map((mm) => `<option value="${mm.id}" ${Number(state.home.mentorId) === mm.id ? "selected" : ""}>${esc(mm.name)}（${esc(mm.title || "导师")}）</option>`).join("")}
         </select>
         <p class="hint">导师照片与职称在该成员的资料页里上传与修改（团队介绍 → 点开成员）。</p></div>
+      <h2 style="margin-top:8px">科研平台</h2>
+      <p class="desc">前台「科研平台」板块的三张实验室图片。</p>
       <div class="fld"><label>科研平台图片（三张，4:3）</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-          ${[1, 2, 3].map((i) => uploadHtml("pv-platform-" + i, "43", "实验室 / 机器人照片 " + i + "，自动居中裁剪。", "选择图片", (state.home.platform || [])[i - 1])).join("")}
+        <div class="platform-ups">
+          ${[1, 2, 3].map((i) => uploadHtml("pv-platform-" + i, "43", "第 " + i + " 张", "选择图片", (state.home.platform || [])[i - 1])).join("")}
         </div>
-        <p class="hint">上传后立即自动裁剪；不满意点「重新裁剪」手动调整。前台「科研平台」板块按此顺序展示。</p></div>
+        <p class="hint">实验室 / 机器人照片，上传后自动居中裁成 4:3；不满意点「重新裁剪」手动调整。前台「科研平台」板块按此顺序展示。</p></div>
+      <h2 style="margin-top:8px">「最新成果」</h2>
+      <p class="desc">首页成果卡的选取规则。</p>
       <div class="fld"><label>「最新成果」的选取方式</label>
         <div class="checks">
           <label><input type="radio" name="f-featured" value="auto" ${state.home.featuredMode === "auto" ? "checked" : ""}>自动取最新的 3 项</label>
@@ -673,7 +732,7 @@ function renderTeam(el) {
       <h2>导师</h2>
       <p class="desc">导师卡片显示照片、姓名、职称与邮箱，点击进入成员详情页。</p>
       <div class="mentor-box">
-        <div class="ph">4:5 导师照片</div>
+        <div class="ph"${mentor && mentor.photo ? ` style="background-image:url('${mentor.photo}');background-size:cover;background-position:center top"` : ""}>${mentor && mentor.photo ? "" : "4:5 导师照片"}</div>
         <div>
           <h3>${esc(mentor ? mentor.name : "未设置")}</h3>
           <p style="margin:0">${esc(mentor ? mentor.title : "")}</p>
@@ -685,16 +744,16 @@ function renderTeam(el) {
       <h2>硕士研究生</h2>
       <p class="desc">列表页只显示 4:5 照片，不显示姓名等文字；点击照片进入详情。上传照片时自动按人脸居中裁剪。</p>
       <div class="member-grid">
-        ${masters.map((m) => `<a class="member-tile" href="#/member/${m.id}"><div class="ph">成员照片</div><div class="nm">${esc(m.name)} · ${esc(m.joinYear)} 级</div></a>`).join("") || `<p class="desc">暂无成员，点击右上角「新增成员」。</p>`}
+        ${masters.map((m) => `<a class="member-tile" href="#/member/${m.id}"><div class="ph"${m.photo ? ` style="background-image:url('${m.photo}');background-size:cover;background-position:center top"` : ""}>${m.photo ? "" : "成员照片"}</div><div class="nm">${esc(m.name)} · ${esc(m.joinYear)} 级</div></a>`).join("") || `<p class="desc" style="grid-column:1/-1;margin:0">暂无成员，点击右上角「新增成员」。</p>`}
       </div>
     </div>
-    <div class="card">
+    ${others.length ? `<div class="card">
       <h2>旧数据中的其他身份</h2>
       <p class="desc">按新方案，前台只保留导师与硕士研究生两组；以下旧数据需要在正式迁移时归并或下架，这里仅列出以便核对。</p>
       <div class="rows">
         ${others.map((m) => `<div class="row"><div class="grow"><h3>${esc(m.name)} <span class="tag dim">旧数据待迁移</span></h3><p class="meta">${esc(m.title || roleName(m.role))} · ${esc(m.joinYear)} 年加入</p></div><div class="acts"><a class="btn ghost sm" href="#/member/${m.id}">查看</a></div></div>`).join("")}
       </div>
-    </div>`;
+    </div>` : ""}`;
 }
 
 /* ════════ 成员编辑 ════════ */
@@ -938,8 +997,8 @@ function renderNewsEdit(el, id) {
       <div class="fld"><label for="f-date">日期</label><input type="date" id="f-date" value="${esc(n.date)}"></div>
       <div class="fld"><label for="f-summary">摘要</label><textarea id="f-summary" style="min-height:64px">${esc(n.summary)}</textarea>
         <p class="hint">一到两句话，用于列表页快速判断内容。</p></div>
-      <div class="fld"><label>缩略图（选填）</label>${uploadHtml("pv-news-cover", "tall", "建议横版图片；上传后可在弹窗中裁剪构图，未上传时前台显示占位样式。", "选择缩略图", n.cover)}</div>
-      <div class="fld"><label for="f-body">正文</label><textarea id="f-body" style="min-height:180px" placeholder="正文段落；正式版本提供小标题、加粗与插图。"></textarea></div>
+      <div class="fld"><label>缩略图（选填）</label>${uploadHtml("pv-news-cover", "43", "建议横版图片；上传后自动裁成 4:3，列表缩略图与详情页大图共用，如不满意可点「重新裁剪」调整。", "选择缩略图", n.cover)}</div>
+      <div class="fld"><label for="f-body">正文</label><textarea id="f-body" style="min-height:180px" placeholder="正文段落；正式版本提供小标题、加粗与插图。">${esc(n.body)}</textarea></div>
       <div class="fld-row">
         <div class="fld">${switchHtml("f-pinned", n.pinned, "置顶（在列表最前显示）")}</div>
         <div class="fld">${switchHtml("f-published", n.published, "上架显示")}</div>
@@ -999,7 +1058,7 @@ function addMedia(fileName, url) {
 function ensureAppearance() {
   if (!state.settings) state.settings = {};
   if (!state.settings.appearance) {
-    state.settings.appearance = { logoLab: "", logoUni: "", colorPrimary: "#243a50", colorAccent: "#873d49", fontHeading: "serif", fontBody: "sans", footerNote: "此页面为结构框架，正式名称与素材待替换" };
+    state.settings.appearance = { logoLab: "", logoUni: "", colorPrimary: "#243a50", colorAccent: "#873d49", fontHeading: "serif", fontBody: "sans", footerNote: "安徽农业大学 · 姚焱刚课题组（EIAUS Lab）" };
   }
   return state.settings.appearance;
 }
@@ -1014,12 +1073,15 @@ function refreshAppearancePreview(el) {
   const logoSpan = (url, label) => url
     ? `<span style="width:46px;height:46px;border-radius:50%;background-image:url('${url}');background-size:cover;background-position:center;display:inline-block;border:1px solid #d0d9df;flex:none"></span>`
     : `<span style="width:46px;height:46px;border-radius:50%;border:1px dashed #b9c4cc;display:inline-grid;place-items:center;font-size:9px;line-height:1.3;color:#8a959d;text-align:center;flex:none">${label}<br>LOGO</span>`;
+  const uniSpan = (url, label) => url
+    ? `<span style="width:150px;height:42px;border-radius:8px;background:#fff;border:1px solid #d0d9df;background-image:url('${url}');background-size:contain;background-position:center;background-repeat:no-repeat;display:inline-block;flex:none"></span>`
+    : `<span style="width:150px;height:42px;border-radius:8px;border:1px dashed #b9c4cc;display:inline-grid;place-items:center;font-size:9px;line-height:1.3;color:#8a959d;text-align:center;flex:none">${label}<br>LOGO</span>`;
   pv.innerHTML = `<div style="border-top:4px solid ${esc(accent)};padding-top:12px">
     <b style="font-family:${hFont};color:${esc(primary)};font-size:19px">${esc(name)}</b>
     <span style="margin-left:10px;padding:1px 8px;border-radius:4px;background:${esc(accent)}22;color:${esc(accent)};font-size:12px">强调色</span>
     <p style="margin:6px 0 0;font-family:${bFont};color:#46515a;font-size:13px">正文示例：这里是网站正文字体的实际显示效果。</p>
     <div style="display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px dashed #d5dde3">
-      ${logoSpan(ap.logoLab, "课题组")}<b style="font-size:13px;color:#3a434c">页眉效果</b>${logoSpan(ap.logoUni, "学校")}
+      ${logoSpan(ap.logoLab, "课题组")}<b style="font-size:13px;color:#3a434c">页眉效果</b>${uniSpan(ap.logoUni, "学校")}
     </div>
   </div>`;
 }
@@ -1029,10 +1091,10 @@ function renderAppearance(el) {
     ${viewHead("网站外观", "Logo、站点名称、配色与字体；保存并发布后，前台整站生效。")}
     <div class="card form">
       <h2>品牌 Logo 与名称</h2>
-      <p class="desc">Logo 建议透明底 PNG / SVG、正方形、小于 500KB；未上传时页眉显示文字占位。</p>
+      <p class="desc">课题组 Logo 建议正方形；学校 Logo 支持横版整体标识（含校名）或方形徽标，建议 PNG 小于 500KB；未上传时页眉显示文字占位。</p>
       <div class="fld-row">
         <div class="fld"><label>课题组 Logo（页眉左）</label>${uploadHtml("pv-logo-lab", "sq", "显示在页眉左侧圆形位置。", "选择课题组 Logo")}</div>
-        <div class="fld"><label>学校 Logo（页眉右）</label>${uploadHtml("pv-logo-uni", "sq", "显示在页眉右侧圆形位置。", "选择学校 Logo")}</div>
+        <div class="fld"><label>学校 Logo（页眉右）</label>${uploadHtml("pv-logo-uni", "sq", "显示在页眉右侧；上传横版整体标识后，页眉不再重复显示校名文字。", "选择学校 Logo")}</div>
       </div>
       <div class="fld-row">
         <div class="fld"><label for="f-site-name">站点名称</label><input type="text" id="f-site-name" value="${esc(s.name || "")}"></div>
@@ -1065,11 +1127,12 @@ function renderAppearance(el) {
   $("#f-font-body", el).value = a.fontBody === "serif" ? "serif" : "sans";
   [["pv-logo-lab", "logoLab"], ["pv-logo-uni", "logoUni"]].forEach(([pvId, key]) => {
     const pv = document.getElementById(pvId);
+    if (pvId === "pv-logo-uni") pv.classList.add("wide-logo");
     if (a[key]) { pv.style.backgroundImage = `url("${a[key]}")`; pv.closest(".up").classList.add("has-img"); }
     const inp = el.querySelector(`.up-input[data-pv="${pvId}"]`);
     inp.addEventListener("change", () => {
       const f = inp.files && inp.files[0]; if (!f) return;
-      AdminImg.process(f, "sq", (url) => {
+      AdminImg.process(f, pvId === "pv-logo-uni" ? "free" : "sq", (url) => {
         a[key] = url;
         setPv(pvId, url);
         recordPending("更新 Logo 图片");
@@ -1100,6 +1163,34 @@ function renderAppearance(el) {
 }
 
 /* ════════ 发布流程 ════════ */
+/* ════════ 云端发布：整站数据写入仓库 site-data-published.json（gh-pages + main 双分支） ════════ */
+const CLOUD_REPO = "zl2626/lab-website";
+const CLOUD_FILE = "site-data-published.json";
+async function cloudPut(branch, token, contentB64, message) {
+  const headers = { "Authorization": "token " + token, "Accept": "application/vnd.github+json" };
+  let sha = null;
+  const get = await fetch("https://api.github.com/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE + "?ref=" + branch, { headers });
+  if (get.status === 200) sha = (await get.json()).sha;
+  else if (get.status !== 404) throw new Error("读取云端文件失败（" + get.status + "）");
+  const put = await fetch("https://api.github.com/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE, {
+    method: "PUT", headers,
+    body: JSON.stringify({ message: message + "（" + branch + "）", content: contentB64, sha: sha, branch })
+  });
+  if (!put.ok) throw new Error("写入" + branch + "分支失败（" + put.status + "）");
+}
+async function cloudPublish(state) {
+  const token = (localStorage.getItem("labAdminToken.v1") || "").trim();
+  if (!token) { toast("未配置云端发布令牌：本次仅本机预览生效"); return; }
+  toast("正在同步到线上（GitHub Pages + Vercel）…");
+  try {
+    const contentB64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    await cloudPut("gh-pages", token, contentB64, "后台发布更新");
+    await cloudPut("main", token, contentB64, "后台发布更新");
+    toast("✅ 云端发布完成：全网访客几秒内可见最新内容");
+  } catch (err) {
+    toast("云端发布失败：" + err.message + "（本机预览已生效）");
+  }
+}
 function openPublish() {
   const dlg = $("#publishDialog");
   const body = $("#publishBody"), foot = $("#publishFoot");
@@ -1128,6 +1219,7 @@ function openPublish() {
       dlg.close();
       toast("已发布：打开或刷新前台页面即可看到修改");
       route();
+      cloudPublish(state);
     }, 1100);
   });
 }

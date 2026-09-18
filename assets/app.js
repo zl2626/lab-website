@@ -42,8 +42,9 @@ document.querySelector("#site-header").innerHTML = `
         <span><span class="brand-name">${esc(S.name || "某某课题组")}</span><span class="brand-en">${esc(S.nameEn || "EMBODIED INTELLIGENCE LAB")}</span></span>
       </a>
       <div class="brand university">
-        <span class="brand-mark" id="brand-mark-uni">安农大<br>LOGO</span>
-        <span><span class="brand-name">${esc(S.university || "安徽农业大学")}</span><span class="brand-en">${esc(S.universityEn || "ANHUI AGRICULTURAL UNIVERSITY")}</span></span>
+        ${AP.logoUni
+          ? `<span class="brand-mark uni-lockup" id="brand-mark-uni">校名标识</span>`
+          : `<span class="brand-mark" id="brand-mark-uni">安农大<br>LOGO</span><span><span class="brand-name">${esc(S.university || "安徽农业大学")}</span><span class="brand-en">${esc(S.universityEn || "ANHUI AGRICULTURAL UNIVERSITY")}</span></span>`}
       </div>
     </div></div>
     <nav class="site-nav" aria-label="主导航">

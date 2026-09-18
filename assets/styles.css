@@ -59,6 +59,17 @@ button { font: inherit; }
 .brand-en { display: block; margin-top: 3px; font-size: 10px; letter-spacing: .11em; opacity: .75; }
 .university .brand-name { font-size: 22px; }
 .brand-mark.has-img { border-color: transparent; color: transparent; }
+.brand-mark.uni-lockup {
+  width: 208px;
+  height: 58px;
+  flex: 0 0 208px;
+  border: 0;
+  border-radius: 9px;
+  background-color: #fff;
+  font-size: 10px;
+  color: #97a3ab;
+}
+.brand-mark.uni-lockup.has-img { color: transparent; }
 
 .site-nav { position: relative; z-index: 20; background: #fff; border-bottom: 1px solid var(--line); }
 .nav-inner { width: min(var(--max), calc(100% - 40px)); margin: 0 auto; display: flex; justify-content: center; }
