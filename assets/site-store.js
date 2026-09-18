@@ -269,15 +269,61 @@
     else if (page === "contact") renderContact(d);
   }
 
-  /* 云端发布副本：后台「发布更新」会把整站数据写入仓库 site-data-published.json；
-     前台每次加载拉取一次，拿到即重渲染——全网访客几秒内看到最新内容，无需等待站点重建。 */
-  var REMOTE_URL = "https://raw.githubusercontent.com/zl2626/lab-website/gh-pages/site-data-published.json";
+  /* 云端发布副本：后台「发布更新」会把整站数据写入仓库 site-data-published.json。
+     读取顺序：GitHub API（无 CDN 缓存，发布后立即生效）→ raw 兜底 → 本机已发布副本 → 种子。
+     每个浏览器会话最多拉取一次（5 分钟节流），避免超出接口频次限制。 */
+  var REPO = "zl2626/lab-website";
+  var PUB_FILE = "site-data-published.json";
+  var API_URL = "https://api.github.com/repos/" + REPO + "/contents/" + PUB_FILE + "?ref=gh-pages";
+  var RAW_URL = "https://raw.githubusercontent.com/" + REPO + "/gh-pages/" + PUB_FILE;
+  var CDN_URL = "https://cdn.jsdelivr.net/gh/" + REPO + "@gh-pages/" + PUB_FILE;
   var remoteData = null;
+  function b64ToUtf8(b64) {
+    if (!b64) return null;
+    try { return decodeURIComponent(escape(atob(String(b64).replace(/\s/g, "")))); }
+    catch (e) { try { return atob(b64); } catch (e2) { return null; } }
+  }
+  function b64ToUtf8Json(b64) {
+    var txt = b64ToUtf8(b64);
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch (e) { return null; }
+  }
+  /* 新旧数据保护：云端带时间戳（新版发布）视为权威；
+     云端是旧数据（无时间戳）时，仅在本浏览器没有已发布副本时才采用，
+     防止初始化种子盖住本机刚发布、尚未同步成功的内容。 */
+  function acceptRemote(j) {
+    if (!j || !j.settings || !j.home) return;
+    var pub = read(KEY_PUBLISHED);
+    var remT = j._publishTime ? Date.parse(j._publishTime) : 0;
+    var pubT = pub && pub._publishTime ? Date.parse(pub._publishTime) : 0;
+    if (!remT && pub) return;
+    if (remT && pubT && remT < pubT) return;
+    remoteData = j;
+    renderAll();
+  }
+  function fetchRemote(mode) {
+    var url = mode === "api" ? API_URL : (mode === "raw" ? RAW_URL : CDN_URL);
+    var next = mode === "api" ? "raw" : (mode === "raw" ? "cdn" : null);
+    var sep = mode === "api" ? "&" : "?";
+    fetch(url + sep + "t=" + Date.now())
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) {
+        if (mode === "api") {
+          if (!j || !j.content) throw new Error("empty");
+          acceptRemote(b64ToUtf8Json(j.content));
+        } else {
+          acceptRemote(j);
+        }
+      })
+      .catch(function () { if (next) fetchRemote(next); });
+  }
   if (location.protocol.indexOf("http") === 0) {
-    fetch(REMOTE_URL + "?t=" + Date.now())
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { if (j && j.settings && j.home) { remoteData = j; renderAll(); } })
-      .catch(function () {});
+    var lastFetch = 0;
+    try { lastFetch = Number(sessionStorage.getItem("labRemoteFetch.v1") || 0); } catch (e) {}
+    if (!lastFetch || Date.now() - lastFetch > 5 * 60 * 1000) {
+      try { sessionStorage.setItem("labRemoteFetch.v1", String(Date.now())); } catch (e) {}
+      fetchRemote("api");
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", renderAll);
