@@ -146,7 +146,7 @@
     if (grid) {
       var masters = (d.members || []).filter(function (m) { return m.role === "master" && m.published; });
       grid.innerHTML = masters.map(function (m) {
-        return '<a class="member-tile" href="member.html?id=' + m.id + '" aria-label="查看 ' + esc(m.name) + ' 详情">' + photoDiv("visual portrait", m.photo, "成员照片") + "</a>";
+        return '<a class="member-tile" href="member.html?id=' + m.id + '" aria-label="查看 ' + esc(m.name) + ' 详情">' + photoDiv("visual portrait", m.photo, "成员照片") + '<span class="member-name">' + esc(m.name) + "</span></a>";
       }).join("");
     }
   }
