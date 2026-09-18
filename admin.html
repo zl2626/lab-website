@@ -587,10 +587,11 @@ function bindUploads(root) {
 function viewHead(title, sub, actions) {
   return `<div class="view-head"><div><h1>${esc(title)}</h1><div class="sub">${esc(sub)}</div></div><div class="acts" style="display:flex;gap:8px">${actions || ""}</div></div>`;
 }
-function saveBar(backHash, saveId) {
+function saveBar(backHash, saveId, extra) {
   return `<div style="display:flex;gap:10px;margin-top:22px">
     <button class="btn" type="button" data-save="${esc(saveId)}" data-back="${esc(backHash)}">保存</button>
     <a class="btn ghost" href="${esc(backHash)}">返回（不保存）</a>
+    ${extra || ""}
   </div>`;
 }
 
@@ -780,7 +781,7 @@ function renderTeam(el) {
     </div>
     <div class="card">
       <h2>硕士研究生</h2>
-      <p class="desc">列表页只显示 4:5 照片，不显示姓名等文字；点击照片进入详情。上传照片时自动按人脸居中裁剪。</p>
+      <p class="desc">照片下方显示姓名，点击照片进入成员详情。上传照片时自动按人脸居中裁剪。</p>
       <div class="member-grid">
         ${masters.map((m) => `<a class="member-tile" href="#/member/${m.id}"><div class="ph"${m.photo ? ` style="background-image:url('${m.photo}');background-size:cover;background-position:center top"` : ""}>${m.photo ? "" : "成员照片"}</div><div class="nm">${esc(m.name)} · ${esc(m.joinYear)} 级</div></a>`).join("") || `<p class="desc" style="grid-column:1/-1;margin:0">暂无成员，点击右上角「新增成员」。</p>`}
       </div>
@@ -824,7 +825,7 @@ function renderMemberEdit(el, id) {
         <p class="hint">普通段落文字即可，不需要排版符号；正式版本提供加粗与小标题。</p></div>
       <div class="note blue" style="margin-bottom:0">「相关成果」不需要在这里维护：保存后，论文作者列表中出现该成员姓名（或英文名）的论文会自动关联到成员详情页。</div>
       <div class="fld" style="margin-top:16px">${switchHtml("f-published", m.published, "上架显示（关闭后前台隐藏，数据保留）")}</div>
-      ${saveBar("#/team", "member:" + (isNew ? "new" : m.id))}
+      ${saveBar("#/team", "member:" + (isNew ? "new" : m.id), isNew ? "" : `<button class="btn ghost" id="btnDeleteMember" type="button" style="margin-left:auto;color:#873d49;border-color:#873d49">删除成员</button>`)}
     </div>`;
   bindUploads(el);
   $("#f-role", el).addEventListener("change", (e) => { $("#fld-title", el).style.display = e.target.value === "mentor" ? "" : "none"; });
@@ -834,6 +835,19 @@ function renderMemberEdit(el, id) {
     else Object.assign(m, data);
     recordPending((isNew ? "新增成员：" : "修改成员：") + data.name);
     toast("已保存为草稿，点右上角「发布更新」后生效");
+    location.hash = "#/team";
+  });
+  const delBtn = $("#btnDeleteMember", el);
+  if (delBtn) delBtn.addEventListener("click", () => {
+    const who = m.name || "该成员";
+    const tip = m.role === "mentor"
+      ? `确定删除导师「${who}」？删除后前台团队页将没有导师卡片（除非另有导师），点「发布更新」后生效。`
+      : `确定删除成员「${who}」？删除后前台团队页与详情页不再显示，点「发布更新」后生效。`;
+    if (!confirm(tip)) return;
+    state.members = state.members.filter((x) => x !== m);
+    if (state.home && state.home.mentorId && String(state.home.mentorId) === String(m.id)) state.home.mentorId = null;
+    recordPending("删除成员：" + who);
+    toast("已删除（草稿），点右上角「发布更新」后生效");
     location.hash = "#/team";
   });
 }

@@ -193,6 +193,8 @@ button { font: inherit; }
 .member-tile { display: block; border: 3px solid transparent; background: #fff; }
 .member-tile:hover { border-color: var(--wine); }
 .member-tile .portrait { background: linear-gradient(145deg, #dce2e2, #abb9be); }
+.member-tile .member-name { display: block; padding: 9px 4px 11px; text-align: center; font-size: 15px; font-weight: 500; color: var(--ink); }
+@media (max-width: 640px) { .member-tile .member-name { font-size: 13.5px; padding: 7px 2px 9px; } }
 
 .profile-top { display: grid; grid-template-columns: 250px 1fr; gap: 36px; padding: 28px; background: #fff; border-top: 4px solid var(--navy); }
 .profile-top h1 { margin: 8px 0 2px; font: 700 36px/1.3 var(--serif); }
