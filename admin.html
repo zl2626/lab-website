@@ -111,6 +111,9 @@
   .fld { margin-bottom: 16px; }
   .fld > label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13.5px; }
   .fld .hint { margin-top: 5px; color: var(--muted); font-size: 12.5px; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .hint.ok { color: #1e7a3c; }
+  .hint.err { color: #873d49; font-weight: 600; }
   .fld input[type=text], .fld input[type=email], .fld input[type=date], .fld input[type=number], .fld select, .fld textarea {
     width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font: inherit;
   }
@@ -593,6 +596,8 @@ function saveBar(backHash, saveId) {
 
 /* ════════ 工作台 ════════ */
 function renderDashboard(el) {
+  const cloudStatus = (() => { try { return JSON.parse(localStorage.getItem("labCloudStatus.v1") || "null"); } catch (e) { return null; } })();
+  const cloudQueued = (() => { try { return !!localStorage.getItem("labCloudQueue.v1"); } catch (e) { return false; } })();
   el.innerHTML = `
     ${viewHead("工作台", "日常更新从这里进入，每个入口与前台栏目一一对应。")}
     <div class="note blue"><div style="flex:1;min-width:0">这是后台信息管理平台。保存的内容先进入<strong>草稿</strong>，点右上角「发布更新」后，打开或刷新前台页面（首页/团队/新闻等）即可看到修改；配置下方「云端发布」令牌后，发布内容还会自动写入网站仓库，全网访客几秒内实时可见。</div><button class="btn ghost sm" type="button" id="btnResetDemo" style="flex:none;align-self:center;white-space:nowrap">重置演示数据</button></div>
@@ -609,6 +614,8 @@ function renderDashboard(el) {
       <h2>发布状态</h2>
       <p class="desc">上次发布：${esc(state.lastPublish)}　·　未发布的修改：${state.pending.length ? state.pending.length + " 处" : "无"}</p>
       ${state.pending.length ? `<ul style="margin:0;padding-left:20px;color:#3a434c">${state.pending.slice(0, 5).map((p) => `<li>${esc(p.label)} · ${esc(p.time)}</li>`).join("")}</ul>` : `<p class="desc" style="margin:0">所有已保存的内容都已发布到正式网站。</p>`}
+      <p class="hint ${cloudStatus && !cloudStatus.ok ? "err" : "ok"}" style="margin:10px 0 0">${esc(cloudStatus ? "云端同步（" + cloudStatus.at + "）：" + cloudStatus.msg : "云端同步：尚未执行过；配置「云端发布」令牌后，每次发布都会自动同步到线上。")}</p>
+      ${cloudQueued ? `<div style="margin-top:10px"><button class="btn accent sm" type="button" id="btnCloudRetry">重试云端同步</button><p class="hint" style="margin:6px 0 0">之前有一次发布未能同步到线上（原因见上方记录）。修好令牌后点这里即可补推，无需重新编辑。</p></div>` : ""}
     </div>
     <div class="card" style="margin-top:14px">
       <h2>云端发布（让所有人实时看到）</h2>
@@ -616,10 +623,12 @@ function renderDashboard(el) {
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input type="password" id="f-cloud-token" placeholder="粘贴 GitHub 访问令牌（PAT）" style="flex:1;min-width:220px">
         <button class="btn sm" type="button" id="btnSaveToken">保存令牌</button>
+        <button class="btn ghost sm" type="button" id="btnVerifyToken">验证令牌</button>
+        <button class="btn accent sm" type="button" id="btnSyncNow">手动同步线上</button>
         <button class="btn ghost sm" type="button" id="btnClearToken">清除</button>
       </div>
       <p class="hint" id="cloudStatus" style="margin:8px 0 0"></p>
-      <p class="hint" style="margin:6px 0 0">令牌获取：GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token，仅选择仓库 zl2626/lab-website，权限勾选 Contents: Read and write。令牌只保存在本浏览器，绝不进入网站代码；换电脑或换浏览器需重新粘贴一次。未配置令牌时，「发布更新」仅在本机预览生效。</p>
+      <p class="hint" style="margin:6px 0 0">令牌获取：GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token，仅选择仓库 zl2626/lab-website，权限勾选 Contents: Read and write。令牌只保存在本浏览器，绝不进入网站代码；换电脑或换浏览器需重新粘贴一次。保存后先点「验证令牌」确认可用；若某次发布后线上没变化，点「手动同步线上」把当前内容补推上去。</p>
     </div>`;
   $("#btnResetDemo", el).addEventListener("click", () => {
     if (confirm("重置演示数据？将清除本浏览器中保存的草稿与已发布内容，恢复到初始示例。")) { SiteStore.reset(); location.reload(); }
@@ -629,6 +638,7 @@ function renderDashboard(el) {
   const hasToken = () => !!(localStorage.getItem("labAdminToken.v1") || "").trim();
   const refreshTk = () => {
     tkInput.value = localStorage.getItem("labAdminToken.v1") || "";
+    tkStatus.className = "hint" + (hasToken() ? " ok" : "");
     tkStatus.textContent = hasToken() ? "✅ 已配置：点右上角「发布更新」即同步到线上（GitHub Pages + Vercel）。" : "⚠️ 未配置：目前发布仅在本浏览器预览生效。";
   };
   refreshTk();
@@ -638,10 +648,38 @@ function renderDashboard(el) {
     refreshTk();
     toast(v ? "云端发布令牌已保存" : "已清除令牌");
   });
+  $("#btnVerifyToken", el).addEventListener("click", async () => {
+    const v = tkInput.value.trim() || (localStorage.getItem("labAdminToken.v1") || "").trim();
+    if (!v) { tkStatus.className = "hint err"; tkStatus.textContent = "请先粘贴令牌，再点「验证令牌」。"; return; }
+    tkStatus.className = "hint";
+    tkStatus.textContent = "正在验证令牌…";
+    const r = await cloudVerify(v);
+    tkStatus.className = r.ok ? "hint ok" : "hint err";
+    tkStatus.textContent = r.msg;
+  });
+  $("#btnSyncNow", el).addEventListener("click", async () => {
+    if (!hasToken()) { tkStatus.className = "hint err"; tkStatus.textContent = "请先粘贴并保存令牌，再点「手动同步线上」。"; return; }
+    tkStatus.className = "hint";
+    tkStatus.textContent = "正在把当前已发布内容同步到线上…";
+    const cur = SiteStore.published() || SiteStore.seed();
+    const r = await cloudPublish(cur);
+    tkStatus.className = r.ok ? "hint ok" : "hint err";
+    tkStatus.textContent = r.msg;
+    toast(r.ok ? "✅ 已同步到线上：全网访客几秒内可见" : "云端同步失败，原因见工作台提示");
+  });
   $("#btnClearToken", el).addEventListener("click", () => {
     localStorage.removeItem("labAdminToken.v1");
     refreshTk();
     toast("已清除云端发布令牌");
+  });
+  const retryBtn = $("#btnCloudRetry", el);
+  if (retryBtn) retryBtn.addEventListener("click", async () => {
+    retryBtn.disabled = true;
+    toast("正在补推上次未同步的内容…");
+    const b64 = localStorage.getItem("labCloudQueue.v1") || "";
+    const r = await cloudPublish(null, b64);
+    toast(r.ok ? "✅ 补推成功：全网访客几秒内可见最新内容" : "补推仍失败：" + r.msg);
+    route();
   });
 }
 
@@ -1166,30 +1204,77 @@ function renderAppearance(el) {
 /* ════════ 云端发布：整站数据写入仓库 site-data-published.json（gh-pages + main 双分支） ════════ */
 const CLOUD_REPO = "zl2626/lab-website";
 const CLOUD_FILE = "site-data-published.json";
-async function cloudPut(branch, token, contentB64, message) {
-  const headers = { "Authorization": "token " + token, "Accept": "application/vnd.github+json" };
-  let sha = null;
-  const get = await fetch("https://api.github.com/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE + "?ref=" + branch, { headers });
-  if (get.status === 200) sha = (await get.json()).sha;
-  else if (get.status !== 404) throw new Error("读取云端文件失败（" + get.status + "）");
-  const put = await fetch("https://api.github.com/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE, {
-    method: "PUT", headers,
-    body: JSON.stringify({ message: message + "（" + branch + "）", content: contentB64, sha: sha, branch })
-  });
-  if (!put.ok) throw new Error("写入" + branch + "分支失败（" + put.status + "）");
+async function cloudHeaders(token) {
+  return { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
 }
-async function cloudPublish(state) {
-  const token = (localStorage.getItem("labAdminToken.v1") || "").trim();
-  if (!token) { toast("未配置云端发布令牌：本次仅本机预览生效"); return; }
-  toast("正在同步到线上（GitHub Pages + Vercel）…");
+async function cloudApi(path, token, options) {
+  let lastErr = null;
+  for (let i = 0; i < 2; i++) {
+    try {
+      const res = await fetch("https://api.github.com" + path, Object.assign({ headers: await cloudHeaders(token) }, options || {}));
+      let json = null, detail = "";
+      try { json = await res.json(); if (json && json.message) detail = "：" + json.message; } catch (e) {}
+      return { res: res, json: json, detail: detail };
+    } catch (err) {
+      lastErr = err;
+      if (i === 0) await new Promise(function (r) { setTimeout(r, 1200); });
+    }
+  }
+  throw new Error("网络不通（本机代理或 VPN 可能拦截了 GitHub 接口），可尝试暂时关闭代理后重试");
+}
+/* 令牌体检：能读到仓库元信息 = 令牌有效且指向正确仓库 */
+async function cloudVerify(token) {
   try {
-    const contentB64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    const { res, detail } = await cloudApi("/repos/" + CLOUD_REPO, token);
+    if (res.status === 200) return { ok: true, msg: "令牌有效，仓库访问正常，可以直接发布。" };
+    if (res.status === 401) return { ok: false, msg: "令牌无效或已过期（401），请到 GitHub 重新生成并粘贴。" };
+    if (res.status === 404) return { ok: false, msg: "找不到仓库（404）：令牌未授权仓库 zl2626/lab-website，请重新生成令牌并勾选该仓库。" };
+    if (res.status === 403) return { ok: false, msg: "令牌权限不足（403）：生成令牌时需勾选仓库 zl2626/lab-website 与 Contents: Read and write。" + detail };
+    return { ok: false, msg: "验证失败（" + res.status + "）" + detail };
+  } catch (err) { return { ok: false, msg: "网络错误：" + err.message + "（请检查网络后重试）" }; }
+}
+async function cloudPut(branch, token, contentB64, message) {
+  const g = await cloudApi("/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE + "?ref=" + branch, token);
+  let sha = null;
+  if (g.res.status === 200) sha = g.json ? g.json.sha : null;
+  else if (g.res.status !== 404) throw new Error("读取云端文件失败（" + g.res.status + "）" + g.detail);
+  const p = await cloudApi("/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE, token, {
+    method: "PUT", body: JSON.stringify({ message: message + "（" + branch + "）", content: contentB64, sha: sha, branch })
+  });
+  if (!p.res.ok) {
+    if (p.res.status === 401) throw new Error("令牌无效或已过期（401），请在工作台重新粘贴令牌");
+    if (p.res.status === 403) throw new Error("令牌权限不足（403）：生成令牌时需勾选仓库 zl2626/lab-website 与 Contents: Read and write" + p.detail);
+    throw new Error("写入" + branch + "分支失败（" + p.res.status + "）" + p.detail);
+  }
+}
+/* 云端同步；b64Override 用于失败补推时复用上次内容。返回 {ok, msg} 供界面显示 */
+async function cloudPublish(state, b64Override) {
+  const token = (localStorage.getItem("labAdminToken.v1") || "").trim();
+  if (!token) {
+    const msg = "未配置云端发布令牌：内容已在本机生效，但线上暂未更新。请到工作台「云端发布」粘贴令牌后，点「手动同步线上」。";
+    setCloudStatus(false, msg);
+    return { ok: false, msg };
+  }
+  /* 上传内容统一带 _publishTime 时间戳：旧版发布的数据没有时间戳，
+     补上后所有访客的前台才会采用这份云端数据（见 site-store.js 的 acceptRemote） */
+  let payload = b64Override ? null : Object.assign({}, state, { _publishTime: (state && state._publishTime) || new Date().toISOString() });
+  const contentB64 = b64Override || btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  try {
     await cloudPut("gh-pages", token, contentB64, "后台发布更新");
     await cloudPut("main", token, contentB64, "后台发布更新");
-    toast("✅ 云端发布完成：全网访客几秒内可见最新内容");
+    try { localStorage.removeItem("labCloudQueue.v1"); } catch (e) {}
+    setCloudStatus(true, "已同步到 GitHub Pages 与 Vercel，全网访客几秒内可见。");
+    return { ok: true, msg: "✅ 云端同步成功：全网访客几秒内可见最新内容。" };
   } catch (err) {
-    toast("云端发布失败：" + err.message + "（本机预览已生效）");
+    try { localStorage.setItem("labCloudQueue.v1", contentB64); } catch (e) {}
+    const msg = "云端同步失败：" + err.message + "。内容已在本机生效；修复令牌后可到工作台点「重试云端同步」或「手动同步线上」补推。";
+    setCloudStatus(false, msg);
+    return { ok: false, msg: "❌ " + msg };
   }
+}
+/* 云端同步状态落盘：工作台「发布状态」卡持久显示最近一次结果，不再一闪而过 */
+function setCloudStatus(ok, msg) {
+  try { localStorage.setItem("labCloudStatus.v1", JSON.stringify({ ok: ok, msg: msg, at: new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) })); } catch (e) {}
 }
 function openPublish() {
   const dlg = $("#publishDialog");
@@ -1201,7 +1286,8 @@ function openPublish() {
     body.innerHTML = `
       <p style="margin:0 0 10px">将把以下 ${state.pending.length} 处已保存的修改发布到正式网站：</p>
       <ul>${state.pending.map((p) => `<li>${esc(p.label)} · ${esc(p.time)}</li>`).join("")}</ul>
-      <div class="progress" style="display:none" id="pubProg"><i></i></div>`;
+      <div class="progress" style="display:none" id="pubProg"><i></i></div>
+      <p class="hint" id="pubMsg" style="margin:10px 0 0"></p>`;
     foot.innerHTML = `<button class="btn ghost" id="dlgClose" type="button">取消</button><button class="btn accent" id="dlgGo" type="button">确认发布</button>`;
   }
   dlg.showModal();
@@ -1211,15 +1297,35 @@ function openPublish() {
     $("#pubProg").style.display = "block";
     requestAnimationFrame(() => { $("#pubProg i").style.width = "100%"; });
     go.disabled = true;
-    setTimeout(() => {
+    setTimeout(async () => {
       state.lastPublish = new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+      state._publishTime = new Date().toISOString();
       state.pending = [];
       SiteStore.publish(state);
       renderPendingCount();
-      dlg.close();
-      toast("已发布：打开或刷新前台页面即可看到修改");
+      const token = (localStorage.getItem("labAdminToken.v1") || "").trim();
+      const msgEl = $("#pubMsg");
+      if (!token) {
+        $("#pubProg").style.display = "none";
+        dlg.close();
+        toast("已发布：本机已生效。要同步到线上，请先到工作台配置「云端发布」令牌");
+        route();
+        return;
+      }
+      if (msgEl) msgEl.textContent = "正在同步到线上（GitHub Pages + Vercel）…";
+      const result = await cloudPublish(state);
+      $("#pubProg").style.display = "none";
+      if (msgEl) { msgEl.textContent = result.msg; msgEl.className = result.ok ? "hint ok" : "hint err"; }
+      toast(result.ok ? "已发布并同步到线上" : "已发布（本机已生效）；云端同步失败，请按发布窗口内的提示处理");
+      if (result.ok) {
+        setTimeout(() => dlg.close(), 1500);
+      } else {
+        const foot = $("#publishFoot");
+        if (foot) foot.innerHTML = `<button class="btn ghost" id="dlgClose" type="button">关闭</button>`;
+        const c = $("#dlgClose");
+        if (c) c.addEventListener("click", () => dlg.close());
+      }
       route();
-      cloudPublish(state);
     }, 1100);
   });
 }
