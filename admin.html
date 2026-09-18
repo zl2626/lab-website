@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="zh-CN" data-page-node-id="bCs6fOF7QIjl5PAOQPh4ek">
+<head data-page-node-id="oPTGDWhLhIWHKJJbCAieSN">
+<meta charset="UTF-8" data-page-node-id="ck0efHyBMSRi1nBhJRdlaN">
+<meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="F1RICLWP1VqSJEnGfVCEux">
+<title>管理后台（原型）｜课题组网站</title>
+<style>
+  :root {
+    --ink: #23292f;
+    --muted: #6b7480;
+    --navy: #243a50;
+    --navy-deep: #182b3d;
+    --wine: #873d49;
+    --gold: #e4a941;
+    --canvas: #f3f5f4;
+    --line: #dfe3e1;
+    --soft: #ecefee;
+    --card: #ffffff;
+    --ok: #2e6e4e;
+    --sidebar-w: 212px;
+    --serif: "Noto Serif SC", "Songti SC", SimSun, serif;
+    --sans: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); background: var(--canvas); font: 14px/1.65 var(--sans); }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  /* ── 顶栏 ─────────────────────────────── */
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    height: 58px; padding: 0 20px;
+    background: linear-gradient(100deg, var(--navy-deep), #2c4258); color: #fff;
+  }
+  .topbar .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .topbar .brand b { font: 700 17px/1.3 var(--serif); white-space: nowrap; }
+  .topbar .brand small { opacity: .72; font-size: 12px; }
+  .topbar .actions { display: flex; align-items: center; gap: 10px; }
+  .link-preview { padding: 7px 12px; border: 1px solid rgba(255,255,255,.38); border-radius: 6px; font-size: 13px; }
+  .link-preview:hover { background: rgba(255,255,255,.12); }
+  .btn-publish {
+    position: relative; border: 0; border-radius: 6px; padding: 8px 16px;
+    background: var(--gold); color: #23292f; font-weight: 700;
+  }
+  .btn-publish:hover { filter: brightness(1.05); }
+  .btn-publish .count {
+    display: none; min-width: 19px; margin-left: 7px; padding: 0 5px;
+    background: #23292f; color: #fff; border-radius: 99px; font-size: 11px; line-height: 18px;
+  }
+  .btn-publish .count.on { display: inline-block; }
+  .menu-toggle { display: none; border: 1px solid rgba(255,255,255,.38); background: transparent; color: #fff; border-radius: 6px; padding: 7px 12px; }
+
+  /* ── 布局 ─────────────────────────────── */
+  .layout { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: calc(100vh - 58px); }
+  .sidenav { background: var(--card); border-right: 1px solid var(--line); padding: 14px 10px 24px; }
+  .sidenav .group { margin: 14px 8px 4px; font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+  .sidenav a {
+    display: block; padding: 10px 12px; margin: 1px 0; border-left: 3px solid transparent;
+    border-radius: 0 6px 6px 0; color: #3a434c;
+  }
+  .sidenav a:hover { background: var(--soft); }
+  .sidenav a.active { border-left-color: var(--wine); background: #f8f3f3; color: var(--navy-deep); font-weight: 700; }
+  .sidenav a .hint { float: right; color: var(--muted); font-size: 12px; font-weight: 400; }
+  main.view { padding: 26px 30px 60px; max-width: 1080px; width: 100%; }
+
+  /* ── 页头与卡片 ───────────────────────── */
+  .view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .view-head h1 { margin: 0; font: 700 22px/1.4 var(--serif); color: var(--navy-deep); }
+  .view-head .sub { margin-top: 4px; color: var(--muted); font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; }
+  .card + .card { margin-top: 14px; }
+  .card h2 { margin: 0 0 4px; font: 700 16px/1.5 var(--serif); color: var(--navy-deep); }
+  .card .desc { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+  .grid-entries { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .entry { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--navy); border-radius: 8px; padding: 15px 16px; }
+  .entry.wine { border-left-color: var(--wine); }
+  .entry b { display: block; font-size: 15px; }
+  .entry p { margin: 5px 0 11px; color: var(--muted); font-size: 13px; min-height: 36px; }
+
+  /* ── 按钮 / 标签 / 状态 ───────────────── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 6px; padding: 8px 15px; background: var(--navy); color: #fff; }
+  .btn:hover { background: var(--navy-deep); }
+  .btn.accent { background: var(--wine); }
+  .btn.accent:hover { filter: brightness(.92); }
+  .btn.ghost { background: var(--card); border-color: var(--line); color: var(--ink); }
+  .btn.ghost:hover { border-color: var(--muted); background: var(--soft); }
+  .btn.sm { padding: 4px 10px; font-size: 12.5px; }
+  .tag { display: inline-block; margin-right: 6px; padding: 1px 8px; background: var(--soft); color: var(--navy); border-radius: 4px; font-size: 12px; white-space: nowrap; }
+  .tag.wine { background: #f5e9ea; color: var(--wine); }
+  .tag.gold { background: #f9efd9; color: #8a6414; }
+  .tag.dim { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+  .meta { color: var(--muted); font-size: 12.5px; }
+
+  /* ── 列表行 ───────────────────────────── */
+  .rows { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 4px 18px; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .grow { flex: 1; min-width: 0; }
+  .row h3 { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.5; }
+  .row p { margin: 3px 0 0; }
+  .row .acts { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .year-head { margin: 20px 0 8px; font: 700 15px/1.4 var(--serif); color: var(--navy); }
+  .year-head:first-child { margin-top: 0; }
+  .empty { border: 1px dashed var(--line); border-radius: 8px; background: var(--card); padding: 34px 20px; text-align: center; color: var(--muted); }
+  .empty b { display: block; margin-bottom: 6px; color: var(--ink); }
+
+  /* ── 表单 ─────────────────────────────── */
+  .form { max-width: 720px; }
+  .fld { margin-bottom: 16px; }
+  .fld > label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13.5px; }
+  .fld .hint { margin-top: 5px; color: var(--muted); font-size: 12.5px; }
+  .fld input[type=text], .fld input[type=email], .fld input[type=date], .fld input[type=number], .fld select, .fld textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); font: inherit;
+  }
+  .fld textarea { min-height: 96px; resize: vertical; }
+  .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(36,58,80,.12); outline: none; }
+  .fld-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checks label {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px;
+    border: 1px solid var(--line); border-radius: 99px; font-size: 13px; cursor: pointer; background: #fff;
+  }
+  .checks label:has(input:checked) { border-color: var(--navy); background: #eef2f5; font-weight: 600; }
+  .checks input { accent-color: var(--navy); }
+
+  .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; }
+  .switch .track { width: 38px; height: 22px; border-radius: 99px; background: #c6ccc9; position: relative; transition: background .15s; flex-shrink: 0; }
+  .switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  .switch input:checked + .track { background: var(--ok); }
+  .switch input:checked + .track::after { transform: translateX(16px); }
+  .switch input:focus-visible + .track { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .switch .sw-label { font-size: 13px; }
+
+  /* ── 上传控件 ─────────────────────────── */
+  .up { display: flex; gap: 16px; align-items: flex-start; }
+  .up-preview {
+    width: 112px; aspect-ratio: 4 / 5; flex-shrink: 0; border-radius: 6px;
+    background: linear-gradient(145deg, #dce2e2, #abb9be);
+    display: grid; place-items: center; color: #46555f; font-size: 12px; text-align: center;
+    background-size: cover; background-position: center top;
+  }
+  .up-preview.wide { width: 100%; max-width: 420px; aspect-ratio: 16 / 6; }
+  .up-preview.wide-logo {
+    width: 100%; max-width: 300px; aspect-ratio: 10 / 3; flex: 0 0 auto;
+    background-color: #fff; border: 1px solid var(--line);
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+  }
+  .up.has-img .up-preview span { display: none; }
+  .up { flex-wrap: wrap; }
+  .up-side { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .up-side .hint { margin: 0; }
+  .up-side .up-input { max-width: 100%; font-size: 12.5px; }
+  .up-preview.sq { width: 88px; aspect-ratio: 1 / 1; }
+  .up-preview.r43 { aspect-ratio: 4 / 3; }
+  .up-preview.r169 { width: 100%; max-width: 460px; aspect-ratio: 16 / 9; }
+  .up-preview.wide, .up-preview.r169 { flex: 1 1 100%; }
+  .platform-ups { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .platform-ups .up { flex-direction: column; gap: 10px; }
+  .platform-ups .up-preview { width: 100%; }
+  .platform-ups .up-side .hint { font-weight: 600; color: var(--navy); }
+  .fld input[type=color] { width: 64px; height: 38px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
+  /* 裁剪弹窗 */
+  #cropDialog { border: none; border-radius: 12px; padding: 18px 20px 16px; width: min(760px, 94vw); box-shadow: 0 18px 60px rgba(10, 18, 24, 0.35); }
+  #cropDialog::backdrop { background: rgba(15, 23, 30, 0.55); }
+  .crop-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .crop-head .meta { font-size: 12px; color: var(--muted); }
+  .crop-stage { position: relative; margin: 0 auto; overflow: hidden; background: #10181e; border-radius: 8px; touch-action: none; cursor: grab; }
+  .crop-stage:active { cursor: grabbing; }
+  .crop-stage canvas { position: absolute; left: 50%; top: 50%; transform-origin: center; max-width: none; }
+  .crop-grid { position: absolute; inset: 0; pointer-events: none; border: 1px solid rgba(255,255,255,0.35); background-image: linear-gradient(rgba(255,255,255,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px); background-size: 33.34% 33.34%; }
+  .crop-bar { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+  .crop-bar label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex: 1; min-width: 200px; }
+  .crop-bar input[type=range] { flex: 1; }
+  .crop-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+  .appearance-preview { border: 1px solid var(--line); border-radius: 8px; padding: 16px; background: var(--canvas); }
+
+  /* ── 成员网格 ─────────────────────────── */
+  .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px; }
+  .member-tile { display: block; text-align: center; }
+  .member-tile .ph { aspect-ratio: 4 / 5; border-radius: 6px; background: linear-gradient(145deg, #dce2e2, #abb9be); display: grid; place-items: center; color: #46555f; font-size: 12px; background-size: cover; }
+  .member-tile:hover .ph { outline: 3px solid var(--wine); outline-offset: 2px; }
+  .member-tile .nm { margin-top: 7px; font-size: 13px; }
+  .mentor-box { display: grid; grid-template-columns: 108px 1fr; gap: 18px; }
+  .mentor-box .ph { aspect-ratio: 4 / 5; border-radius: 6px; background: linear-gradient(145deg, #dce2e2, #abb9be); display: grid; place-items: center; color: #46555f; font-size: 12px; }
+  .mentor-box h3 { margin: 0 0 4px; font: 700 18px/1.4 var(--serif); }
+
+  /* ── 图片素材 ─────────────────────────── */
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .media-tile { background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .media-tile .ph { aspect-ratio: 4 / 3; background: linear-gradient(145deg, #d8dfdf, #a9b8bd); display: grid; place-items: center; color: #46555f; font-size: 12px; }
+  .media-tile .cap { padding: 9px 11px; font-size: 12.5px; }
+  .media-tile .cap b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── 对话框 / 提示 ────────────────────── */
+  dialog { border: 0; border-radius: 10px; padding: 0; width: min(460px, calc(100vw - 40px)); box-shadow: 0 24px 60px rgba(15,26,37,.3); }
+  dialog::backdrop { background: rgba(15, 26, 37, .45); }
+  .dlg-head { background: var(--navy-deep); color: #fff; padding: 14px 20px; font: 700 16px/1.4 var(--serif); }
+  .dlg-body { padding: 18px 20px; }
+  .dlg-body ul { margin: 0 0 14px; padding-left: 20px; color: #3a434c; }
+  .dlg-body li { margin: 4px 0; }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 0 20px 18px; }
+  .progress { height: 6px; border-radius: 99px; background: var(--soft); overflow: hidden; margin: 4px 0 14px; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .9s ease; }
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px);
+    background: #23292f; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13.5px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 60;
+  }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .note { display: flex; gap: 10px; align-items: flex-start; background: #fdf7ea; border: 1px solid #ecd9a8; border-radius: 8px; padding: 11px 14px; font-size: 13px; color: #6b5a20; margin-bottom: 16px; }
+  .note.blue { background: #eef3f7; border-color: #c8d6e2; color: #2f4a60; }
+
+  /* ── 响应式 ───────────────────────────── */
+  @media (max-width: 880px) {
+    .topbar { padding: 0 12px; gap: 8px; }
+    .topbar .brand small { display: none; }
+    .topbar .brand b { font-size: 15px; white-space: nowrap; }
+    .link-preview { padding: 6px 9px; font-size: 12.5px; }
+    .btn-publish { padding: 7px 11px; font-size: 13.5px; }
+    .menu-toggle { display: inline-block; }
+    .layout { grid-template-columns: 1fr; }
+    .sidenav { position: fixed; z-index: 40; top: 58px; bottom: 0; left: 0; width: 232px; box-shadow: 12px 0 30px rgba(15,26,37,.18); transform: translateX(-105%); transition: transform .18s ease; }
+    .sidenav.open { transform: translateX(0); }
+    main.view { padding: 18px 14px 60px; }
+    .fld-row { grid-template-columns: 1fr; }
+    .row { flex-wrap: wrap; }
+    .mentor-box { grid-template-columns: 88px 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body data-page-node-id="E8Z14nCF6khyh7Z30ntOxC">
+
+<header class="topbar" data-page-node-id="RpmYzHGZrYcA8kBpouPTxb">
+  <div class="brand" data-page-node-id="Mv6PHmrxKLXJaw4pvbJwoV"><b data-page-node-id="JnCjt0eSBXXApw0XofcOfj">课题组网站管理</b><small data-page-node-id="BSsDuDSznudRYN1MTuXKTw">后台原型 · 数据保存在本浏览器</small></div>
+  <div class="actions" data-page-node-id="lxfbJ8owbb0J7WrayqBHCA">
+    <button class="menu-toggle" type="button" id="menuToggle" aria-expanded="false" aria-controls="sidenav" data-page-node-id="A1gZ5Meg4KlGNJAymNZMlL">菜单</button>
+    <a class="link-preview" href="index.html" target="_blank" rel="noopener" data-page-node-id="E9SMW7u5rtaktnrq7OVvPn">预览网站</a>
+    <button class="btn-publish" type="button" id="btnPublish" data-page-node-id="fORGyJddWbRKvD3IA0dyds">发布更新<span class="count" id="pendingCount" data-page-node-id="ek3rKQnka9Se4rvlqz7cYw"></span></button>
+  </div>
+</header>
+
+<div class="layout" data-page-node-id="7CQ9UEBowjnlkb6VoaHqzA">
+  <nav class="sidenav" id="sidenav" aria-label="后台导航" data-page-node-id="r6JX1rQXcVbmomiLqD4aPz">
+    <a href="#/dashboard" data-nav="dashboard" data-page-node-id="PJTi5MD1j1ZkYOGHXfp5eN">工作台</a>
+    <div class="group" data-page-node-id="vRS48ja3bCOfbGm4zUgAXF">前台栏目</div>
+    <a href="#/home" data-nav="home" data-page-node-id="C2dzqpe1AzhHfJlCGJjzxv">首页设置</a>
+    <a href="#/team" data-nav="team" data-page-node-id="GSzTx8FqNZMRQOJgBdxsOV">团队介绍</a>
+    <a href="#/research" data-nav="research" data-page-node-id="J7uOOMcgEPSpUufNiJews6">科研成果</a>
+    <a href="#/news" data-nav="news" data-page-node-id="NBUHWL6Lpml12kTzGNr1M0">新闻动态</a>
+    <a href="#/contact" data-nav="contact" data-page-node-id="fc4HBYCsI6bOTtseEKpvai">联系我们</a>
+    <div class="group" data-page-node-id="lEIlANkeUriDAaMvpj02Po">辅助</div>
+    <a href="#/appearance" data-nav="appearance">网站外观</a>
+    <a href="#/media" data-nav="media" data-page-node-id="BcwZGrFgnha4avrxG49sb4">图片素材</a>
+  </nav>
+  <main class="view" id="view" data-page-node-id="G2J2Cg0HyMHuEZQVSONp4c"></main>
+</div>
+
+<dialog id="publishDialog" data-page-node-id="qBSYesjotIq3zmBjFq55RL">
+  <div class="dlg-head" data-page-node-id="k4AhWxqh7XjHEo9m34wuV2">发布更新</div>
+  <div class="dlg-body" id="publishBody" data-page-node-id="60cKy1ZSQgiKz7jwazzYFY"></div>
+  <div class="dlg-foot" id="publishFoot" data-page-node-id="nPVq10anz3AEE5F9dNHy2o"></div>
+</dialog>
+
+<dialog id="cropDialog">
+  <div class="crop-head"><b>调整并裁剪图片</b><span class="meta">拖动摆正位置，滚轮或滑杆缩放；取景框内为最终保留区域。</span></div>
+  <div class="crop-stage" id="cropStage"><canvas id="cropCanvas"></canvas><div class="crop-grid"></div></div>
+  <div class="crop-bar">
+    <label>缩放<input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1"></label>
+    <button type="button" class="btn ghost sm" id="cropRotL">向左旋转</button>
+    <button type="button" class="btn ghost sm" id="cropReset">重置</button>
+  </div>
+  <div class="crop-foot">
+    <button type="button" class="btn ghost" id="cropCancel">取消</button>
+    <button type="button" class="btn" id="cropOk">确认裁剪</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" data-page-node-id="eqlD73fmiBi88Hg6NX0HNZ"></div>
+
+<script src="assets/site-data.js"></script>
+<script src="assets/site-store.js"></script>
+<script>
+"use strict";
+
+/* ════════ 工作台状态：草稿优先，其次已发布，最后种子数据 ════════ */
+const state = window.SiteStore.open();
+state.pending = state.pending || [];
+state.lastPublish = state.lastPublish || "";
+
+let nextId = 100;
+const $ = (sel, root) => (root || document).querySelector(sel);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const roleName = (r) => ({ mentor: "导师", master: "硕士研究生", other: "其他身份" }[r] || r);
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(() => t.classList.remove("on"), 2600);
+}
+function recordPending(label) {
+  state.pending.unshift({ label, time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) });
+  renderPendingCount();
+  SiteStore.saveDraft(state);
+}
+function renderPendingCount() {
+  const el = $("#pendingCount");
+  el.textContent = String(state.pending.length);
+  el.classList.toggle("on", state.pending.length > 0);
+}
+
+/* ════════ 通用片段 ════════ */
+function switchHtml(id, checked, label) {
+  return `<label class="switch"><input type="checkbox" id="${id}" ${checked ? "checked" : ""}><span class="track"></span><span class="sw-label">${esc(label)}</span></label>`;
+}
+const PV_LABEL = { tall: "4:5 照片", sq: "1:1 Logo", wide: "团队照片 16:6", "43": "平台图片 4:3", "169": "背景图 16:9" };
+function uploadHtml(pvId, ratio, hint, btnText, initial) {
+  return `<div class="up" id="up-${pvId}">
+    <div class="up-preview ${ratio === "wide" ? "wide" : ratio === "sq" ? "sq" : ratio === "43" ? "r43" : ratio === "169" ? "r169" : ""}${initial ? " has-img" : ""}" id="${pvId}"${initial ? ` style="background-image:url('${initial}')"` : ""}><span>${PV_LABEL[ratio] || "4:5 照片"}</span></div>
+    <div class="up-side">
+      <p class="hint">${esc(hint)}</p>
+      <input type="file" accept="image/jpeg,image/png,image/webp" class="up-input" data-pv="${pvId}" data-ratio="${ratio}" aria-label="${esc(btnText)}">
+      <button type="button" class="btn ghost sm up-recrop" data-pv="${pvId}" ${initial ? "" : "hidden"}>重新裁剪</button>
+      <button type="button" class="btn ghost sm up-clear" data-pv="${pvId}">移除图片</button>
+    </div>
+  </div>`;
+}
+
+/* ════════ 图片管线：EXIF 摆正 → 压缩 → 按比例裁剪 ════════ */
+const photoDraft = new Map(); // pvId → dataURL（空字符串 = 已删除，渲染编辑表单时清空）
+const rawCanvases = new Map(); // pvId → 原始解码 canvas（供「重新裁剪」使用）
+function setPv(pvId, dataURL) {
+  const pv = document.getElementById(pvId);
+  if (!pv) return;
+  if (dataURL) { pv.style.backgroundImage = `url("${dataURL}")`; pv.closest(".up").classList.add("has-img"); }
+  else { pv.style.backgroundImage = ""; pv.closest(".up").classList.remove("has-img"); }
+}
+const AdminImg = (() => {
+  const RATIOS = { tall: 4 / 5, sq: 1, wide: 16 / 6, "43": 4 / 3, "169": 16 / 9 };
+  const OUT_CAP = { tall: 1200, sq: 512, wide: 1600, free: 1600, "43": 1200, "169": 1600 };
+  function exifOrientation(buf) {
+    const v = new DataView(buf);
+    if (v.byteLength < 4 || v.getUint16(0) !== 0xffd8) return 1;
+    let off = 2;
+    while (off < v.byteLength - 4) {
+      const marker = v.getUint16(off);
+      if ((marker & 0xff00) !== 0xff00) break;
+      const size = v.getUint16(off + 2);
+      if (marker === 0xffe1 && v.byteLength > off + 10 && v.getUint32(off + 4) === 0x45786966) {
+        const tiff = off + 10;
+        const little = v.getUint16(tiff) === 0x4949;
+        const g16 = (p) => v.getUint16(p, little), g32 = (p) => v.getUint32(p, little);
+        const ifd = tiff + g32(tiff + 4);
+        const n = g16(ifd);
+        for (let i = 0; i < n; i++) {
+          const e = ifd + 2 + i * 12;
+          if (g16(e) === 0x0112) return g16(e + 8) || 1;
+        }
+        return 1;
+      }
+      off += 2 + size;
+    }
+    return 1;
+  }
+  async function decode(file) {
+    let orient = 1;
+    if (file.type === "image/jpeg") { try { orient = exifOrientation(await file.arrayBuffer()); } catch (e) { orient = 1; } }
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("图片解码失败")); i.src = url; });
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const swapped = orient >= 5 && orient <= 8;
+      const W = swapped ? h : w, H = swapped ? w : h;
+      const k = Math.min(1, 1920 / Math.max(W, H));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(W * k)); c.height = Math.max(1, Math.round(H * k));
+      const g = c.getContext("2d");
+      g.imageSmoothingQuality = "high";
+      const T = { 1: [1, 0, 0, 1, 0, 0], 2: [-1, 0, 0, 1, w, 0], 3: [-1, 0, 0, -1, w, h], 4: [1, 0, 0, -1, 0, h], 5: [0, 1, 1, 0, 0, 0], 6: [0, 1, -1, h, 0, 0], 7: [0, -1, -1, h, w, 0], 8: [0, -1, 1, 0, 0, w] }[orient] || [1, 0, 0, 1, 0, 0];
+      g.setTransform(T[0] * k, T[1] * k, T[2] * k, T[3] * k, T[4] * k, T[5] * k);
+      g.drawImage(img, 0, 0);
+      return c;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  let st = null, bound = false;
+  /* 人脸启发式定位：肤色像素中位数质心；白底/失败时回退 null（调用方按证件照偏上处理） */
+  function facePoint(canvas) {
+    const w = 140, h = Math.max(1, Math.round(canvas.height * w / canvas.width));
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const g = c.getContext("2d"); g.drawImage(canvas, 0, 0, w, h);
+    let d;
+    try { d = g.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+    const xs = [], ys = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4, r = d[i], gg = d[i + 1], b = d[i + 2];
+      const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+      if (r > 70 && r < 250 && r > gg && r - mn > 12 && mx - mn > 14 && b > 15) { xs.push(x); ys.push(y); }
+    }
+    if (xs.length < w * h * 0.012) return null;
+    const med = (a) => { a.sort((p, q) => p - q); return a[a.length >> 1]; };
+    const mx = med(xs), my = med(ys);
+    if (!isFinite(mx) || !isFinite(my)) return null;
+    return { px: (mx + 0.5) * canvas.width / w, py: (my + 0.5) * canvas.height / h };
+  }
+  /* 自动裁剪输出：取景框 cover，脸点置于框高 42% 处；无脸点时居中 */
+  function autoCropOutput(canvas, ratioKey, fp) {
+    const ratio = RATIOS[ratioKey];
+    const maxW = 560, maxH = 430;
+    let sw = maxW, sh = sw / ratio;
+    if (sh > maxH) { sh = maxH; sw = sh * ratio; }
+    const s0 = Math.max(sw / canvas.width, sh / canvas.height);
+    const swi = sw / s0, shi = sh / s0;
+    const px = fp ? fp.px : canvas.width / 2, py = fp ? fp.py : canvas.height / 2;
+    let sx = px - swi / 2, sy = fp ? py - shi * 0.42 : py - shi / 2;
+    sx = Math.min(canvas.width - swi, Math.max(0, sx));
+    sy = Math.min(canvas.height - shi, Math.max(0, sy));
+    const cap = OUT_CAP[ratioKey] || 1600;
+    const rho = Math.min(1, cap / swi, cap / shi);
+    const ow = Math.max(1, Math.round(swi * rho)), oh = Math.max(1, Math.round(shi * rho));
+    const out = document.createElement("canvas");
+    out.width = ow; out.height = oh;
+    const g = out.getContext("2d");
+    g.imageSmoothingQuality = "high";
+    if (ratioKey === "sq") { g.fillStyle = "#ffffff"; g.fillRect(0, 0, ow, oh); }
+    g.drawImage(canvas, sx, sy, swi, shi, 0, 0, ow, oh);
+    return out.toDataURL(ratioKey === "sq" ? "image/png" : "image/jpeg", 0.85);
+  }
+  const visDims = () => (st.rot % 180 ? { w: st.ch, h: st.cw } : { w: st.cw, h: st.ch });
+  const baseScale = () => { const v = visDims(); return Math.max(st.sw / v.w, st.sh / v.h); };
+  function apply() {
+    const c = $("#cropCanvas");
+    c.style.width = st.cw + "px"; c.style.height = st.ch + "px";
+    c.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) rotate(${st.rot}deg) scale(${st.s})`;
+    $("#cropZoom").value = (st.s / baseScale()).toFixed(2);
+  }
+  function clamp() {
+    st.s = Math.max(st.s, baseScale());
+    const v = visDims();
+    const mx = Math.max(0, (v.w * st.s - st.sw) / 2), my = Math.max(0, (v.h * st.s - st.sh) / 2);
+    st.tx = Math.min(mx, Math.max(-mx, st.tx));
+    st.ty = Math.min(my, Math.max(-my, st.ty));
+    apply();
+  }
+  function close() { $("#cropDialog").close(); }
+  function openCrop(canvas, ratioKey, onDone) {
+    const c = $("#cropCanvas");
+    c.width = canvas.width; c.height = canvas.height;
+    c.getContext("2d").drawImage(canvas, 0, 0);
+    const ratio = RATIOS[ratioKey];
+    const maxW = Math.min(560, window.innerWidth - 90), maxH = Math.min(430, window.innerHeight - 240);
+    let sw = maxW, sh = sw / ratio;
+    if (sh > maxH) { sh = maxH; sw = sh * ratio; }
+    const stage = $("#cropStage");
+    stage.style.width = sw + "px"; stage.style.height = sh + "px";
+    st = { cw: canvas.width, ch: canvas.height, rot: 0, tx: 0, ty: 0, s: 1, canvas, ratio, ratioKey, onDone, sw, sh };
+    st.s = baseScale();
+    const fp = st.ratioKey === "tall" ? facePoint(canvas) : null;
+    if (fp) { st.tx = -(fp.px - st.cw / 2) * st.s; st.ty = -st.sh * 0.08 - (fp.py - st.ch / 2) * st.s; }
+    else if (st.ratioKey === "wide" || st.ratioKey === "169") { st.ty = -st.sh * 0.06; }
+    clamp();
+    $("#cropDialog").showModal();
+  }
+  function bindOnce() {
+    const stage = $("#cropStage"), zoom = $("#cropZoom");
+    let drag = null;
+    stage.addEventListener("pointerdown", (e) => { if (!st) return; drag = { x: e.clientX, y: e.clientY, tx: st.tx, ty: st.ty }; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener("pointermove", (e) => { if (!st || !drag) return; st.tx = drag.tx + (e.clientX - drag.x); st.ty = drag.ty + (e.clientY - drag.y); clamp(); });
+    stage.addEventListener("pointerup", () => { drag = null; });
+    stage.addEventListener("wheel", (e) => {
+      if (!st) return; e.preventDefault();
+      const z = Math.min(4, Math.max(1, (st.s / baseScale()) * (e.deltaY < 0 ? 1.12 : 0.9)));
+      st.s = baseScale() * z; clamp();
+    }, { passive: false });
+    zoom.addEventListener("input", () => { if (!st) return; st.s = baseScale() * Number(zoom.value); clamp(); });
+    $("#cropRotL").addEventListener("click", () => { if (!st) return; st.rot = (st.rot + 270) % 360; clamp(); });
+    $("#cropReset").addEventListener("click", () => { if (!st) return; st.rot = 0; st.s = baseScale(); st.tx = 0; st.ty = 0; clamp(); });
+    $("#cropCancel").addEventListener("click", close);
+    $("#cropOk").addEventListener("click", () => {
+      if (!st) return;
+      const cap = OUT_CAP[st.ratioKey];
+      const rho = Math.min(st.s, cap / st.sw, cap / st.sh);
+      const ow = Math.max(1, Math.round(st.sw * rho)), oh = Math.max(1, Math.round(st.sh * rho));
+      const out = document.createElement("canvas");
+      out.width = ow; out.height = oh;
+      const g = out.getContext("2d");
+      g.imageSmoothingQuality = "high";
+      g.setTransform(rho, 0, 0, rho, 0, 0);
+      g.translate(st.sw / 2, st.sh / 2);
+      g.rotate(-st.rot * Math.PI / 180);
+      g.scale(1 / st.s, 1 / st.s);
+      g.translate(-(st.sw / 2 + st.tx), -(st.sh / 2 + st.ty));
+      g.drawImage(st.canvas, 0, 0);
+      const url = st.ratioKey === "sq" ? out.toDataURL("image/png") : out.toDataURL("image/jpeg", 0.85);
+      const done = st.onDone;
+      close();
+      done(url);
+    });
+    $("#cropDialog").addEventListener("close", () => { st = null; });
+    bound = true;
+  }
+  async function process(file, ratioKey, onDone) {
+    try {
+      const canvas = await decode(file);
+      if (!bound) bindOnce();
+      if (ratioKey === "free" || !RATIOS[ratioKey]) {
+        const cap = OUT_CAP.free;
+        const k = Math.min(1, cap / Math.max(canvas.width, canvas.height));
+        const out = document.createElement("canvas");
+        out.width = Math.max(1, Math.round(canvas.width * k));
+        out.height = Math.max(1, Math.round(canvas.height * k));
+        const g = out.getContext("2d");
+        g.imageSmoothingQuality = "high";
+        g.drawImage(canvas, 0, 0, out.width, out.height);
+        const isPng = /png/i.test(file.type || "");
+        onDone(isPng ? out.toDataURL("image/png") : out.toDataURL("image/jpeg", 0.85));
+        return canvas;
+      }
+      onDone(autoCropOutput(canvas, ratioKey, ratioKey === "tall" ? facePoint(canvas) : null));
+      return canvas;
+    } catch (err) { toast("图片读取失败，请换一张试试"); return null; }
+  }
+  function recrop(canvas, ratioKey, onDone) { if (!bound) bindOnce(); openCrop(canvas, ratioKey, onDone); }
+  return { process, recrop };
+})();
+function onPvSet(pvId, fileName, url) {
+  setPv(pvId, url);
+  photoDraft.set(pvId, url);
+  const rc = document.querySelector('.up-recrop[data-pv="' + pvId + '"]');
+  if (rc) rc.hidden = !url;
+  if (pvId === "pv-media-new") addMedia(fileName, url);
+  else recordPending("上传图片（草稿）");
+}
+function bindUploads(root) {
+  root.querySelectorAll(".up-input").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      AdminImg.process(f, inp.dataset.ratio || "free", (url) => onPvSet(inp.dataset.pv, f.name, url)).then((c) => { if (c) rawCanvases.set(inp.dataset.pv, c); });
+    });
+  });
+  root.querySelectorAll(".up-clear").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setPv(btn.dataset.pv, "");
+      photoDraft.set(btn.dataset.pv, "");
+      const rcBtn = root.querySelector('.up-recrop[data-pv="' + btn.dataset.pv + '"]');
+      if (rcBtn) rcBtn.hidden = true;
+      const inp = root.querySelector(`.up-input[data-pv="${btn.dataset.pv}"]`);
+      if (inp) inp.value = "";
+    });
+  });
+  root.querySelectorAll(".up-recrop").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const pv = btn.dataset.pv;
+      const inp = root.querySelector(`.up-input[data-pv="${pv}"]`);
+      const ratio = (inp && inp.dataset.ratio) || "free";
+      if (!RATIOS[ratio]) { toast("此图片位无需裁剪"); return; }
+      const done = (url) => onPvSet(pv, "", url);
+      const raw = rawCanvases.get(pv);
+      if (raw) { AdminImg.recrop(raw, ratio, done); return; }
+      const pvEl = document.getElementById(pv);
+      const m = pvEl && (pvEl.style.backgroundImage || "").match(/url\("([\s\S]+)"\)/);
+      if (!m) { toast("请先上传图片"); return; }
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 1920 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.naturalWidth * k));
+        c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        AdminImg.recrop(c, ratio, done);
+      };
+      img.src = m[1];
+    });
+  });
+}
+function viewHead(title, sub, actions) {
+  return `<div class="view-head"><div><h1>${esc(title)}</h1><div class="sub">${esc(sub)}</div></div><div class="acts" style="display:flex;gap:8px">${actions || ""}</div></div>`;
+}
+function saveBar(backHash, saveId) {
+  return `<div style="display:flex;gap:10px;margin-top:22px">
+    <button class="btn" type="button" data-save="${esc(saveId)}" data-back="${esc(backHash)}">保存</button>
+    <a class="btn ghost" href="${esc(backHash)}">返回（不保存）</a>
+  </div>`;
+}
+
+/* ════════ 工作台 ════════ */
+function renderDashboard(el) {
+  el.innerHTML = `
+    ${viewHead("工作台", "日常更新从这里进入，每个入口与前台栏目一一对应。")}
+    <div class="note blue"><div style="flex:1;min-width:0">这是后台信息管理平台。保存的内容先进入<strong>草稿</strong>，点右上角「发布更新」后，打开或刷新前台页面（首页/团队/新闻等）即可看到修改；配置下方「云端发布」令牌后，发布内容还会自动写入网站仓库，全网访客几秒内实时可见。</div><button class="btn ghost sm" type="button" id="btnResetDemo" style="flex:none;align-self:center;white-space:nowrap">重置演示数据</button></div>
+    <div class="grid-entries">
+      <div class="entry"><b>首页设置</b><p>欢迎标题、团队照片、课题组简介</p><a class="btn ghost sm" href="#/home">编辑首页</a></div>
+      <div class="entry"><b>团队介绍</b><p>导师与硕士研究生资料、成员详情、照片上传</p><a class="btn ghost sm" href="#/team">管理成员</a></div>
+      <div class="entry wine"><b>科研成果</b><p>论文、专利、项目三个列表</p><a class="btn ghost sm" href="#/research">管理科研内容</a></div>
+      <div class="entry"><b>新闻动态</b><p>新闻列表、缩略图与详情正文</p><a class="btn ghost sm" href="#/newsitem/new">写一条新闻</a></div>
+      <div class="entry"><b>联系我们</b><p>邮箱、电话、地址、邮编，共四项</p><a class="btn ghost sm" href="#/contact">编辑联系信息</a></div>
+      <div class="entry"><b>网站外观</b><p>Logo、站点名称、配色、字体与页脚文字</p><a class="btn ghost sm" href="#/appearance">管理外观</a></div>
+      <div class="entry"><b>图片素材</b><p>已上传图片的统一存放处（辅助入口）</p><a class="btn ghost sm" href="#/media">查看素材</a></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>发布状态</h2>
+      <p class="desc">上次发布：${esc(state.lastPublish)}　·　未发布的修改：${state.pending.length ? state.pending.length + " 处" : "无"}</p>
+      ${state.pending.length ? `<ul style="margin:0;padding-left:20px;color:#3a434c">${state.pending.slice(0, 5).map((p) => `<li>${esc(p.label)} · ${esc(p.time)}</li>`).join("")}</ul>` : `<p class="desc" style="margin:0">所有已保存的内容都已发布到正式网站。</p>`}
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>云端发布（让所有人实时看到）</h2>
+      <p class="desc">网站托管在 GitHub Pages 与 Vercel：配置一次访问令牌，之后每次点右上角「发布更新」，内容会自动写入网站仓库并同步上线，访客几秒内即可看到，无需任何部署操作。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="password" id="f-cloud-token" placeholder="粘贴 GitHub 访问令牌（PAT）" style="flex:1;min-width:220px">
+        <button class="btn sm" type="button" id="btnSaveToken">保存令牌</button>
+        <button class="btn ghost sm" type="button" id="btnClearToken">清除</button>
+      </div>
+      <p class="hint" id="cloudStatus" style="margin:8px 0 0"></p>
+      <p class="hint" style="margin:6px 0 0">令牌获取：GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token，仅选择仓库 zl2626/lab-website，权限勾选 Contents: Read and write。令牌只保存在本浏览器，绝不进入网站代码；换电脑或换浏览器需重新粘贴一次。未配置令牌时，「发布更新」仅在本机预览生效。</p>
+    </div>`;
+  $("#btnResetDemo", el).addEventListener("click", () => {
+    if (confirm("重置演示数据？将清除本浏览器中保存的草稿与已发布内容，恢复到初始示例。")) { SiteStore.reset(); location.reload(); }
+  });
+  const tkInput = $("#f-cloud-token", el);
+  const tkStatus = $("#cloudStatus", el);
+  const hasToken = () => !!(localStorage.getItem("labAdminToken.v1") || "").trim();
+  const refreshTk = () => {
+    tkInput.value = localStorage.getItem("labAdminToken.v1") || "";
+    tkStatus.textContent = hasToken() ? "✅ 已配置：点右上角「发布更新」即同步到线上（GitHub Pages + Vercel）。" : "⚠️ 未配置：目前发布仅在本浏览器预览生效。";
+  };
+  refreshTk();
+  $("#btnSaveToken", el).addEventListener("click", () => {
+    const v = tkInput.value.trim();
+    if (v) localStorage.setItem("labAdminToken.v1", v); else localStorage.removeItem("labAdminToken.v1");
+    refreshTk();
+    toast(v ? "云端发布令牌已保存" : "已清除令牌");
+  });
+  $("#btnClearToken", el).addEventListener("click", () => {
+    localStorage.removeItem("labAdminToken.v1");
+    refreshTk();
+    toast("已清除云端发布令牌");
+  });
+}
+
+/* ════════ 首页设置 ════════ */
+function dirRowHtml(item) {
+  const v = item && typeof item === "object" ? item : { t: String(item || ""), d: "" };
+  return `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:center"><span class="meta" style="flex:none">·</span><input type="text" class="dir-title" value="${esc(v.t)}" style="flex:0 0 32%" placeholder="主题，例如：智能控制算法"><input type="text" class="dir-desc" value="${esc(v.d)}" style="flex:1" placeholder="一句话说明（选填）"><button class="btn ghost sm dir-del" type="button">删除</button></div>`;
+}
+function renderHome(el) {
+  el.innerHTML = `
+    ${viewHead("首页设置", "只管理首页上由文字和照片组成的内容，改完保存即可。")}
+    <div class="card form">
+      <h2>首页开屏</h2>
+      <p class="desc">深色首屏：背景图与欢迎标题。</p>
+      <div class="fld"><label>首页开屏背景图</label>
+        ${uploadHtml("pv-hero-bg", "169", "深色横图效果最佳；上传后自动裁成 16:9，页面文字自动加暗色遮罩保证可读。", "选择背景图", state.home.heroBg)}</div>
+      <div class="fld"><label for="f-welcome">欢迎标题</label>
+        <input type="text" id="f-welcome" value="${esc(state.home.welcome)}">
+        <p class="hint">显示在首页最上方，居中出现。</p></div>
+      <h2 style="margin-top:8px">团队照片与主要研究</h2>
+      <p class="desc">显示在简介区左侧的合照与一行研究领域。</p>
+      <div class="fld"><label>团队照片</label>
+        ${uploadHtml("pv-home-photo", "wide", "横版合照；上传后在弹窗中拖拽裁成 16:6，自动纠正手机照片方向并压缩。", "选择团队照片", state.home.photo)}</div>
+      <div class="fld"><label for="f-research">主要研究（一行文字）</label>
+        <input type="text" id="f-research" value="${esc(state.home.researchLine)}">
+        <p class="hint">显示在团队照片下方，用顿号分隔研究领域。</p></div>
+      <h2 style="margin-top:8px">课题组简介</h2>
+      <p class="desc">简介正文、编号要点与首页导师卡。</p>
+      <div class="fld"><label for="f-about">课题组简介（首页简介区正文）</label>
+        <textarea id="f-about" style="min-height:110px">${esc(state.home.about || "")}</textarea>
+        <p class="hint">显示在首页「课题组简介」区块，普通段落文字即可。</p></div>
+      <div class="fld"><label>简介要点（可增删改）</label>
+        <div id="dirRows">${(state.home.aboutDirections || []).map((t) => dirRowHtml(t)).join("")}</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+          <button class="btn ghost sm" type="button" id="btnAddDir">＋ 添加一条</button>
+          <span class="hint" style="margin:0">显示为首页简介区的编号条目：主题加一句话说明。</span>
+        </div></div>
+      <div class="fld"><label for="f-mentor">首页导师卡展示</label>
+        <select id="f-mentor">
+          <option value="">自动（第一位上架导师）</option>
+          ${state.members.filter((mm) => mm.role === "mentor").map((mm) => `<option value="${mm.id}" ${Number(state.home.mentorId) === mm.id ? "selected" : ""}>${esc(mm.name)}（${esc(mm.title || "导师")}）</option>`).join("")}
+        </select>
+        <p class="hint">导师照片与职称在该成员的资料页里上传与修改（团队介绍 → 点开成员）。</p></div>
+      <h2 style="margin-top:8px">科研平台</h2>
+      <p class="desc">前台「科研平台」板块的三张实验室图片。</p>
+      <div class="fld"><label>科研平台图片（三张，4:3）</label>
+        <div class="platform-ups">
+          ${[1, 2, 3].map((i) => uploadHtml("pv-platform-" + i, "43", "第 " + i + " 张", "选择图片", (state.home.platform || [])[i - 1])).join("")}
+        </div>
+        <p class="hint">实验室 / 机器人照片，上传后自动居中裁成 4:3；不满意点「重新裁剪」手动调整。前台「科研平台」板块按此顺序展示。</p></div>
+      <h2 style="margin-top:8px">「最新成果」</h2>
+      <p class="desc">首页成果卡的选取规则。</p>
+      <div class="fld"><label>「最新成果」的选取方式</label>
+        <div class="checks">
+          <label><input type="radio" name="f-featured" value="auto" ${state.home.featuredMode === "auto" ? "checked" : ""}>自动取最新的 3 项</label>
+          <label><input type="radio" name="f-featured" value="manual" ${state.home.featuredMode === "manual" ? "checked" : ""}>手动挑选并置顶</label>
+        </div>
+        <p class="hint">此项尚未最终确认：自动方式最省事，手动方式可以在论文/专利/项目编辑里勾选「最新成果」。</p></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" type="button" data-save="home" data-back="#/dashboard">保存</button>
+        <a class="btn ghost" href="index.html" target="_blank" rel="noopener">看首页效果</a>
+      </div>
+    </div>`;
+  bindUploads(el);
+  const wireDirRows = () => {
+    el.querySelectorAll(".dir-del").forEach((btn) => {
+      btn.addEventListener("click", () => { btn.closest("div").remove(); });
+    });
+  };
+  wireDirRows();
+  $("#btnAddDir", el).addEventListener("click", () => {
+    if (el.querySelectorAll(".dir-title").length >= 8) { toast("最多 8 条"); return; }
+    el.querySelector("#dirRows").insertAdjacentHTML("beforeend", dirRowHtml(""));
+    wireDirRows();
+    const items = el.querySelectorAll(".dir-title");
+    items[items.length - 1].focus();
+  });
+}
+
+/* ════════ 团队介绍 ════════ */
+function renderTeam(el) {
+  const mentor = state.members.find((m) => m.role === "mentor" && m.published) || state.members.find((m) => m.role === "mentor");
+  const masters = state.members.filter((m) => m.role === "master" && m.published);
+  const others = state.members.filter((m) => m.role === "other");
+  el.innerHTML = `
+    ${viewHead("团队介绍", "导师重点展示，硕士研究生按照片网格排列；照片是进入成员详情的唯一入口。", `<a class="btn accent sm" href="#/member/new">＋ 新增成员</a>`)}
+    <div class="card">
+      <h2>导师</h2>
+      <p class="desc">导师卡片显示照片、姓名、职称与邮箱，点击进入成员详情页。</p>
+      <div class="mentor-box">
+        <div class="ph"${mentor && mentor.photo ? ` style="background-image:url('${mentor.photo}');background-size:cover;background-position:center top"` : ""}>${mentor && mentor.photo ? "" : "4:5 导师照片"}</div>
+        <div>
+          <h3>${esc(mentor ? mentor.name : "未设置")}</h3>
+          <p style="margin:0">${esc(mentor ? mentor.title : "")}</p>
+          ${mentor ? `<a class="btn ghost sm" href="#/member/${mentor.id}">编辑导师资料</a>` : ""}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>硕士研究生</h2>
+      <p class="desc">列表页只显示 4:5 照片，不显示姓名等文字；点击照片进入详情。上传照片时自动按人脸居中裁剪。</p>
+      <div class="member-grid">
+        ${masters.map((m) => `<a class="member-tile" href="#/member/${m.id}"><div class="ph"${m.photo ? ` style="background-image:url('${m.photo}');background-size:cover;background-position:center top"` : ""}>${m.photo ? "" : "成员照片"}</div><div class="nm">${esc(m.name)} · ${esc(m.joinYear)} 级</div></a>`).join("") || `<p class="desc" style="grid-column:1/-1;margin:0">暂无成员，点击右上角「新增成员」。</p>`}
+      </div>
+    </div>
+    ${others.length ? `<div class="card">
+      <h2>旧数据中的其他身份</h2>
+      <p class="desc">按新方案，前台只保留导师与硕士研究生两组；以下旧数据需要在正式迁移时归并或下架，这里仅列出以便核对。</p>
+      <div class="rows">
+        ${others.map((m) => `<div class="row"><div class="grow"><h3>${esc(m.name)} <span class="tag dim">旧数据待迁移</span></h3><p class="meta">${esc(m.title || roleName(m.role))} · ${esc(m.joinYear)} 年加入</p></div><div class="acts"><a class="btn ghost sm" href="#/member/${m.id}">查看</a></div></div>`).join("")}
+      </div>
+    </div>` : ""}`;
+}
+
+/* ════════ 成员编辑 ════════ */
+function renderMemberEdit(el, id) {
+  const isNew = id === "new";
+  const m = isNew
+    ? { id: null, name: "", nameEn: "", role: "master", title: "", joinYear: String(new Date().getFullYear()), areas: [], email: "", bio: "", photo: null, published: true }
+    : state.members.find((x) => String(x.id) === String(id));
+  if (!m) { el.innerHTML = viewHead("未找到该成员", "可能已被移除。", `<a class="btn ghost sm" href="#/team">返回团队介绍</a>`); return; }
+  el.innerHTML = `
+    ${viewHead(isNew ? "新增成员" : `编辑成员：${m.name}`, "填写成员的基本资料与个人简介，照片按 4:5 统一裁剪。")}
+    <div class="card form">
+      <div class="fld"><label>照片（4:5）</label>
+        ${uploadHtml("pv-member-photo", "tall", "支持 JPG / PNG / WebP。上传后自动按人脸居中裁成 4:5 并压缩，预览即可见；如需调整，点「重新裁剪」手动微调。", "选择成员照片", m.photo)}</div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-name">姓名</label><input type="text" id="f-name" value="${esc(m.name)}"></div>
+        <div class="fld"><label for="f-nameEn">英文名（用于论文作者自动匹配）</label><input type="text" id="f-nameEn" value="${esc(m.nameEn)}"><p class="hint">与论文作者列表中的写法一致，相关成果才会自动关联。</p></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-role">身份</label>
+          <select id="f-role">
+            <option value="mentor" ${m.role === "mentor" ? "selected" : ""}>导师</option>
+            <option value="master" ${m.role === "master" ? "selected" : ""}>硕士研究生</option>
+          </select></div>
+        <div class="fld"><label for="f-joinYear">加入年份</label><input type="text" id="f-joinYear" value="${esc(m.joinYear)}"></div>
+      </div>
+      <div class="fld" id="fld-title" ${m.role === "mentor" ? "" : 'style="display:none"'}><label for="f-title">职称（仅导师显示）</label><input type="text" id="f-title" value="${esc(m.title)}" placeholder="例如：教授 / 博士生导师"></div>
+      <div class="fld"><label for="f-email">电子邮箱</label><input type="email" id="f-email" value="${esc(m.email)}"></div>
+      <div class="fld"><label for="f-bio">个人简介</label><textarea id="f-bio">${esc(m.bio)}</textarea>
+        <p class="hint">普通段落文字即可，不需要排版符号；正式版本提供加粗与小标题。</p></div>
+      <div class="note blue" style="margin-bottom:0">「相关成果」不需要在这里维护：保存后，论文作者列表中出现该成员姓名（或英文名）的论文会自动关联到成员详情页。</div>
+      <div class="fld" style="margin-top:16px">${switchHtml("f-published", m.published, "上架显示（关闭后前台隐藏，数据保留）")}</div>
+      ${saveBar("#/team", "member:" + (isNew ? "new" : m.id))}
+    </div>`;
+  bindUploads(el);
+  $("#f-role", el).addEventListener("change", (e) => { $("#fld-title", el).style.display = e.target.value === "mentor" ? "" : "none"; });
+  el.querySelector("[data-save]").addEventListener("click", () => {
+    const data = readMemberForm(m.photo);
+    if (isNew) { data.id = nextId++; state.members.push(data); }
+    else Object.assign(m, data);
+    recordPending((isNew ? "新增成员：" : "修改成员：") + data.name);
+    toast("已保存为草稿，点右上角「发布更新」后生效");
+    location.hash = "#/team";
+  });
+}
+function readMemberForm(prevPhoto) {
+  return {
+    name: $("#f-name").value.trim(),
+    nameEn: $("#f-nameEn").value.trim(),
+    role: $("#f-role").value,
+    title: $("#f-title").value.trim(),
+    joinYear: $("#f-joinYear").value.trim(),
+    areas: [...document.querySelectorAll('input[name="f-areas"]:checked')].map((i) => Number(i.value)),
+    email: $("#f-email").value.trim(),
+    bio: $("#f-bio").value.trim(),
+    photo: photoDraft.has("pv-member-photo") ? (photoDraft.get("pv-member-photo") || null) : (prevPhoto || null),
+    published: $("#f-published").checked
+  };
+}
+
+/* ════════ 科研成果（三个子页签） ════════ */
+function renderResearch(el, tab) {
+  tab = tab || "pubs";
+  const tabs = [["pubs", "论文"], ["patents", "专利"], ["projects", "项目"]];
+  let body = "";
+  if (tab === "pubs") {
+    const years = [...new Set(state.pubs.map((p) => p.year))].sort((a, b) => b - a);
+    body = years.map((y) => `<div class="year-head">${y} 年</div><div class="rows">
+      ${state.pubs.filter((p) => p.year === y).map((p) => `<div class="row">
+        <div class="grow"><h3>${esc(p.title)} ${p.featured ? '<span class="tag gold">最新成果</span>' : ""} ${p.published ? "" : '<span class="tag dim">已下架</span>'}</h3>
+        <p class="meta">${esc(p.authors)} · ${esc(p.venueShort || p.venue)} · ${esc(p.type)}</p></div>
+        <div class="acts"><a class="btn ghost sm" href="#/pub/${p.id}">编辑</a></div></div>`).join("")}
+    </div>`).join("") + `<div style="margin-top:12px"><a class="btn accent sm" href="#/pub/new">＋ 新增论文</a></div>`;
+  } else if (tab === "patents") {
+    body = state.patents.length ? `<div class="rows">
+      ${state.patents.map((p) => `<div class="row">
+        <div class="grow"><h3>${esc(p.name)} ${p.published ? "" : '<span class="tag dim">已下架</span>'}</h3>
+        <p class="meta"><span class="tag">${esc(p.kind)}</span><span class="tag ${p.status === "已授权" ? "" : "dim"}">${esc(p.status)}</span>${esc(p.inventors)} · ${p.year}</p></div>
+        <div class="acts"><a class="btn ghost sm" href="#/patent/${p.id}">编辑</a></div></div>`).join("")}
+    </div>` : `<div class="empty"><b>还没有录入专利</b>点击下方按钮录入第一条专利。</div>`;
+    body += `<div style="margin-top:12px"><a class="btn accent sm" href="#/patent/new">＋ 新增专利</a></div>`;
+  } else if (tab === "projects") {
+    body = `<div class="rows">
+      ${state.projects.map((p) => `<div class="row">
+        <div class="grow"><h3>${esc(p.name)} ${p.published ? "" : '<span class="tag dim">已下架</span>'}</h3>
+        <p class="meta"><span class="tag">${esc(p.category)}</span>${esc(p.sponsor)} · ${p.startYear}–${p.endYear} · ${esc(p.status)}</p></div>
+        <div class="acts"><a class="btn ghost sm" href="#/project/${p.id}">编辑</a></div></div>`).join("")}
+    </div><div style="margin-top:12px"><a class="btn accent sm" href="#/project/new">＋ 新增项目</a></div>`;
+  }
+  el.innerHTML = `
+    ${viewHead("科研成果", "论文、专利、项目是三个独立列表，保存后按对应栏目展示。")}
+    <div class="checks" style="margin-bottom:16px" role="tablist">
+      ${tabs.map(([k, label]) => `<label><input type="radio" name="rtab" value="${k}" ${k === tab ? "checked" : ""}>${label}</label>`).join("")}
+    </div>
+    ${body}`;
+  el.querySelectorAll('input[name="rtab"]').forEach((i) => i.addEventListener("change", () => { location.hash = "#/research/" + i.value; }));
+}
+
+/* ── 论文编辑 ── */
+function renderPubEdit(el, id) {
+  const isNew = id === "new";
+  const p = isNew ? { id: null, title: "", authors: "", venue: "", venueShort: "", year: new Date().getFullYear(), type: "会议论文", areas: [], featured: false, link: "", pdf: "", code: "", abstract: "", published: true } : state.pubs.find((x) => String(x.id) === String(id));
+  if (!p) { el.innerHTML = viewHead("未找到该论文", "", `<a class="btn ghost sm" href="#/research/pubs">返回</a>`); return; }
+  el.innerHTML = `
+    ${viewHead(isNew ? "新增论文" : "编辑论文", "保存后按年份出现在论文列表，勾选「最新成果」可进入首页展示。")}
+    <div class="card form">
+      <div class="fld"><label for="f-title">标题（保留英文原文）</label><input type="text" id="f-title" value="${esc(p.title)}"></div>
+      <div class="fld"><label for="f-authors">作者列表</label><input type="text" id="f-authors" value="${esc(p.authors)}" placeholder="Wei Zhang, Yang Liu, ...">
+        <p class="hint">成员的姓名或英文名与「团队介绍」里的写法完全一致时，论文会自动关联到该成员。</p></div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-venue">期刊 / 会议全称</label><input type="text" id="f-venue" value="${esc(p.venue)}"></div>
+        <div class="fld"><label for="f-venueShort">简称</label><input type="text" id="f-venueShort" value="${esc(p.venueShort)}" placeholder="CVPR"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-year">年份</label><input type="number" id="f-year" value="${esc(p.year)}"></div>
+        <div class="fld"><label for="f-type">类型</label>
+          <select id="f-type">${["会议论文", "期刊论文", "预印本"].map((t) => `<option ${p.type === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-link">DOI / 链接</label><input type="text" id="f-link" value="${esc(p.link)}"></div>
+        <div class="fld"><label for="f-pdf">PDF 链接（选填）</label><input type="text" id="f-pdf" value="${esc(p.pdf)}"></div>
+      </div>
+      <div class="fld"><label for="f-abstract">摘要（选填）</label><textarea id="f-abstract">${esc(p.abstract)}</textarea></div>
+      <div class="fld">${switchHtml("f-featured", p.featured, "标记为「最新成果」（首页展示）")}
+        <p class="hint" style="margin-top:6px">若首页设置为自动选取，此处勾选不生效。</p></div>
+      <div class="fld">${switchHtml("f-published", p.published, "上架显示")}</div>
+      ${saveBar("#/research/pubs", "pub")}
+    </div>`;
+  el.querySelector("[data-save]").addEventListener("click", () => {
+    const data = {
+      title: $("#f-title").value.trim(), authors: $("#f-authors").value.trim(),
+      venue: $("#f-venue").value.trim(), venueShort: $("#f-venueShort").value.trim(),
+      year: Number($("#f-year").value) || new Date().getFullYear(), type: $("#f-type").value,
+      areas: [...document.querySelectorAll('input[name="f-areas"]:checked')].map((i) => Number(i.value)),
+      link: $("#f-link").value.trim(), pdf: $("#f-pdf").value.trim(), code: $("#f-code") ? $("#f-code").value.trim() : "",
+      abstract: $("#f-abstract").value.trim(), featured: $("#f-featured").checked, published: $("#f-published").checked
+    };
+    if (isNew) { data.id = nextId++; state.pubs.push(data); } else Object.assign(p, data);
+    recordPending((isNew ? "新增论文：" : "修改论文：") + (data.title.slice(0, 30) || "未命名"));
+    toast("已保存为草稿，点右上角「发布更新」后生效");
+    location.hash = "#/research/pubs";
+  });
+}
+
+/* ── 专利编辑 ── */
+function renderPatentEdit(el, id) {
+  const isNew = id === "new";
+  const p = isNew ? { id: null, name: "", no: "", kind: "发明专利", status: "申请中", year: new Date().getFullYear(), inventors: "", link: "", published: true } : state.patents.find((x) => String(x.id) === String(id));
+  if (!p) { el.innerHTML = viewHead("未找到该专利", "", `<a class="btn ghost sm" href="#/research/patents">返回</a>`); return; }
+  el.innerHTML = `
+    ${viewHead(isNew ? "新增专利" : "编辑专利", "旧数据中存为「论文」的专利条目，正式迁移时会归到这里。")}
+    <div class="card form">
+      <div class="fld"><label for="f-name">专利名称</label><input type="text" id="f-name" value="${esc(p.name)}"></div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-no">专利号</label><input type="text" id="f-no" value="${esc(p.no)}"></div>
+        <div class="fld"><label for="f-year">年份</label><input type="number" id="f-year" value="${esc(p.year)}"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-kind">类型</label><select id="f-kind">${["发明专利", "实用新型", "外观设计"].map((t) => `<option ${p.kind === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+        <div class="fld"><label for="f-status">状态</label><select id="f-status">${["已授权", "已受理", "申请中"].map((t) => `<option ${p.status === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      </div>
+      <div class="fld"><label for="f-inventors">发明人</label><input type="text" id="f-inventors" value="${esc(p.inventors)}"></div>
+      <div class="fld"><label for="f-link">链接（选填）</label><input type="text" id="f-link" value="${esc(p.link)}"></div>
+      <div class="fld">${switchHtml("f-published", p.published, "上架显示")}</div>
+      ${saveBar("#/research/patents", "patent")}
+    </div>`;
+  el.querySelector("[data-save]").addEventListener("click", () => {
+    const data = { name: $("#f-name").value.trim(), no: $("#f-no").value.trim(), kind: $("#f-kind").value, status: $("#f-status").value, year: Number($("#f-year").value) || new Date().getFullYear(), inventors: $("#f-inventors").value.trim(), link: $("#f-link").value.trim(), published: $("#f-published").checked };
+    if (isNew) { data.id = nextId++; state.patents.push(data); } else Object.assign(p, data);
+    recordPending((isNew ? "新增专利：" : "修改专利：") + data.name);
+    toast("已保存为草稿，点右上角「发布更新」后生效");
+    location.hash = "#/research/patents";
+  });
+}
+
+/* ── 项目编辑 ── */
+function renderProjectEdit(el, id) {
+  const isNew = id === "new";
+  const p = isNew ? { id: null, name: "", category: "国家级项目", sponsor: "", code: "", leader: "", members: "", startYear: new Date().getFullYear(), endYear: new Date().getFullYear() + 3, status: "在研", amount: "", summary: "", published: true } : state.projects.find((x) => String(x.id) === String(id));
+  if (!p) { el.innerHTML = viewHead("未找到该项目", "", `<a class="btn ghost sm" href="#/research/projects">返回</a>`); return; }
+  el.innerHTML = `
+    ${viewHead(isNew ? "新增项目" : `编辑项目：${p.name}`, "项目子页展示名称、来源、时间、负责人与简介。")}
+    <div class="card form">
+      <div class="fld"><label for="f-name">项目名称</label><input type="text" id="f-name" value="${esc(p.name)}"></div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-category">类别</label><select id="f-category">${["国家级项目", "省部级项目", "校级项目", "开放课题", "质量工程", "企业合作", "其他"].map((t) => `<option ${p.category === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+        <div class="fld"><label for="f-status">状态</label><select id="f-status">${["在研", "已结题"].map((t) => `<option ${p.status === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-sponsor">来源单位</label><input type="text" id="f-sponsor" value="${esc(p.sponsor)}"></div>
+        <div class="fld"><label for="f-code">项目编号（选填）</label><input type="text" id="f-code" value="${esc(p.code)}"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-startYear">开始年份</label><input type="number" id="f-startYear" value="${esc(p.startYear)}"></div>
+        <div class="fld"><label for="f-endYear">结束年份</label><input type="number" id="f-endYear" value="${esc(p.endYear)}"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-leader">负责人</label><input type="text" id="f-leader" value="${esc(p.leader)}"></div>
+        <div class="fld"><label for="f-members">参与成员</label><input type="text" id="f-members" value="${esc(p.members)}" placeholder="用逗号分隔"></div>
+      </div>
+      <div class="fld"><label for="f-summary">简介</label><textarea id="f-summary">${esc(p.summary)}</textarea></div>
+      <div class="fld">${switchHtml("f-published", p.published, "上架显示")}</div>
+      ${saveBar("#/research/projects", "project")}
+    </div>`;
+  el.querySelector("[data-save]").addEventListener("click", () => {
+    const data = { name: $("#f-name").value.trim(), category: $("#f-category").value, status: $("#f-status").value, sponsor: $("#f-sponsor").value.trim(), code: $("#f-code").value.trim(), startYear: Number($("#f-startYear").value), endYear: Number($("#f-endYear").value), leader: $("#f-leader").value.trim(), members: $("#f-members").value.trim(), summary: $("#f-summary").value.trim(), published: $("#f-published").checked };
+    if (isNew) { data.id = nextId++; state.projects.push(data); } else Object.assign(p, data);
+    recordPending((isNew ? "新增项目：" : "修改项目：") + data.name);
+    toast("已保存为草稿，点右上角「发布更新」后生效");
+    location.hash = "#/research/projects";
+  });
+}
+
+/* ════════ 新闻动态 ════════ */
+function renderNews(el) {
+  const list = [...state.news].sort((a, b) => (b.pinned - a.pinned) || (b.date > a.date ? 1 : -1));
+  el.innerHTML = `
+    ${viewHead("新闻动态", "首页自动显示最新 3 条；置顶的新闻会排在最前面。", `<a class="btn accent sm" href="#/newsitem/new">＋ 写新闻</a>`)}
+    <div class="rows">
+      ${list.map((n) => `<div class="row">
+        <div style="width:76px;flex-shrink:0;color:var(--navy);font-size:12.5px;line-height:1.5">${esc(n.date)}</div>
+        <div class="grow"><h3>${esc(n.title)} ${n.pinned ? '<span class="tag wine">置顶</span>' : ""} ${n.published ? "" : '<span class="tag dim">已下架</span>'}</h3>
+          <p class="meta">${esc(n.summary)}</p></div>
+        <div class="acts">${switchHtml("pin-" + n.id, n.pinned, "置顶")}<a class="btn ghost sm" href="#/newsitem/${n.id}">编辑</a></div>
+      </div>`).join("")}
+    </div>`;
+  list.forEach((n) => {
+    const sw = $("#pin-" + n.id, el);
+    sw.addEventListener("change", () => { n.pinned = sw.checked; recordPending("调整新闻置顶：" + n.title); renderNews(el); });
+  });
+}
+
+function renderNewsEdit(el, id) {
+  const isNew = id === "new";
+  const n = isNew ? { id: null, title: "", date: new Date().toISOString().slice(0, 10), summary: "", body: "", cover: null, pinned: false, published: true } : state.news.find((x) => String(x.id) === String(id));
+  if (!n) { el.innerHTML = viewHead("未找到该新闻", "", `<a class="btn ghost sm" href="#/news">返回</a>`); return; }
+  el.innerHTML = `
+    ${viewHead(isNew ? "写一条新闻" : "编辑新闻", "每条新闻都有独立详情页；首页与列表页显示日期、标题、摘要与缩略图。")}
+    <div class="card form">
+      <div class="fld"><label for="f-title">标题</label><input type="text" id="f-title" value="${esc(n.title)}"></div>
+      <div class="fld"><label for="f-date">日期</label><input type="date" id="f-date" value="${esc(n.date)}"></div>
+      <div class="fld"><label for="f-summary">摘要</label><textarea id="f-summary" style="min-height:64px">${esc(n.summary)}</textarea>
+        <p class="hint">一到两句话，用于列表页快速判断内容。</p></div>
+      <div class="fld"><label>缩略图（选填）</label>${uploadHtml("pv-news-cover", "43", "建议横版图片；上传后自动裁成 4:3，列表缩略图与详情页大图共用，如不满意可点「重新裁剪」调整。", "选择缩略图", n.cover)}</div>
+      <div class="fld"><label for="f-body">正文</label><textarea id="f-body" style="min-height:180px" placeholder="正文段落；正式版本提供小标题、加粗与插图。">${esc(n.body)}</textarea></div>
+      <div class="fld-row">
+        <div class="fld">${switchHtml("f-pinned", n.pinned, "置顶（在列表最前显示）")}</div>
+        <div class="fld">${switchHtml("f-published", n.published, "上架显示")}</div>
+      </div>
+      ${saveBar("#/news", "news")}
+    </div>`;
+  bindUploads(el);
+  el.querySelector("[data-save]").addEventListener("click", () => {
+    const data = { title: $("#f-title").value.trim(), date: $("#f-date").value, summary: $("#f-summary").value.trim(), body: $("#f-body").value, cover: photoDraft.has("pv-news-cover") ? (photoDraft.get("pv-news-cover") || null) : (n.cover || null), pinned: $("#f-pinned").checked, published: $("#f-published").checked };
+    if (isNew) { data.id = nextId++; state.news.push(data); } else Object.assign(n, data);
+    recordPending((isNew ? "新增新闻：" : "修改新闻：") + (data.title || "未命名"));
+    toast("已保存为草稿，点右上角「发布更新」后生效");
+    location.hash = "#/news";
+  });
+}
+
+/* ════════ 联系我们 ════════ */
+function renderContact(el) {
+  el.innerHTML = `
+    ${viewHead("联系我们", "前台联系页只展示下面四项，没有其他内容模块。")}
+    <div class="card form">
+      <div class="fld-row">
+        <div class="fld"><label for="f-email">电子邮箱</label><input type="email" id="f-email" value="${esc(state.contact.email)}"></div>
+        <div class="fld"><label for="f-phone">联系电话</label><input type="text" id="f-phone" value="${esc(state.contact.phone)}"></div>
+      </div>
+      <div class="fld"><label for="f-address">通讯地址</label><input type="text" id="f-address" value="${esc(state.contact.address)}"></div>
+      <div class="fld"><label for="f-postcode">邮政编码</label><input type="text" id="f-postcode" value="${esc(state.contact.postcode)}"></div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" type="button" data-save="contact" data-back="#/dashboard">保存</button>
+        <a class="btn ghost" href="contact.html" target="_blank" rel="noopener">看联系页效果</a>
+      </div>
+    </div>`;
+}
+
+/* ════════ 图片素材 ════════ */
+function renderMedia(el) {
+  el.innerHTML = `
+    ${viewHead("图片素材", "统一存放已上传的图片；日常编辑时在对应栏目里上传即可，不需要先来这里。")}
+    <div class="media-grid">
+      ${state.media.map((m) => `<div class="media-tile"><div class="ph"${m.data ? ` style="background-image:url('${m.data}');background-size:cover;background-position:center"` : ""}>${m.data ? "" : "图片预览"}</div><div class="cap"><b>${esc(m.name)}</b><span class="meta">${esc(m.size)} · 用于：${esc(m.used)}</span></div></div>`).join("")}
+      <div class="media-tile" style="display:grid;place-items:center;min-height:150px;border-style:dashed;color:var(--muted)">
+        <div style="text-align:center;padding:14px"><div style="font-size:22px;margin-bottom:6px">＋</div>上传图片
+          <input type="file" accept="image/jpeg,image/png,image/webp" class="up-input" data-pv="pv-media-new" data-ratio="free" aria-label="上传图片" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <p class="meta" style="margin-top:14px">说明：上传的图片会自动纠正手机照片方向并压缩到适合网页的尺寸；素材仅存于草稿，发布后生效。</p>`;
+  bindUploads(el);
+}
+function addMedia(fileName, url) {
+  state.media.unshift({ id: nextId++, name: fileName || "图片", size: Math.max(1, Math.round(url.length * 3 / 4 / 1024)) + " KB", used: "未使用", data: url });
+  recordPending("上传图片素材");
+  toast("已压缩存入素材库（草稿），发布后生效");
+  route();
+}
+
+/* ════════ 网站外观 ════════ */
+function ensureAppearance() {
+  if (!state.settings) state.settings = {};
+  if (!state.settings.appearance) {
+    state.settings.appearance = { logoLab: "", logoUni: "", colorPrimary: "#243a50", colorAccent: "#873d49", fontHeading: "serif", fontBody: "sans", footerNote: "安徽农业大学 · 姚焱刚课题组（EIAUS Lab）" };
+  }
+  return state.settings.appearance;
+}
+function refreshAppearancePreview(el) {
+  const pv = $("#appearancePreview", el); if (!pv) return;
+  const primary = $("#f-color-primary", el).value || "#243a50";
+  const accent = $("#f-color-accent", el).value || "#873d49";
+  const hFont = $("#f-font-heading", el).value === "sans" ? "var(--sans)" : "var(--serif)";
+  const bFont = $("#f-font-body", el).value === "serif" ? "var(--serif)" : "var(--sans)";
+  const name = $("#f-site-name", el).value || "课题组名称";
+  const ap = (state.settings && state.settings.appearance) || {};
+  const logoSpan = (url, label) => url
+    ? `<span style="width:46px;height:46px;border-radius:50%;background-image:url('${url}');background-size:cover;background-position:center;display:inline-block;border:1px solid #d0d9df;flex:none"></span>`
+    : `<span style="width:46px;height:46px;border-radius:50%;border:1px dashed #b9c4cc;display:inline-grid;place-items:center;font-size:9px;line-height:1.3;color:#8a959d;text-align:center;flex:none">${label}<br>LOGO</span>`;
+  const uniSpan = (url, label) => url
+    ? `<span style="width:150px;height:42px;border-radius:8px;background:#fff;border:1px solid #d0d9df;background-image:url('${url}');background-size:contain;background-position:center;background-repeat:no-repeat;display:inline-block;flex:none"></span>`
+    : `<span style="width:150px;height:42px;border-radius:8px;border:1px dashed #b9c4cc;display:inline-grid;place-items:center;font-size:9px;line-height:1.3;color:#8a959d;text-align:center;flex:none">${label}<br>LOGO</span>`;
+  pv.innerHTML = `<div style="border-top:4px solid ${esc(accent)};padding-top:12px">
+    <b style="font-family:${hFont};color:${esc(primary)};font-size:19px">${esc(name)}</b>
+    <span style="margin-left:10px;padding:1px 8px;border-radius:4px;background:${esc(accent)}22;color:${esc(accent)};font-size:12px">强调色</span>
+    <p style="margin:6px 0 0;font-family:${bFont};color:#46515a;font-size:13px">正文示例：这里是网站正文字体的实际显示效果。</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px dashed #d5dde3">
+      ${logoSpan(ap.logoLab, "课题组")}<b style="font-size:13px;color:#3a434c">页眉效果</b>${uniSpan(ap.logoUni, "学校")}
+    </div>
+  </div>`;
+}
+function renderAppearance(el) {
+  const s = state.settings, a = ensureAppearance();
+  el.innerHTML = `
+    ${viewHead("网站外观", "Logo、站点名称、配色与字体；保存并发布后，前台整站生效。")}
+    <div class="card form">
+      <h2>品牌 Logo 与名称</h2>
+      <p class="desc">课题组 Logo 建议正方形；学校 Logo 支持横版整体标识（含校名）或方形徽标，建议 PNG 小于 500KB；未上传时页眉显示文字占位。</p>
+      <div class="fld-row">
+        <div class="fld"><label>课题组 Logo（页眉左）</label>${uploadHtml("pv-logo-lab", "sq", "显示在页眉左侧圆形位置。", "选择课题组 Logo")}</div>
+        <div class="fld"><label>学校 Logo（页眉右）</label>${uploadHtml("pv-logo-uni", "sq", "显示在页眉右侧；上传横版整体标识后，页眉不再重复显示校名文字。", "选择学校 Logo")}</div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-site-name">站点名称</label><input type="text" id="f-site-name" value="${esc(s.name || "")}"></div>
+        <div class="fld"><label for="f-site-nameEn">英文副标</label><input type="text" id="f-site-nameEn" value="${esc(s.nameEn || "")}"></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-uni-name">学校名称</label><input type="text" id="f-uni-name" value="${esc(s.university || "")}"></div>
+        <div class="fld"><label for="f-uni-nameEn">学校英文</label><input type="text" id="f-uni-nameEn" value="${esc(s.universityEn || "")}"></div>
+      </div>
+      <h2 style="margin-top:8px">配色</h2>
+      <p class="desc">主色用于页眉、导航和标题；强调色用于重点标记、按钮与装饰。</p>
+      <div class="fld-row">
+        <div class="fld"><label for="f-color-primary">主色</label><input type="color" id="f-color-primary" value="${esc(a.colorPrimary || "#243a50")}"></div>
+        <div class="fld"><label for="f-color-accent">强调色</label><input type="color" id="f-color-accent" value="${esc(a.colorAccent || "#873d49")}"></div>
+      </div>
+      <h2 style="margin-top:8px">字体</h2>
+      <div class="fld-row">
+        <div class="fld"><label for="f-font-heading">标题字体</label><select id="f-font-heading"><option value="serif">衬线（宋体风格）</option><option value="sans">无衬线（黑体风格）</option></select></div>
+        <div class="fld"><label for="f-font-body">正文字体</label><select id="f-font-body"><option value="sans">无衬线（默认）</option><option value="serif">衬线（宋体风格）</option></select></div>
+      </div>
+      <div class="fld"><label for="f-footer-note">页脚说明文字</label><input type="text" id="f-footer-note" value="${esc(a.footerNote || "")}"></div>
+      <div class="fld"><label>效果预览</label><div class="appearance-preview" id="appearancePreview"></div></div>
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+        <button class="btn" type="button" data-save="appearance" data-back="#/dashboard">保存</button>
+        <button class="btn ghost" type="button" id="btn-restore-appearance">恢复默认外观</button>
+        <a class="btn ghost" href="index.html" target="_blank" rel="noopener">看前台效果</a>
+      </div>
+    </div>`;
+  $("#f-font-heading", el).value = a.fontHeading === "sans" ? "sans" : "serif";
+  $("#f-font-body", el).value = a.fontBody === "serif" ? "serif" : "sans";
+  [["pv-logo-lab", "logoLab"], ["pv-logo-uni", "logoUni"]].forEach(([pvId, key]) => {
+    const pv = document.getElementById(pvId);
+    if (pvId === "pv-logo-uni") pv.classList.add("wide-logo");
+    if (a[key]) { pv.style.backgroundImage = `url("${a[key]}")`; pv.closest(".up").classList.add("has-img"); }
+    const inp = el.querySelector(`.up-input[data-pv="${pvId}"]`);
+    inp.addEventListener("change", () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      AdminImg.process(f, pvId === "pv-logo-uni" ? "free" : "sq", (url) => {
+        a[key] = url;
+        setPv(pvId, url);
+        recordPending("更新 Logo 图片");
+        refreshAppearancePreview(el);
+        toast("Logo 已裁剪压缩，保存后生效");
+      });
+    });
+  });
+  el.querySelectorAll(".up-clear").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.pv === "pv-logo-lab" ? "logoLab" : btn.dataset.pv === "pv-logo-uni" ? "logoUni" : null;
+      setPv(btn.dataset.pv, "");
+      if (key) { a[key] = ""; photoDraft.set(btn.dataset.pv, ""); recordPending("移除 Logo"); refreshAppearancePreview(el); toast("已移除 Logo（保存后生效）"); }
+      const inp = el.querySelector(`.up-input[data-pv="${btn.dataset.pv}"]`);
+      if (inp) inp.value = "";
+    });
+  });
+  el.querySelectorAll("input, select").forEach((i) => i.addEventListener("change", () => refreshAppearancePreview(el)));
+  refreshAppearancePreview(el);
+  $("#btn-restore-appearance", el).addEventListener("click", () => {
+    const seed = SiteStore.seed().settings;
+    Object.assign(state.settings, { name: seed.name, nameEn: seed.nameEn, university: seed.university, universityEn: seed.universityEn });
+    state.settings.appearance = { ...seed.appearance };
+    recordPending("恢复默认外观");
+    toast("已恢复默认外观（草稿），发布后生效");
+    renderAppearance(el);
+  });
+}
+
+/* ════════ 发布流程 ════════ */
+/* ════════ 云端发布：整站数据写入仓库 site-data-published.json（gh-pages + main 双分支） ════════ */
+const CLOUD_REPO = "zl2626/lab-website";
+const CLOUD_FILE = "site-data-published.json";
+async function cloudPut(branch, token, contentB64, message) {
+  const headers = { "Authorization": "token " + token, "Accept": "application/vnd.github+json" };
+  let sha = null;
+  const get = await fetch("https://api.github.com/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE + "?ref=" + branch, { headers });
+  if (get.status === 200) sha = (await get.json()).sha;
+  else if (get.status !== 404) throw new Error("读取云端文件失败（" + get.status + "）");
+  const put = await fetch("https://api.github.com/repos/" + CLOUD_REPO + "/contents/" + CLOUD_FILE, {
+    method: "PUT", headers,
+    body: JSON.stringify({ message: message + "（" + branch + "）", content: contentB64, sha: sha, branch })
+  });
+  if (!put.ok) throw new Error("写入" + branch + "分支失败（" + put.status + "）");
+}
+async function cloudPublish(state) {
+  const token = (localStorage.getItem("labAdminToken.v1") || "").trim();
+  if (!token) { toast("未配置云端发布令牌：本次仅本机预览生效"); return; }
+  toast("正在同步到线上（GitHub Pages + Vercel）…");
+  try {
+    const contentB64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    await cloudPut("gh-pages", token, contentB64, "后台发布更新");
+    await cloudPut("main", token, contentB64, "后台发布更新");
+    toast("✅ 云端发布完成：全网访客几秒内可见最新内容");
+  } catch (err) {
+    toast("云端发布失败：" + err.message + "（本机预览已生效）");
+  }
+}
+function openPublish() {
+  const dlg = $("#publishDialog");
+  const body = $("#publishBody"), foot = $("#publishFoot");
+  if (!state.pending.length) {
+    body.innerHTML = `<p style="margin:0">没有需要发布的修改。所有已保存的内容都已在线上。</p>`;
+    foot.innerHTML = `<button class="btn ghost" id="dlgClose" type="button">好的</button>`;
+  } else {
+    body.innerHTML = `
+      <p style="margin:0 0 10px">将把以下 ${state.pending.length} 处已保存的修改发布到正式网站：</p>
+      <ul>${state.pending.map((p) => `<li>${esc(p.label)} · ${esc(p.time)}</li>`).join("")}</ul>
+      <div class="progress" style="display:none" id="pubProg"><i></i></div>`;
+    foot.innerHTML = `<button class="btn ghost" id="dlgClose" type="button">取消</button><button class="btn accent" id="dlgGo" type="button">确认发布</button>`;
+  }
+  dlg.showModal();
+  $("#dlgClose").addEventListener("click", () => dlg.close());
+  const go = $("#dlgGo");
+  if (go) go.addEventListener("click", () => {
+    $("#pubProg").style.display = "block";
+    requestAnimationFrame(() => { $("#pubProg i").style.width = "100%"; });
+    go.disabled = true;
+    setTimeout(() => {
+      state.lastPublish = new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+      state.pending = [];
+      SiteStore.publish(state);
+      renderPendingCount();
+      dlg.close();
+      toast("已发布：打开或刷新前台页面即可看到修改");
+      route();
+      cloudPublish(state);
+    }, 1100);
+  });
+}
+
+/* ════════ 路由 ════════ */
+function route() {
+  const hash = location.hash.replace(/^#\/?/, "") || "dashboard";
+  const [r, a] = hash.split("/");
+  const view = $("#view");
+  document.querySelectorAll(".sidenav a").forEach((link) => {
+    const key = link.dataset.nav;
+    const active = key === r || (key === "team" && r === "member") || (key === "research" && ["pub", "patent", "project"].includes(r)) || (key === "news" && r === "newsitem");
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
+  });
+  $("#sidenav").classList.remove("open");
+  $("#menuToggle").setAttribute("aria-expanded", "false");
+  window.scrollTo(0, 0);
+  photoDraft.clear();
+  switch (r) {
+    case "home": renderHome(view); break;
+    case "team": renderTeam(view); break;
+    case "member": renderMemberEdit(view, a); break;
+    case "research": renderResearch(view, a); break;
+    case "pub": renderPubEdit(view, a); break;
+    case "patent": renderPatentEdit(view, a); break;
+    case "project": renderProjectEdit(view, a); break;
+    case "news": renderNews(view); break;
+    case "newsitem": renderNewsEdit(view, a); break;
+    case "contact": renderContact(view); break;
+    case "appearance": renderAppearance(view); break;
+    case "media": renderMedia(view); break;
+    default: renderDashboard(view);
+  }
+}
+
+/* 全局保存按钮（首页设置 / 联系我们） */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-save]");
+  if (!btn) return;
+  const kind = btn.dataset.save;
+  if (kind === "home") {
+    state.home.welcome = $("#f-welcome").value.trim();
+    state.home.researchLine = $("#f-research").value.trim();
+    state.home.about = $("#f-about").value.trim();
+    state.home.aboutDirections = [...document.querySelectorAll("#dirRows > div")].map((row) => {
+      const t = row.querySelector(".dir-title");
+      const d = row.querySelector(".dir-desc");
+      return { t: t ? t.value.trim() : "", d: d ? d.value.trim() : "" };
+    }).filter((x) => x.t);
+    state.home.mentorId = Number($("#f-mentor").value) || null;
+    const mode = document.querySelector('input[name="f-featured"]:checked');
+    if (mode) state.home.featuredMode = mode.value;
+    if (photoDraft.has("pv-home-photo")) state.home.photo = photoDraft.get("pv-home-photo") || null;
+    if (photoDraft.has("pv-hero-bg")) state.home.heroBg = photoDraft.get("pv-hero-bg") || null;
+    state.home.platform = [1, 2, 3].map((i) => photoDraft.has("pv-platform-" + i) ? (photoDraft.get("pv-platform-" + i) || null) : ((state.home.platform || [])[i - 1] || null));
+    recordPending("修改首页设置");
+  } else if (kind === "contact") {
+    state.contact = { email: $("#f-email").value.trim(), phone: $("#f-phone").value.trim(), address: $("#f-address").value.trim(), postcode: $("#f-postcode").value.trim() };
+    recordPending("修改联系信息");
+  } else if (kind === "appearance") {
+    const s = state.settings, a = ensureAppearance();
+    s.name = $("#f-site-name").value.trim();
+    s.nameEn = $("#f-site-nameEn").value.trim();
+    s.university = $("#f-uni-name").value.trim();
+    s.universityEn = $("#f-uni-nameEn").value.trim();
+    a.colorPrimary = $("#f-color-primary").value;
+    a.colorAccent = $("#f-color-accent").value;
+    a.fontHeading = $("#f-font-heading").value;
+    a.fontBody = $("#f-font-body").value;
+    a.footerNote = $("#f-footer-note").value.trim();
+    if (photoDraft.has("pv-logo-lab")) a.logoLab = photoDraft.get("pv-logo-lab") || "";
+    if (photoDraft.has("pv-logo-uni")) a.logoUni = photoDraft.get("pv-logo-uni") || "";
+    recordPending("修改网站外观");
+  }
+  toast("已保存为草稿，点右上角「发布更新」后生效");
+  if (btn.dataset.back && btn.dataset.back.startsWith("#/")) { location.hash = btn.dataset.back; route(); }
+});
+
+$("#btnPublish").addEventListener("click", openPublish);
+$("#menuToggle").addEventListener("click", () => {
+  const open = $("#sidenav").classList.toggle("open");
+  $("#menuToggle").setAttribute("aria-expanded", String(open));
+});
+window.addEventListener("hashchange", route);
+renderPendingCount();
+route();
+</script>
+</body>
+</html>
